@@ -208,6 +208,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSession(null);
       setProfile(null);
+      setLoading(false);
       
       // Try to sign out from Supabase, but don't fail if session is missing
       console.log('Attempting supabase auth signOut');
@@ -229,11 +230,17 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Sign out process completed successfully');
       
+      // Force navigation to admin auth page
+      console.log('Forcing navigation to admin auth');
+      setTimeout(() => {
+        window.location.hash = '#/admin/auth';
+        window.location.reload();
+      }, 100);
+      
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
       setIsSigningOut(false);
-      setLoading(false);
     }
   };
 
