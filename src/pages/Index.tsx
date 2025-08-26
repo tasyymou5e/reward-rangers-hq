@@ -1,9 +1,37 @@
 import { PortalCard } from "@/components/PortalCard";
 import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogIn, UserPlus } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+
+  // Redirect based on user role if authenticated
+  const handlePortalNavigation = (portal: string) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
+    // Check if user has permission for this portal
+    if (portal === "kids" && profile?.role !== "kid") {
+      navigate("/auth");
+      return;
+    }
+    if (portal === "parents" && profile?.role !== "parent") {
+      navigate("/auth");
+      return;
+    }
+    if (portal === "admin" && profile?.role !== "admin") {
+      navigate("/auth");
+      return;
+    }
+    
+    navigate(`/${portal}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-kids-background/30">
@@ -18,8 +46,21 @@ const Index = () => {
             Turn chores into an adventure! Gamified task management for families.
           </p>
           <div className="text-lg text-muted-foreground">
-            Choose your portal to get started:
+            {user ? `Welcome back, ${profile?.display_name || 'Champion'}!` : 'Choose your portal to get started:'}
           </div>
+          
+          {!user && (
+            <div className="flex gap-4 justify-center mt-6">
+              <Button onClick={() => navigate("/auth")} variant="default" size="lg">
+                <LogIn className="h-5 w-5 mr-2" />
+                Sign In
+              </Button>
+              <Button onClick={() => navigate("/auth")} variant="outline" size="lg">
+                <UserPlus className="h-5 w-5 mr-2" />
+                Sign Up
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -28,7 +69,7 @@ const Index = () => {
             description="Complete chores, earn points, and unlock amazing rewards!"
             icon="🎮"
             variant="kids"
-            onClick={() => navigate("/kids")}
+            onClick={() => handlePortalNavigation("kids")}
           />
           
           <PortalCard
@@ -36,7 +77,7 @@ const Index = () => {
             description="Manage chores, track progress, and set up rewards for your children."
             icon="👨‍👩‍👧‍👦"
             variant="parents"
-            onClick={() => navigate("/parents")}
+            onClick={() => handlePortalNavigation("parents")}
           />
           
           <PortalCard
@@ -44,7 +85,7 @@ const Index = () => {
             description="System administration, user management, and analytics dashboard."
             icon="⚙️"
             variant="admin"
-            onClick={() => navigate("/admin")}
+            onClick={() => handlePortalNavigation("admin")}
           />
         </div>
 
