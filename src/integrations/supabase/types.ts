@@ -906,7 +906,7 @@ export type Database = {
     }
     Functions: {
       decrypt_mfa_secret: {
-        Args: { encrypted_text: string }
+        Args: { encoded_text: string }
         Returns: string
       }
       encrypt_mfa_secret: {
@@ -923,6 +923,22 @@ export type Database = {
       }
       is_family_parent: {
         Args: { family_id_param: string; user_id_param?: string }
+        Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          event_type: string
+          metadata_param?: Json
+          user_id_param: string
+        }
+        Returns: undefined
+      }
+      validate_family_access: {
+        Args: {
+          family_id_param: string
+          required_role?: string
+          user_id_param?: string
+        }
         Returns: boolean
       }
     }

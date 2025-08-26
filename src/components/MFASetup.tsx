@@ -50,17 +50,43 @@ export function MFASetup() {
     try {
       setLoading(true);
       const newBackupCodes = generateBackupCodes();
+      
+      // Use the secure encryption function for storing sensitive data
+      const { data: encryptedSecret } = await supabase
+        .rpc('encrypt_mfa_secret', { 
+          secret_text: 'mock_secret_' + Date.now() 
+        });
 
+      const { data: encryptedCodes } = await supabase
+        .rpc('encrypt_mfa_secret', { 
+          secret_text: JSON.stringify(newBackupCodes) 
+        });
+
+      if (!encryptedSecret || !encryptedCodes) {
+        throw new Error('Failed to encrypt MFA data');
+      }
+      
       const { error } = await supabase
         .from('user_mfa_settings')
         .upsert({
           user_id: user.id,
           mfa_enabled: true,
-          backup_codes: newBackupCodes,
-          totp_secret: Math.random().toString(36) // Placeholder - would use actual TOTP library
+          backup_codes: [encryptedCodes], // Store as encrypted array
+          totp_secret: encryptedSecret,
         });
 
       if (error) throw error;
+
+      // Log security event
+      await supabase.rpc('log_security_event', {
+        event_type: 'mfa_enabled',
+        user_id_param: user.id,
+        metadata_param: {
+          success: true,
+          ip_address: 'unknown', // Would get from request in production
+          user_agent: navigator.userAgent
+        }
+      });
 
       setMfaEnabled(true);
       setBackupCodes(newBackupCodes);
@@ -71,6 +97,20 @@ export function MFASetup() {
       });
     } catch (error) {
       console.error('Error enabling MFA:', error);
+      
+      // Log failed attempt
+      if (user) {
+        await supabase.rpc('log_security_event', {
+          event_type: 'mfa_enable_failed',
+          user_id_param: user.id,
+          metadata_param: {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            user_agent: navigator.userAgent
+          }
+        });
+      }
+
       toast({
         title: "Error",
         description: "Failed to enable MFA. Please try again.",
@@ -86,6 +126,7 @@ export function MFASetup() {
 
     try {
       setLoading(true);
+      
       const { error } = await supabase
         .from('user_mfa_settings')
         .update({
@@ -97,6 +138,17 @@ export function MFASetup() {
 
       if (error) throw error;
 
+      // Log security event
+      await supabase.rpc('log_security_event', {
+        event_type: 'mfa_disabled',
+        user_id_param: user.id,
+        metadata_param: {
+          success: true,
+          ip_address: 'unknown',
+          user_agent: navigator.userAgent
+        }
+      });
+
       setMfaEnabled(false);
       setBackupCodes([]);
       
@@ -106,6 +158,20 @@ export function MFASetup() {
       });
     } catch (error) {
       console.error('Error disabling MFA:', error);
+      
+      // Log failed attempt
+      if (user) {
+        await supabase.rpc('log_security_event', {
+          event_type: 'mfa_disable_failed',
+          user_id_param: user.id,
+          metadata_param: {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            user_agent: navigator.userAgent
+          }
+        });
+      }
+
       toast({
         title: "Error",
         description: "Failed to disable MFA. Please try again.",
