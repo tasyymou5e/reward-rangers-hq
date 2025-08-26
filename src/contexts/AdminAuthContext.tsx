@@ -19,10 +19,12 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     try {
+      setProfileLoading(true);
       console.log('Fetching admin profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
@@ -53,6 +55,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error during sign out:', signOutError);
       }
       setProfile(null);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -92,15 +96,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
               setUser(session.user);
               
               // Defer profile fetch to prevent blocking
-              setTimeout(() => {
+              setTimeout(async () => {
                 if (mounted && !isSigningOut) {
-                  fetchProfile(session.user.id);
+                  await fetchProfile(session.user.id);
                 }
               }, 100);
-            }
-            
-            if (mounted) {
-              setLoading(false);
+            } else {
+              // Only set loading to false if there's no user
+              if (mounted) {
+                setLoading(false);
+              }
             }
           }
         );
@@ -236,7 +241,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     profile,
-    loading,
+    loading: loading || profileLoading, // Keep loading true while either auth or profile is loading
     signIn,
     signOut,
     refreshProfile,
