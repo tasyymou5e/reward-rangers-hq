@@ -977,6 +977,21 @@ export type Database = {
           username: string
         }[]
       }
+      get_safe_family_profiles: {
+        Args: { requesting_user_id?: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          last_activity: string
+          level: number
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
+        }[]
+      }
       get_safe_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {

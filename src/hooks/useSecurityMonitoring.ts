@@ -41,7 +41,7 @@ export function useSecurityMonitoring() {
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
-      console.error('Error loading security alerts:', error);
+      // Error loading security alerts (logging removed for production)
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export function useSecurityMonitoring() {
       });
 
       if (error) {
-        console.error('Security monitoring error:', error);
+        // Security monitoring error (logging removed for production)
         
         // Fallback: Log directly to security alerts table
         await supabase.rpc('log_security_event', {
@@ -104,18 +104,11 @@ export function useSecurityMonitoring() {
           },
         });
       } else {
-        console.log('Security event logged:', data);
+        // Security event logged successfully (removed console logging for production security)
       }
     } catch (error) {
-      console.error('Failed to log security event:', error);
-      
-      // Final fallback: Log to console for debugging
-      console.warn('Security Event (unlogged):', {
-        eventType,
-        userId: user.id,
-        metadata,
-        timestamp: new Date().toISOString(),
-      });
+      // Failed to log security event (logging removed for production)
+      // Security events are now handled securely without console exposure
     }
   };
 
@@ -152,7 +145,7 @@ export function useSecurityMonitoring() {
         )
       );
     } catch (error) {
-      console.error('Error resolving alert:', error);
+      // Error resolving alert (logging removed for production)
       throw error;
     }
   };

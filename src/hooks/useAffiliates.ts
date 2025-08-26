@@ -20,14 +20,14 @@ export function useAffiliates() {
       setLoading(true);
       const { data, error } = await supabase
         .from('approved_affiliates')
-        .select('*')
+        .select('id, name, logo_url, base_url, is_active')
         .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
       setAffiliates(data || []);
     } catch (error) {
-      console.error('Error fetching affiliates:', error);
+      // Error fetching affiliates (logging removed for production)
       toast({
         title: "Error",
         description: "Failed to load affiliate partners",
