@@ -84,9 +84,13 @@ Deno.serve(async (req) => {
 
     console.log('Creating test family:', { familyName, parentEmail, parentName, childrenCount: children.length });
 
+    // Generate unique email addresses by adding timestamp
+    const timestamp = Date.now();
+    const uniqueParentEmail = parentEmail.replace('@', `+${timestamp}@`);
+
     // Create parent user
     const { data: parentAuth, error: parentAuthError } = await supabaseAdmin.auth.admin.createUser({
-      email: parentEmail,
+      email: uniqueParentEmail,
       password: parentPassword,
       email_confirm: true,
       user_metadata: {
@@ -122,8 +126,11 @@ Deno.serve(async (req) => {
     // Create children users
     const createdChildren = [];
     for (const child of children) {
+      // Generate unique email for each child
+      const uniqueChildEmail = child.email.replace('@', `+${timestamp}@`);
+      
       const { data: childAuth, error: childAuthError } = await supabaseAdmin.auth.admin.createUser({
-        email: child.email,
+        email: uniqueChildEmail,
         password: child.password,
         email_confirm: true,
         user_metadata: {
@@ -164,7 +171,7 @@ Deno.serve(async (req) => {
       createdChildren.push({
         id: childAuth.user.id,
         name: child.name,
-        email: child.email,
+        email: uniqueChildEmail,
       });
 
       console.log('Child created and added to family:', childAuth.user.id);
