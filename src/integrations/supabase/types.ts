@@ -997,6 +997,10 @@ export type Database = {
         Args: { user_id_param?: string }
         Returns: string[]
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_family_member: {
         Args: { family_id_param: string; user_id_param?: string }
         Returns: boolean
