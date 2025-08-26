@@ -346,9 +346,9 @@ export default function AdminPortal() {
           </div>
           <Button 
             variant="outline" 
-            onClick={async () => {
+            onClick={() => {
               console.log('Sign out button clicked');
-              await signOut();
+              signOut();
             }}
             className="text-admin-primary border-admin-primary hover:bg-admin-primary hover:text-white"
           >

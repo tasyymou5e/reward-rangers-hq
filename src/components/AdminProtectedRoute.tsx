@@ -8,6 +8,13 @@ interface AdminProtectedRouteProps {
 export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   const { user, profile, loading } = useAdminAuth();
 
+  console.log('AdminProtectedRoute check:', { 
+    user: !!user, 
+    profile: !!profile, 
+    role: profile?.role, 
+    loading 
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-admin-background flex items-center justify-center">
@@ -20,8 +27,10 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!user || !profile || profile.role !== 'admin') {
+    console.log('Redirecting to admin auth - not authorized');
     return <Navigate to="/admin/auth" replace />;
   }
 
+  console.log('Admin access granted');
   return <>{children}</>;
 }
