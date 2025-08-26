@@ -19,6 +19,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -63,29 +64,39 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let subscription: any = null;
     
     const initializeAuth = async () => {
       try {
         // Set up auth state listener FIRST
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        const { data } = supabase.auth.onAuthStateChange(
           async (event, session) => {
-            if (!mounted) return;
+            if (!mounted || isSigningOut) return;
             
             console.log('Auth state change:', event, session?.user?.id);
-            setSession(session);
-            setUser(session?.user ?? null);
             
-            if (session?.user) {
+            // Only update state if we're not in the middle of signing out
+            if (event === 'SIGNED_OUT' || !session) {
+              console.log('User signed out or session ended');
+              if (mounted && !isSigningOut) {
+                setSession(null);
+                setUser(null);
+                setProfile(null);
+                setLoading(false);
+              }
+              return;
+            }
+            
+            if (session?.user && mounted && !isSigningOut) {
+              setSession(session);
+              setUser(session.user);
+              
               // Defer profile fetch to prevent blocking
               setTimeout(() => {
-                if (mounted) {
+                if (mounted && !isSigningOut) {
                   fetchProfile(session.user.id);
                 }
-              }, 0);
-            } else {
-              if (mounted) {
-                setProfile(null);
-              }
+              }, 100);
             }
             
             if (mounted) {
@@ -93,9 +104,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         );
+        
+        subscription = data.subscription;
 
         // THEN check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: sessionData, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
@@ -103,19 +116,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         
         if (!mounted) return;
         
+        const session = sessionData.session;
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (session?.user && !isSigningOut) {
           await fetchProfile(session.user.id);
         }
         
         setLoading(false);
 
-        return () => {
-          mounted = false;
-          subscription.unsubscribe();
-        };
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
@@ -128,8 +138,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       mounted = false;
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
-  }, []);
+  }, [isSigningOut]); // Add isSigningOut as dependency
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -176,31 +189,46 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (isSigningOut) {
+      console.log('Sign out already in progress, skipping');
+      return;
+    }
+    
     try {
       console.log('Admin signOut function called - starting process');
-      setLoading(true);
+      setIsSigningOut(true);
       
-      // Sign out from Supabase first
-      console.log('Calling supabase auth signOut');
-      const { error } = await supabase.auth.signOut();
+      // Clear local state first to prevent loops
+      console.log('Clearing local auth state immediately');
+      setUser(null);
+      setSession(null);
+      setProfile(null);
       
-      if (error) {
-        console.error('Supabase sign out error:', error);
-        // Don't throw, continue with local cleanup
-      } else {
-        console.log('Supabase sign out successful');
+      // Try to sign out from Supabase, but don't fail if session is missing
+      console.log('Attempting supabase auth signOut');
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error && error.message !== 'Auth session missing!') {
+          console.error('Supabase sign out error:', error);
+        } else {
+          console.log('Supabase sign out completed (or session was already gone)');
+        }
+      } catch (authError: any) {
+        // AuthSessionMissingError is actually fine when signing out
+        if (authError.message?.includes('Auth session missing')) {
+          console.log('Session was already missing - this is fine for sign out');
+        } else {
+          console.error('Unexpected auth error:', authError);
+        }
       }
+      
+      console.log('Sign out process completed successfully');
       
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
-      // Always clear local state - this will trigger AdminProtectedRoute to redirect
-      console.log('Clearing local auth state');
-      setUser(null);
-      setSession(null);
-      setProfile(null);
+      setIsSigningOut(false);
       setLoading(false);
-      console.log('Local auth state cleared - should redirect now');
     }
   };
 
