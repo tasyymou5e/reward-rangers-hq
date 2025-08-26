@@ -4,10 +4,31 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogIn, UserPlus } from "lucide-react";
+import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
+
+  // Auto-redirect authenticated users to their appropriate portal
+  useEffect(() => {
+    if (!loading && user && profile) {
+      switch (profile.role) {
+        case 'parent':
+          navigate('/parents');
+          break;
+        case 'kid':
+          navigate('/kids');
+          break;
+        case 'admin':
+          navigate('/admin');
+          break;
+        default:
+          // Stay on index page for unknown roles
+          break;
+      }
+    }
+  }, [user, profile, loading, navigate]);
 
   // Redirect based on user role if authenticated
   const handlePortalNavigation = (portal: string) => {
