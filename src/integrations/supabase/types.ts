@@ -394,6 +394,51 @@ export type Database = {
         }
         Relationships: []
       }
+      motivation_journal: {
+        Row: {
+          chore_id: string | null
+          confidence_level: number
+          created_at: string
+          emotion: string
+          family_id: string
+          id: string
+          next_time: string | null
+          reflection: string
+          task_name: string
+          updated_at: string
+          user_id: string
+          what_helped: string | null
+        }
+        Insert: {
+          chore_id?: string | null
+          confidence_level: number
+          created_at?: string
+          emotion: string
+          family_id: string
+          id?: string
+          next_time?: string | null
+          reflection: string
+          task_name: string
+          updated_at?: string
+          user_id: string
+          what_helped?: string | null
+        }
+        Update: {
+          chore_id?: string | null
+          confidence_level?: number
+          created_at?: string
+          emotion?: string
+          family_id?: string
+          id?: string
+          next_time?: string | null
+          reflection?: string
+          task_name?: string
+          updated_at?: string
+          user_id?: string
+          what_helped?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

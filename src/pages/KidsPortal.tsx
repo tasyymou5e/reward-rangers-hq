@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChoreTimer } from "@/components/ChoreTimer";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
+import { MiniGames } from "@/components/MiniGames";
+import { MotivationJournal } from "@/components/MotivationJournal";
 
 export default function KidsPortal() {
   const { user, profile } = useAuth();
@@ -28,6 +30,8 @@ export default function KidsPortal() {
   const [rewards, setRewards] = useState<any[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
+  const [showMiniGames, setShowMiniGames] = useState(false);
+  const [completedChoreInfo, setCompletedChoreInfo] = useState<{id: string, title: string} | null>(null);
 
   // Filter chores assigned to current user
   const myChores = chores.filter(chore => chore.assigned_to === user?.id);
@@ -103,14 +107,19 @@ export default function KidsPortal() {
 
   const handleCompleteChore = async (choreId: string) => {
     try {
+      const chore = myChores.find(c => c.id === choreId);
       await completeChore(choreId);
+      
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       
-      const chore = myChores.find(c => c.id === choreId);
+      // Show mini games after completion
+      setCompletedChoreInfo({ id: choreId, title: chore?.title || 'Chore' });
+      setShowMiniGames(true);
+      
       toast({
         title: "🎉 Chore Completed!",
-        description: `You earned ${chore?.points_value || 0} points! Keep it up!`,
+        description: `You earned ${chore?.points_value || 0} points! Play a game to earn bonus points!`,
       });
       
       // Check for new badges
@@ -122,6 +131,13 @@ export default function KidsPortal() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleGameComplete = (bonusPoints: number) => {
+    toast({
+      title: "🎮 Bonus Points!",
+      description: `You earned ${bonusPoints} bonus XP from the game!`,
+    });
   };
 
   const checkForNewBadges = async () => {
@@ -295,6 +311,19 @@ export default function KidsPortal() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Mini Games and Journal Action Bar */}
+        <div className="flex gap-4 justify-center">
+          <MotivationJournal />
+          <Button 
+            variant="outline" 
+            className="border-kids-secondary text-kids-secondary hover:bg-kids-secondary hover:text-white"
+            onClick={() => setShowMiniGames(true)}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Play Games
+          </Button>
+        </div>
 
         <Tabs defaultValue="chores" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 bg-white shadow-md">
@@ -633,6 +662,17 @@ export default function KidsPortal() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Mini Games Modal */}
+        <MiniGames
+          isOpen={showMiniGames}
+          onClose={() => {
+            setShowMiniGames(false);
+            setCompletedChoreInfo(null);
+          }}
+          onComplete={handleGameComplete}
+          choreTitle={completedChoreInfo?.title}
+        />
       </div>
     </div>
   );
