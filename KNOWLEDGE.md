@@ -63,15 +63,20 @@ Transform mundane household chores into exciting quests with points, levels, bad
 ### 2. Parents Portal (`/parents`)
 **Target Users**: Parent/guardian managing family chores and rewards
 **Key Features**:
-- Family dashboard with children's progress
-- Chore creation and assignment
+- **Real Family Dashboard**: Displays actual children by name with avatars/initials
+- **Individual Child Progress**: Live tracking of each child's XP, level, streaks, and daily completion stats
+- **Flexible Chore Assignment**: 
+  - Assign chores to specific children individually
+  - Bulk assign to all children simultaneously
+  - Visual child selection with checkboxes
+- **Comprehensive Chore Creation**: Full form with title, description, points, difficulty, time estimates, and due dates
+- **Real-time Statistics**: Live counts of active children, completed chores, pending tasks
 - Wishlist approval/rejection system
 - Multi-Factor Authentication (MFA) setup
 - Family communication center
 - AI-powered predictive insights
 - Weekly report generation (PDF exports)
 - Reward management system
-- Real-time progress tracking
 - Security monitoring dashboard
 
 **Design Theme**: Professional, calm green/blue palette focused on productivity
@@ -149,13 +154,18 @@ Transform mundane household chores into exciting quests with points, levels, bad
    - Role assignments within families
 
 4. **chores** - Task management
-   - Point values and difficulty levels
+   - Point values and difficulty levels (easy/medium/hard)
    - Assignment and completion tracking
-   - Due dates and time estimates
+   - Due dates and time estimates  
+   - **Bulk assignment support** for multiple children
+   - Status tracking (pending/in_progress/completed)
+   - Family-based organization
+   - Individual and group assignment capabilities
 
 5. **progress_logs** - Activity tracking
    - Points earned history
    - Action logging for analytics
+   - Completion timestamps
 
 6. **wishlist_items** - Goal setting system
    - Parent approval workflow
@@ -214,8 +224,12 @@ check_auth_rate_limit(ip_addr, email, max_attempts, block_duration)
 
 ### Key Custom Hooks
 - **useAuth** - Authentication state management
-- **useChores** - Chore CRUD operations
-- **useFamily** - Family management
+- **useChores** - Chore CRUD operations with bulk assignment support
+  - `createChore()` - Single chore creation
+  - `createBulkChores()` - Bulk assignment to multiple children
+  - `updateChore()` - Chore modifications
+  - `completeChore()` - Completion with points/progress tracking
+- **useFamily** - Family management with real-time member data
 - **useWishlist** - Wishlist functionality
 - **useSecurityMonitoring** - Security event tracking
 - **useReportGeneration** - PDF report creation
@@ -223,7 +237,13 @@ check_auth_rate_limit(ip_addr, email, max_attempts, block_duration)
 - **useABTesting** - Feature flag management
 
 ### Specialized Components
-- **ChoreTimer** - Interactive countdown timer
+- **ChoreTimer** - Interactive countdown timer for kids
+- **ChoreAssignmentForm** - Comprehensive chore creation and assignment interface
+  - Individual child selection with visual checkboxes
+  - Bulk assignment to all children option
+  - Full form validation with Zod schema
+  - Date picker for due dates
+  - Difficulty levels with emoji indicators
 - **ConfettiEffect** - Celebration animations
 - **MiniGames** - Post-completion bonus games
 - **MotivationJournal** - Personal reflection tool
@@ -298,6 +318,9 @@ src/
 - **TypeScript First**: Strict typing throughout
 - **Component Composition**: Small, focused components
 - **Custom Hooks**: Feature logic abstraction
+- **Form Management**: React Hook Form + Zod validation
+- **Bulk Operations**: Efficient database operations for multiple records
+- **Real-time Updates**: Live data synchronization
 - **Error Boundaries**: Graceful error handling
 - **Loading States**: User feedback during async operations
 
@@ -390,6 +413,11 @@ src/
 - **IoT Integration**: Smart home device connectivity
 - **Advanced AI**: Machine learning recommendations
 - **Social Features**: Friend families and competitions
+- **Enhanced Assignment**: 
+  - Recurring chore templates
+  - Advanced scheduling options
+  - Chore dependency chains
+  - Automatic assignment based on child availability
 
 ### Scalability Considerations
 - **Multi-tenancy**: Support for larger organizations
@@ -401,6 +429,16 @@ src/
 ---
 
 ## 🐛 Common Issues & Solutions
+
+### Parent Portal Issues
+- **Problem**: Children not displaying
+- **Solution**: Ensure family members have 'kid' role and are properly linked
+- **Prevention**: Validate family relationships in database
+
+### Chore Assignment Issues  
+- **Problem**: Bulk assignment failing
+- **Solution**: Check family_id and assigned_to relationships
+- **Prevention**: Use createBulkChores hook for multiple assignments
 
 ### Authentication Issues
 - **Problem**: Redirect URL mismatches
@@ -452,6 +490,24 @@ npm run build
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+---
+
+## 🆕 Recent Updates & Features
+
+### Parent Portal Enhancements (Latest)
+- **Real Children Display**: Replaced mock data with actual family members
+- **Flexible Chore Assignment**: Individual and bulk assignment options
+- **Enhanced UI**: Child selection with avatars, progress tracking, and streak indicators
+- **Bulk Operations**: Efficient database operations for multiple chore creation
+- **Form Validation**: Comprehensive form with Zod schema validation
+- **Real-time Stats**: Live dashboard with completion counts and progress
+
+### Technical Improvements
+- **ChoreAssignmentForm Component**: New comprehensive chore creation interface
+- **Bulk Database Operations**: Enhanced useChores hook with createBulkChores function
+- **Improved Data Flow**: Better integration between family data and chore assignment
+- **Enhanced TypeScript**: Proper typing for bulk operations and form data
 
 ---
 
