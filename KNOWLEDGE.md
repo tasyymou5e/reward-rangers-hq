@@ -65,6 +65,11 @@ Transform mundane household chores into exciting quests with points, levels, bad
 **Key Features**:
 - **Real Family Dashboard**: Displays actual children by name with avatars/initials
 - **Individual Child Progress**: Live tracking of each child's XP, level, streaks, and daily completion stats
+- **Child Invitation System**: 
+  - Send email invitations to children with temporary passwords
+  - Automated user account creation and family assignment
+  - Professional email templates with ChoreQuest branding
+  - Family management interface with current members display
 - **Flexible Chore Assignment**: 
   - Assign chores to specific children individually
   - Bulk assign to all children simultaneously
@@ -244,6 +249,15 @@ check_auth_rate_limit(ip_addr, email, max_attempts, block_duration)
   - Full form validation with Zod schema
   - Date picker for due dates
   - Difficulty levels with emoji indicators
+- **AddChildForm** - Child invitation and family management
+  - Modal-based form for adding children via email
+  - Real-time validation and error handling
+  - Success states with automatic dialog management
+  - Integration with invite-child edge function
+- **Header** - Navigation and user controls
+  - User-type specific styling and gradients
+  - Logout functionality with proper authentication handling
+  - Home navigation and user welcome messages
 - **ConfettiEffect** - Celebration animations
 - **MiniGames** - Post-completion bonus games
 - **MotivationJournal** - Personal reflection tool
@@ -393,11 +407,16 @@ src/
 - **Database**: PostgreSQL with custom functions
 - **Auth**: Email/password with MFA support
 - **Edge Functions**: Custom business logic
+  - `invite-child` - User creation and email invitations
+  - `create-user` - User account setup
+  - `create-test-family` - Development family creation
+  - `security-monitor` - Security event tracking
 - **Real-time**: Live data subscriptions
 - **Storage**: File uploads (when needed)
 
 ### External Dependencies
 - **PDF Generation**: jsPDF for reports
+- **Email Service**: Resend for invitation emails and notifications
 - **Date Handling**: date-fns for time calculations
 - **Form Validation**: React Hook Form + Zod
 - **Charts**: Recharts for data visualization
@@ -418,6 +437,14 @@ src/
   - Advanced scheduling options
   - Chore dependency chains
   - Automatic assignment based on child availability
+- **Communication Features**:
+  - SMS notifications for parents
+  - Push notifications for completed chores
+  - Video call integration for family meetings
+- **Advanced Invitations**:
+  - QR code family joining
+  - Bulk invitation for multiple children
+  - Guest access for babysitters/caregivers
 
 ### Scalability Considerations
 - **Multi-tenancy**: Support for larger organizations
@@ -495,7 +522,27 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 ## 🆕 Recent Updates & Features
 
-### Parent Portal Enhancements (Latest)
+### Child Invitation System (Latest)
+- **Email-based Invitations**: Parents can invite children via email with temporary passwords
+- **Automated Account Creation**: Edge function creates user accounts and assigns to families
+- **Professional Email Templates**: Branded HTML emails with ChoreQuest styling and instructions
+- **Family Management Interface**: New "Children" tab with family member management
+- **Security & Validation**: Parent authorization, automatic cleanup on failures, RLS compliance
+
+### UI/UX Improvements
+- **Enhanced Header Component**: Added logout functionality with proper authentication handling
+- **AddChildForm Modal**: Beautiful form interface with real-time validation and success states
+- **Family Dashboard Enhancement**: Shows real children with invitation capabilities
+- **Navigation Improvements**: Proper home navigation and user session management
+
+### Technical Enhancements
+- **invite-child Edge Function**: Comprehensive user creation, family assignment, and email delivery
+- **Resend Integration**: Professional email service for invitation delivery
+- **Form Validation**: React Hook Form + Zod for robust input validation
+- **Error Handling**: Comprehensive error management with user-friendly messages
+- **Authentication Flow**: Improved logout functionality across all user types
+
+### Previous Updates
 - **Real Children Display**: Replaced mock data with actual family members
 - **Flexible Chore Assignment**: Individual and bulk assignment options
 - **Enhanced UI**: Child selection with avatars, progress tracking, and streak indicators
