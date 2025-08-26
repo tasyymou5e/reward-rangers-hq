@@ -947,6 +947,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_manage_rate_limits: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_auth_rate_limit: {
         Args: {
           block_duration_minutes?: number
@@ -1007,6 +1011,10 @@ export type Database = {
           user_id_param?: string
           violation_type: string
         }
+        Returns: undefined
+      }
+      monitor_security_table_integrity: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       validate_family_access: {
