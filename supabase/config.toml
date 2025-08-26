@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.create-test-family] 
 verify_jwt = true
+
+[functions.invite-child]
+verify_jwt = true

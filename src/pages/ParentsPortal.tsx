@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus } from "lucide-react";
 import { WishlistCard } from "@/components/WishlistCard";
 import { ChoreAssignmentForm } from "@/components/ChoreAssignmentForm";
+import { AddChildForm } from "@/components/AddChildForm";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFamily } from "@/hooks/useFamily";
 import { useChores } from "@/hooks/useChores";
@@ -88,7 +90,10 @@ export default function ParentsPortal() {
       <div className="container mx-auto p-6 space-y-8">
         {/* Family Overview */}
         <section>
-          <h2 className="text-3xl font-bold mb-6 text-parents-primary">👨‍👩‍👧‍👦 Family Dashboard</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-parents-primary">👨‍👩‍👧‍👦 Family Dashboard</h2>
+            <AddChildForm />
+          </div>
           
           {familyLoading ? (
             <div className="text-center py-8">
@@ -97,14 +102,17 @@ export default function ParentsPortal() {
             </div>
           ) : children.length === 0 ? (
             <Card className="bg-white text-center p-8">
-              <User className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <UserPlus className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">No Children in Family</h3>
               <p className="text-muted-foreground mb-4">
                 Add children to your family to start assigning chores and tracking progress.
               </p>
-              <p className="text-sm text-muted-foreground">
-                Family Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{family?.family_code}</span>
-              </p>
+              <div className="space-y-3">
+                <AddChildForm />
+                <p className="text-sm text-muted-foreground">
+                  Family Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{family?.family_code}</span>
+                </p>
+              </div>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -277,7 +285,11 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue="chores" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="children">
+              <UserPlus className="h-4 w-4 mr-1" />
+              Children
+            </TabsTrigger>
             <TabsTrigger value="chores">Quick Add</TabsTrigger>
             <TabsTrigger value="wishlist" className="flex items-center gap-2">
               <Heart className="h-4 w-4" />
@@ -300,6 +312,88 @@ export default function ParentsPortal() {
               Reports
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="children" className="space-y-4">
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="text-parents-primary flex items-center gap-2">
+                  <UserPlus className="h-5 w-5" />
+                  Family Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold">Add New Child</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Invite your children to join ChoreQuest via email
+                    </p>
+                  </div>
+                  <AddChildForm />
+                </div>
+
+                {family && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Family Information</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Family Name</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          {family.name}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Family Code</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg font-mono">
+                          {family.family_code}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Share the family code with older children who can sign up themselves.
+                    </p>
+                  </div>
+                )}
+
+                {children.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3">Current Family Members</h4>
+                    <div className="grid gap-3">
+                      {children.map((child) => (
+                        <div
+                          key={child.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-kids-primary flex items-center justify-center text-white font-bold text-sm">
+                              {child.avatar_url ? (
+                                <img
+                                  src={child.avatar_url}
+                                  alt={child.display_name}
+                                  className="w-full h-full rounded-full object-cover"
+                                />
+                              ) : (
+                                child.display_name.charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium">{child.display_name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                Level {child.level} • {child.points} XP
+                              </div>
+                            </div>
+                          </div>
+                          <Badge className="bg-kids-primary text-white">
+                            Active
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="chores" className="space-y-4">
             <ChoreAssignmentForm 
