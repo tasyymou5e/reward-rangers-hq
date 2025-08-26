@@ -4,12 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import AdminPortal from "./pages/AdminPortal";
+import AdminAuth from "./pages/AdminAuth";
 import NotFound from "./pages/NotFound";
 import { FeedbackWidget } from "./components/FeedbackWidget";
 
@@ -22,28 +25,34 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/kids" element={
-              <ProtectedRoute requiredRole="kid">
-                <KidsPortal />
-              </ProtectedRoute>
-            } />
-            <Route path="/parents" element={
-              <ProtectedRoute requiredRole="parent">
-                <ParentsPortal />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminPortal />
-              </ProtectedRoute>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <FeedbackWidget />
+          <AdminAuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/kids" element={
+                <ProtectedRoute requiredRole="kid">
+                  <KidsPortal />
+                </ProtectedRoute>
+              } />
+              <Route path="/parents" element={
+                <ProtectedRoute requiredRole="parent">
+                  <ParentsPortal />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin routes - separate authentication */}
+              <Route path="/admin/auth" element={<AdminAuth />} />
+              <Route path="/admin" element={
+                <AdminProtectedRoute>
+                  <AdminPortal />
+                </AdminProtectedRoute>
+              } />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <FeedbackWidget />
+          </AdminAuthProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -25,8 +25,8 @@ const Index = () => {
       navigate("/auth");
       return;
     }
-    if (portal === "admin" && profile?.role !== "admin") {
-      navigate("/auth");
+    if (portal === "admin") {
+      navigate("/admin/auth");
       return;
     }
     

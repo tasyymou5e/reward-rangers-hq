@@ -31,7 +31,7 @@ import {
   Eye,
   X
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
 import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
@@ -39,7 +39,7 @@ import { useABTesting } from "@/hooks/useABTesting";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminPortal() {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAdminAuth();
   const { toast } = useToast();
   const {
     fetchAllUsers,
@@ -335,12 +335,21 @@ export default function AdminPortal() {
       
       <div className="container mx-auto p-6 space-y-8">
         {/* Admin Header */}
-        <div className="flex items-center gap-4">
-          <Shield className="h-8 w-8 text-admin-primary" />
-          <div>
-            <h1 className="text-3xl font-bold text-admin-primary">Admin Dashboard</h1>
-            <p className="text-muted-foreground">System administration and monitoring</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Shield className="h-8 w-8 text-admin-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-admin-primary">Admin Dashboard</h1>
+              <p className="text-muted-foreground">System administration and monitoring</p>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={signOut}
+            className="text-admin-primary border-admin-primary hover:bg-admin-primary hover:text-white"
+          >
+            Sign Out
+          </Button>
         </div>
 
         {/* Quick Stats */}
