@@ -172,12 +172,24 @@ export function useAdmin() {
     role: 'admin' | 'parent' | 'kid';
   }) => {
     try {
-      // Use Supabase Admin API to create user with metadata
+      // Get the current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: userData
+        body: userData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       return data;
     } catch (error) {
       console.error('Error creating user:', error);
@@ -197,11 +209,24 @@ export function useAdmin() {
     }>;
   }) => {
     try {
+      // Get the current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
       const { data, error } = await supabase.functions.invoke('create-test-family', {
-        body: familyData
+        body: familyData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       return data;
     } catch (error) {
       console.error('Error creating test family:', error);
