@@ -24,11 +24,19 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  MessageSquare,
+  TestTube,
+  Settings,
+  Eye,
+  X
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
+import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
+import { useABTesting } from "@/hooks/useABTesting";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminPortal() {
   const { profile } = useAuth();
@@ -45,6 +53,15 @@ export default function AdminPortal() {
     banUser,
     getAnalytics,
   } = useAdmin();
+  
+  const { alerts, resolveAlert, getUnresolvedAlertsCount } = useSecurityMonitoring();
+  const { 
+    getAllTests, 
+    createABTest, 
+    updateABTest, 
+    getTestAnalytics,
+    assignUserToVariant 
+  } = useABTesting();
 
   const [users, setUsers] = useState<any[]>([]);
   const [families, setFamilies] = useState<any[]>([]);
@@ -52,6 +69,8 @@ export default function AdminPortal() {
   const [progressLogs, setProgressLogs] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>({});
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [abTests, setAbTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,6 +84,21 @@ export default function AdminPortal() {
     icon: "",
     points_required: 0,
   });
+
+  const [newABTest, setNewABTest] = useState({
+    name: "",
+    description: "",
+    feature_key: "",
+    variants: [
+      { name: "control", config: {} },
+      { name: "variant_a", config: {} }
+    ],
+    active: true,
+    target_audience: {}
+  });
+
+  const [showABTestDialog, setShowABTestDialog] = useState(false);
+  const [editingABTest, setEditingABTest] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -80,6 +114,8 @@ export default function AdminPortal() {
         logsData,
         badgesData,
         analyticsData,
+        feedbackData,
+        abTestsData,
       ] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies(),
@@ -87,6 +123,8 @@ export default function AdminPortal() {
         fetchProgressLogs(),
         fetchBadges(),
         getAnalytics(),
+        fetchFeedback(),
+        getAllTests(),
       ]);
 
       setUsers(usersData);
@@ -95,6 +133,8 @@ export default function AdminPortal() {
       setProgressLogs(logsData);
       setBadges(badgesData);
       setAnalytics(analyticsData);
+      setFeedback(feedbackData);
+      setAbTests(abTestsData);
     } catch (error) {
       toast({
         title: "Error",
@@ -203,6 +243,81 @@ export default function AdminPortal() {
     setShowBadgeDialog(true);
   };
 
+  const fetchFeedback = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_feedback')
+        .select(`
+          *,
+          profiles!user_id (display_name, email)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      return [];
+    }
+  };
+
+  const handleCreateABTest = async () => {
+    try {
+      await createABTest(newABTest);
+      setNewABTest({
+        name: "",
+        description: "",
+        feature_key: "",
+        variants: [
+          { name: "control", config: {} },
+          { name: "variant_a", config: {} }
+        ],
+        active: true,
+        target_audience: {}
+      });
+      setShowABTestDialog(false);
+      await loadData();
+      toast({
+        title: "Success",
+        description: "A/B test created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create A/B test",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResolveFeedback = async (feedbackId: string, response: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_feedback')
+        .update({
+          status: 'resolved',
+          admin_response: response,
+          responded_by: profile?.id,
+          responded_at: new Date().toISOString(),
+        })
+        .eq('id', feedbackId);
+
+      if (error) throw error;
+
+      await loadData();
+      toast({
+        title: "Success",
+        description: "Feedback resolved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to resolve feedback",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-admin-background flex items-center justify-center">
@@ -281,10 +396,27 @@ export default function AdminPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-8 bg-white shadow-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Security
+              {getUnresolvedAlertsCount() > 0 && (
+                <span className="bg-red-500 text-white text-xs rounded-full px-1">
+                  {getUnresolvedAlertsCount()}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Feedback
+            </TabsTrigger>
+            <TabsTrigger value="abtesting" className="flex items-center gap-2">
+              <TestTube className="h-4 w-4" />
+              A/B Tests
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -383,6 +515,268 @@ export default function AdminPortal() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Security Alerts */}
+          <TabsContent value="security" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-admin-primary">Security Monitoring</h2>
+              <div className="flex items-center gap-4">
+                <Badge className={`${getUnresolvedAlertsCount() > 0 ? 'bg-red-500' : 'bg-green-500'} text-white`}>
+                  {getUnresolvedAlertsCount()} Unresolved Alerts
+                </Badge>
+              </div>
+            </div>
+
+            <Card className="bg-white">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Alert Type</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {alerts.slice(0, 20).map((alert) => (
+                      <TableRow key={alert.id}>
+                        <TableCell>
+                          <Badge className={
+                            alert.alert_type === 'failed_login_attempts' ? 'bg-red-500 text-white' :
+                            alert.alert_type === 'unusual_location' ? 'bg-yellow-500 text-white' :
+                            'bg-orange-500 text-white'
+                          }>
+                            {alert.alert_type.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            alert.severity === 'high' ? 'bg-red-600 text-white' :
+                            alert.severity === 'medium' ? 'bg-yellow-600 text-white' :
+                            'bg-blue-600 text-white'
+                          }>
+                            {alert.severity}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-md truncate">{alert.description}</TableCell>
+                        <TableCell>{(alert as any).profiles?.display_name || 'Unknown'}</TableCell>
+                        <TableCell>{new Date(alert.created_at).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge className={alert.resolved ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
+                            {alert.resolved ? 'Resolved' : 'Active'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {!alert.resolved && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => resolveAlert(alert.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Resolve
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* User Feedback */}
+          <TabsContent value="feedback" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-admin-primary">User Feedback</h2>
+              <Badge className="bg-blue-500 text-white">
+                {feedback.filter(f => f.status === 'pending').length} Pending
+              </Badge>
+            </div>
+
+            <div className="grid gap-4">
+              {feedback.map((item) => (
+                <Card key={item.id} className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Badge className={
+                            item.type === 'bug' ? 'bg-red-500 text-white' :
+                            item.type === 'feature' ? 'bg-blue-500 text-white' :
+                            item.type === 'improvement' ? 'bg-green-500 text-white' :
+                            'bg-gray-500 text-white'
+                          }>
+                            {item.type}
+                          </Badge>
+                          <Badge variant="outline">{item.category}</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            by {(item as any).profiles?.display_name}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-lg">{item.title}</h3>
+                        <p className="text-muted-foreground mt-2">{item.description}</p>
+                        {item.admin_response && (
+                          <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                            <p className="text-sm font-medium text-green-800">Admin Response:</p>
+                            <p className="text-green-700">{item.admin_response}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className={item.status === 'resolved' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
+                          {item.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </span>
+                        {item.status === 'pending' && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Respond
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Respond to Feedback</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const form = e.target as HTMLFormElement;
+                                const response = (form.elements.namedItem('response') as HTMLTextAreaElement).value;
+                                handleResolveFeedback(item.id, response);
+                              }}>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="response">Response</Label>
+                                    <Textarea name="response" placeholder="Enter your response..." required />
+                                  </div>
+                                  <Button type="submit" className="w-full">
+                                    Send Response
+                                  </Button>
+                                </div>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* A/B Testing */}
+          <TabsContent value="abtesting" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-admin-primary">A/B Testing</h2>
+              <Button onClick={() => setShowABTestDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Test
+              </Button>
+            </div>
+
+            <div className="grid gap-4">
+              {abTests.map((test) => (
+                <Card key={test.id} className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg">{test.name}</h3>
+                          <Badge className={test.active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}>
+                            {test.active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mb-2">{test.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>Feature: {test.feature_key}</span>
+                          <span>Started: {new Date(test.start_date).toLocaleDateString()}</span>
+                          {test.end_date && (
+                            <span>Ends: {new Date(test.end_date).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                          View Results
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => updateABTest(test.id, { active: !test.active })}>
+                          <Settings className="h-4 w-4" />
+                          {test.active ? 'Disable' : 'Enable'}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <p className="text-sm font-medium">Variants:</p>
+                      <div className="flex gap-2">
+                        {Array.isArray(test.variants) ? test.variants.map((variant: any, index: number) => (
+                          <Badge key={index} variant="outline">
+                            {variant.name || `Variant ${index + 1}`}
+                          </Badge>
+                        )) : null}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Create A/B Test Dialog */}
+            <Dialog open={showABTestDialog} onOpenChange={setShowABTestDialog}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create A/B Test</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="test-name">Test Name</Label>
+                    <Input
+                      id="test-name"
+                      value={newABTest.name}
+                      onChange={(e) => setNewABTest(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter test name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="test-description">Description</Label>
+                    <Textarea
+                      id="test-description"
+                      value={newABTest.description}
+                      onChange={(e) => setNewABTest(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe what this test is for"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="feature-key">Feature Key</Label>
+                    <Input
+                      id="feature-key"
+                      value={newABTest.feature_key}
+                      onChange={(e) => setNewABTest(prev => ({ ...prev, feature_key: e.target.value }))}
+                      placeholder="e.g. new_gamification_system"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button onClick={handleCreateABTest} className="flex-1">
+                      Create Test
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowABTestDialog(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Analytics */}

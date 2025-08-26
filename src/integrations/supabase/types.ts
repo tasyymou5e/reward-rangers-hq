@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_assignments: {
+        Row: {
+          assigned_at: string | null
+          id: string
+          test_id: string | null
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          id?: string
+          test_id?: string | null
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          assigned_at?: string | null
+          id?: string
+          test_id?: string | null
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_assignments_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_tests: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          feature_key: string
+          id: string
+          name: string
+          start_date: string | null
+          target_audience: Json | null
+          variants: Json
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          feature_key: string
+          id?: string
+          name: string
+          start_date?: string | null
+          target_audience?: Json | null
+          variants?: Json
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          feature_key?: string
+          id?: string
+          name?: string
+          start_date?: string | null
+          target_audience?: Json | null
+          variants?: Json
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           created_at: string | null
@@ -365,6 +439,45 @@ export type Database = {
           },
         ]
       }
+      security_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string | null
@@ -400,6 +513,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_feedback: {
+        Row: {
+          admin_response: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string | null
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

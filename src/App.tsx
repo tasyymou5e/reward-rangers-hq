@@ -11,6 +11,7 @@ import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import AdminPortal from "./pages/AdminPortal";
 import NotFound from "./pages/NotFound";
+import { FeedbackWidget } from "./components/FeedbackWidget";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FeedbackWidget />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
