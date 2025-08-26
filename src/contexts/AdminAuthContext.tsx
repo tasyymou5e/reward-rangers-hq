@@ -177,26 +177,30 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      console.log('Admin signing out');
+      console.log('Admin signOut function called - starting process');
+      setLoading(true);
       
       // Sign out from Supabase first
+      console.log('Calling supabase auth signOut');
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Sign out error:', error);
+        console.error('Supabase sign out error:', error);
         // Don't throw, continue with local cleanup
+      } else {
+        console.log('Supabase sign out successful');
       }
-      
-      console.log('Admin signed out successfully');
       
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
       // Always clear local state - this will trigger AdminProtectedRoute to redirect
+      console.log('Clearing local auth state');
       setUser(null);
       setSession(null);
       setProfile(null);
       setLoading(false);
+      console.log('Local auth state cleared - should redirect now');
     }
   };
 
