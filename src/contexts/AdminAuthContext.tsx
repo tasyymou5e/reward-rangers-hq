@@ -22,25 +22,35 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching admin profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .eq('role', 'admin') // Only allow admin profiles
-        .single();
+        .maybeSingle(); // Use maybeSingle to avoid errors if no data
       
-      if (error) throw error;
+      if (error) {
+        console.error('Profile fetch error:', error);
+        throw error;
+      }
       
       // Verify the user is actually an admin
-      if (data.role !== 'admin') {
+      if (!data || data.role !== 'admin') {
+        console.warn('User is not an admin, signing out');
         throw new Error('Unauthorized: Admin access required');
       }
       
+      console.log('Admin profile loaded:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error fetching admin profile:', error);
       // If not admin, sign out
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.error('Error during sign out:', signOutError);
+      }
       setProfile(null);
     }
   };
@@ -52,70 +62,126 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    let mounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (!mounted) return;
+            
+            console.log('Auth state change:', event, session?.user?.id);
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (session?.user) {
+              // Defer profile fetch to prevent blocking
+              setTimeout(() => {
+                if (mounted) {
+                  fetchProfile(session.user.id);
+                }
+              }, 0);
+            } else {
+              if (mounted) {
+                setProfile(null);
+              }
+            }
+            
+            if (mounted) {
+              setLoading(false);
+            }
+          }
+        );
+
+        // THEN check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer profile fetch to prevent blocking
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
+          await fetchProfile(session.user.id);
         }
         
         setLoading(false);
-      }
-    );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Attempting admin sign in for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
 
       // Check if user is admin after successful login
       if (data.user) {
+        console.log('User signed in, checking admin status');
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profileError || profileData?.role !== 'admin') {
+        if (profileError) {
+          console.error('Profile check error:', profileError);
+          await supabase.auth.signOut();
+          throw new Error('Profile verification failed');
+        }
+
+        if (!profileData || profileData.role !== 'admin') {
+          console.warn('User is not an admin');
           await supabase.auth.signOut();
           throw new Error('Unauthorized: Admin access required');
         }
+        
+        console.log('Admin access confirmed');
       }
 
       return { data, error: null };
     } catch (error: any) {
+      console.error('Sign in process failed:', error);
       return { data: null, error };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      console.log('Admin signing out');
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const value = {
