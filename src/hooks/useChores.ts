@@ -56,6 +56,31 @@ export function useChores() {
     }
   };
 
+  const createBulkChores = async (choreData: any, assignedToIds: string[]) => {
+    if (!family?.id || !user || assignedToIds.length === 0) return;
+
+    try {
+      const choresToInsert = assignedToIds.map(assignedToId => ({
+        ...choreData,
+        assigned_to: assignedToId,
+        family_id: family.id,
+        created_by: user.id,
+      }));
+
+      const { data, error } = await supabase
+        .from('chores')
+        .insert(choresToInsert)
+        .select();
+
+      if (error) throw error;
+      await fetchChores();
+      return data;
+    } catch (error) {
+      console.error('Error creating bulk chores:', error);
+      throw error;
+    }
+  };
+
   const updateChore = async (choreId: string, updates: any) => {
     try {
       const { error } = await supabase
@@ -127,6 +152,7 @@ export function useChores() {
     chores,
     loading,
     createChore,
+    createBulkChores,
     updateChore,
     completeChore,
     refetchChores: fetchChores,

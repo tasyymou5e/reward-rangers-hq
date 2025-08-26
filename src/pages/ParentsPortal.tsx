@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User } from "lucide-react";
 import { WishlistCard } from "@/components/WishlistCard";
+import { ChoreAssignmentForm } from "@/components/ChoreAssignmentForm";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useFamily } from "@/hooks/useFamily";
+import { useChores } from "@/hooks/useChores";
 import { MFASetup } from "@/components/MFASetup";
 import { FamilyChat } from "@/components/FamilyChat";
 import { PredictiveInsights } from "@/components/PredictiveInsights";
@@ -18,18 +19,51 @@ import { useToast } from "@/hooks/use-toast";
 export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
   const { wishlistItems, loading: wishlistLoading, approveWishlistItem, rejectWishlistItem } = useWishlist();
+  const { family, familyMembers, loading: familyLoading } = useFamily();
+  const { chores, loading: choresLoading } = useChores();
   const { toast } = useToast();
 
-  const mockChildren = [
-    { name: "Alex", level: 3, points: 125, completedToday: 2, totalChores: 5 },
-    { name: "Emma", level: 2, points: 87, completedToday: 3, totalChores: 4 },
-  ];
+  // Filter family members to show only children (not parents)
+  const children = familyMembers
+    .filter(member => member.profiles?.role === 'kid')
+    .map(member => ({
+      id: member.profiles.id,
+      display_name: member.profiles.display_name,
+      avatar_url: member.profiles.avatar_url,
+      points: member.profiles.points || 0,
+      level: member.profiles.level || 1,
+      streak_days: member.profiles.streak_days || 0,
+    }));
 
-  const mockChores = [
-    { title: "Make Bed", assignedTo: "Alex", status: "completed", points: 10 },
-    { title: "Clean Room", assignedTo: "Emma", status: "pending", points: 25 },
-    { title: "Take Out Trash", assignedTo: "Alex", status: "in-progress", points: 15 },
-  ];
+  // Calculate stats for children
+  const childrenStats = children.map(child => {
+    const childChores = chores.filter(chore => chore.assigned_to === child.id);
+    const completedToday = childChores.filter(chore => {
+      if (!chore.completed_at) return false;
+      const completedDate = new Date(chore.completed_at);
+      const today = new Date();
+      return completedDate.toDateString() === today.toDateString();
+    }).length;
+    const totalChores = childChores.length;
+    
+    return {
+      ...child,
+      completedToday,
+      totalChores,
+      pendingChores: childChores.filter(chore => chore.status === 'pending').length,
+    };
+  });
+
+  // Calculate recent chores with better assignment info
+  const recentChores = chores.slice(0, 5).map(chore => ({
+    id: chore.id,
+    title: chore.title,
+    assignedTo: chore.assigned_to_profile?.display_name || 'Unassigned',
+    assignedToId: chore.assigned_to,
+    status: chore.status,
+    points: chore.points_value,
+    difficulty: chore.difficulty,
+  }));
 
   const handleGenerateReport = async () => {
     try {
@@ -55,29 +89,81 @@ export default function ParentsPortal() {
         {/* Family Overview */}
         <section>
           <h2 className="text-3xl font-bold mb-6 text-parents-primary">👨‍👩‍👧‍👦 Family Dashboard</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {mockChildren.map((child, index) => (
-              <Card key={index} className="bg-white hover:shadow-parents hover:scale-105 transform transition-bounce">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg">{child.name}</CardTitle>
-                  <Badge className="bg-parents-primary text-white">Level {child.level}</Badge>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Points</span>
-                    <span className="font-bold text-parents-accent">{child.points} XP</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Today's Progress</span>
-                      <span>{child.completedToday}/{child.totalChores}</span>
+          
+          {familyLoading ? (
+            <div className="text-center py-8">
+              <div className="text-4xl animate-spin mb-4">⚡</div>
+              <p>Loading family information...</p>
+            </div>
+          ) : children.length === 0 ? (
+            <Card className="bg-white text-center p-8">
+              <User className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-semibold mb-2">No Children in Family</h3>
+              <p className="text-muted-foreground mb-4">
+                Add children to your family to start assigning chores and tracking progress.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Family Code: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{family?.family_code}</span>
+              </p>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {childrenStats.map((child) => (
+                <Card key={child.id} className="bg-white hover:shadow-parents hover:scale-105 transform transition-bounce">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-kids-primary flex items-center justify-center text-white font-bold">
+                        {child.avatar_url ? (
+                          <img
+                            src={child.avatar_url}
+                            alt={child.display_name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          child.display_name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <CardTitle className="text-lg">{child.display_name}</CardTitle>
                     </div>
-                    <Progress value={(child.completedToday / child.totalChores) * 100} />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <Badge className="bg-parents-primary text-white">Level {child.level}</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Points</span>
+                      <span className="font-bold text-parents-accent">{child.points} XP</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="text-center p-2 bg-green-50 rounded">
+                        <div className="font-bold text-green-600">{child.completedToday}</div>
+                        <div className="text-green-600">Completed Today</div>
+                      </div>
+                      <div className="text-center p-2 bg-orange-50 rounded">
+                        <div className="font-bold text-orange-600">{child.pendingChores}</div>
+                        <div className="text-orange-600">Pending</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{child.completedToday}/{child.totalChores}</span>
+                      </div>
+                      <Progress 
+                        value={child.totalChores > 0 ? (child.completedToday / child.totalChores) * 100 : 0} 
+                        className="h-2"
+                      />
+                    </div>
+                    {child.streak_days > 0 && (
+                      <div className="text-center">
+                        <Badge variant="outline" className="text-parents-accent border-parents-accent">
+                          🔥 {child.streak_days} day streak
+                        </Badge>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Quick Stats */}
@@ -88,7 +174,7 @@ export default function ParentsPortal() {
               <Users className="h-4 w-4 text-parents-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2</div>
+              <div className="text-2xl font-bold">{children.length}</div>
             </CardContent>
           </Card>
 
@@ -98,27 +184,31 @@ export default function ParentsPortal() {
               <TrendingUp className="h-4 w-4 text-parents-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">
+                {childrenStats.reduce((sum, child) => sum + child.completedToday, 0)}
+              </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-parents-secondary/10 to-parents-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rewards Pending</CardTitle>
-              <Award className="h-4 w-4 text-parents-secondary" />
+              <CardTitle className="text-sm font-medium">Pending Chores</CardTitle>
+              <Clock className="h-4 w-4 text-parents-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">
+                {chores.filter(chore => chore.status === 'pending').length}
+              </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-parents-primary/10 to-parents-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Calendar className="h-4 w-4 text-parents-primary" />
+              <CardTitle className="text-sm font-medium">Total Chores</CardTitle>
+              <Award className="h-4 w-4 text-parents-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">23</div>
+              <div className="text-2xl font-bold">{chores.length}</div>
             </CardContent>
           </Card>
         </div>
@@ -127,41 +217,62 @@ export default function ParentsPortal() {
         <section>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-parents-primary">📋 Recent Chores</h2>
-            <Button variant="parents">
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Chore
-            </Button>
           </div>
           
-          <Card className="bg-white">
-            <CardContent className="p-0">
-              <div className="space-y-0">
-                {mockChores.map((chore, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border-b last:border-b-0">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        chore.status === "completed" ? "bg-parents-primary" :
-                        chore.status === "in-progress" ? "bg-parents-accent" : "bg-muted"
-                      }`} />
-                      <div>
-                        <div className="font-medium">{chore.title}</div>
-                        <div className="text-sm text-muted-foreground">Assigned to {chore.assignedTo}</div>
+          {choresLoading ? (
+            <Card className="bg-white text-center p-8">
+              <div className="text-4xl animate-spin mb-4">📋</div>
+              <p>Loading chores...</p>
+            </Card>
+          ) : recentChores.length === 0 ? (
+            <Card className="bg-white text-center p-8">
+              <div className="text-6xl mb-4">📝</div>
+              <h3 className="text-xl font-semibold mb-2">No Chores Yet</h3>
+              <p className="text-muted-foreground">Create your first chore using the form below!</p>
+            </Card>
+          ) : (
+            <Card className="bg-white">
+              <CardContent className="p-0">
+                <div className="space-y-0">
+                  {recentChores.map((chore) => (
+                    <div key={chore.id} className="flex items-center justify-between p-4 border-b last:border-b-0">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          chore.status === "completed" ? "bg-parents-primary" :
+                          chore.status === "in_progress" ? "bg-parents-accent" : "bg-orange-400"
+                        }`} />
+                        <div>
+                          <div className="font-medium">{chore.title}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Assigned to {chore.assignedTo}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Badge variant="outline">{chore.points} XP</Badge>
+                        <Badge 
+                          variant="outline"
+                          className={`${
+                            chore.difficulty === 'easy' ? 'border-green-500 text-green-600' :
+                            chore.difficulty === 'medium' ? 'border-yellow-500 text-yellow-600' :
+                            'border-red-500 text-red-600'
+                          }`}
+                        >
+                          {chore.difficulty}
+                        </Badge>
+                        <Badge className={
+                          chore.status === "completed" ? "bg-parents-primary text-white" :
+                          chore.status === "in_progress" ? "bg-parents-accent text-white" : "bg-orange-400 text-white"
+                        }>
+                          {chore.status.replace('_', ' ')}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge variant="outline">{chore.points} XP</Badge>
-                      <Badge className={
-                        chore.status === "completed" ? "bg-parents-primary text-white" :
-                        chore.status === "in-progress" ? "bg-parents-accent text-white" : "bg-muted"
-                      }>
-                        {chore.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* Enhanced Features Tabs */}
@@ -191,28 +302,15 @@ export default function ParentsPortal() {
           </TabsList>
 
           <TabsContent value="chores" className="space-y-4">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle className="text-parents-primary">✨ Quick Add Chore</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Input placeholder="Chore title..." />
-                  <Input placeholder="Points (XP)" type="number" />
-                </div>
-                <Textarea placeholder="Description..." />
-                <div className="flex gap-4">
-                  <Button variant="parents" className="flex-1">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Chore
-                  </Button>
-                  <Button variant="outline">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Schedule Later
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ChoreAssignmentForm 
+              children={children}
+              onSuccess={() => {
+                toast({
+                  title: "Success!",
+                  description: "Chores have been successfully assigned.",
+                });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="wishlist" className="space-y-4">
