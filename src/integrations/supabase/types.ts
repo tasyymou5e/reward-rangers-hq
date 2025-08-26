@@ -239,24 +239,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "chores_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "chores_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chores_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -299,13 +285,6 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "families_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -372,13 +351,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -625,13 +597,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "progress_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       rewards: {
@@ -692,24 +657,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rewards_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "rewards_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rewards_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -724,13 +675,6 @@ export type Database = {
             columns: ["redeemed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rewards_redeemed_by_fkey"
-            columns: ["redeemed_by"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -806,13 +750,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_badges_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -891,7 +828,7 @@ export type Database = {
       }
     }
     Views: {
-      safe_profiles: {
+      safe_profiles_secure: {
         Row: {
           avatar_url: string | null
           created_at: string | null
@@ -904,32 +841,6 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"] | null
           streak_days: number | null
           username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email?: never
-          id?: string | null
-          last_activity?: string | null
-          level?: number | null
-          points?: number | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          streak_days?: number | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email?: never
-          id?: string | null
-          last_activity?: string | null
-          level?: number | null
-          points?: number | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          streak_days?: number | null
-          username?: string | null
         }
         Relationships: []
       }
@@ -951,6 +862,22 @@ export type Database = {
       encrypt_mfa_secret: {
         Args: { secret_text: string }
         Returns: string
+      }
+      get_safe_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          last_activity: string
+          level: number
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
+        }[]
       }
       get_user_family_ids: {
         Args: { user_id_param?: string }
