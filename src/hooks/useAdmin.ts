@@ -8,11 +8,13 @@ export function useAdmin() {
 
   const fetchAllUsers = async () => {
     try {
+      console.log('Admin fetching all users...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
+      console.log('Users query result:', { data, error, count: data?.length });
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -23,6 +25,7 @@ export function useAdmin() {
 
   const fetchAllFamilies = async () => {
     try {
+      console.log('Admin fetching all families...');
       const { data, error } = await supabase
         .from('families')
         .select(`
@@ -34,6 +37,7 @@ export function useAdmin() {
         `)
         .order('created_at', { ascending: false });
       
+      console.log('Families query result:', { data, error, count: data?.length });
       if (error) throw error;
       return data || [];
     } catch (error) {
