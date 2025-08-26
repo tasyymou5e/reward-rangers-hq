@@ -115,6 +115,42 @@ export type Database = {
         }
         Relationships: []
       }
+      chore_analytics: {
+        Row: {
+          child_id: string
+          chore_id: string
+          completion_time: number | null
+          created_at: string
+          day_of_week: number | null
+          difficulty_rating: number | null
+          family_id: string
+          id: string
+          preferred_time_of_day: string | null
+        }
+        Insert: {
+          child_id: string
+          chore_id: string
+          completion_time?: number | null
+          created_at?: string
+          day_of_week?: number | null
+          difficulty_rating?: number | null
+          family_id: string
+          id?: string
+          preferred_time_of_day?: string | null
+        }
+        Update: {
+          child_id?: string
+          chore_id?: string
+          completion_time?: number | null
+          created_at?: string
+          day_of_week?: number | null
+          difficulty_rating?: number | null
+          family_id?: string
+          id?: string
+          preferred_time_of_day?: string | null
+        }
+        Relationships: []
+      }
       chores: {
         Row: {
           assigned_to: string | null
@@ -223,6 +259,36 @@ export type Database = {
           },
         ]
       }
+      family_ai_settings: {
+        Row: {
+          ai_suggestions_enabled: boolean | null
+          analytics_enabled: boolean | null
+          created_at: string
+          data_sharing_consent: boolean | null
+          family_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_suggestions_enabled?: boolean | null
+          analytics_enabled?: boolean | null
+          created_at?: string
+          data_sharing_consent?: boolean | null
+          family_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_suggestions_enabled?: boolean | null
+          analytics_enabled?: boolean | null
+          created_at?: string
+          data_sharing_consent?: boolean | null
+          family_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       family_members: {
         Row: {
           family_id: string | null
@@ -258,6 +324,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      family_messages: {
+        Row: {
+          chore_id: string | null
+          content: string
+          created_at: string
+          family_id: string
+          id: string
+          is_encrypted: boolean | null
+          message_type: string | null
+          parent_message_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chore_id?: string | null
+          content: string
+          created_at?: string
+          family_id: string
+          id?: string
+          is_encrypted?: boolean | null
+          message_type?: string | null
+          parent_message_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chore_id?: string | null
+          content?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          is_encrypted?: boolean | null
+          message_type?: string | null
+          parent_message_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      family_reports: {
+        Row: {
+          created_at: string
+          family_id: string
+          generated_by: string
+          id: string
+          report_data: Json
+          report_type: string | null
+          report_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          family_id: string
+          generated_by: string
+          id?: string
+          report_data: Json
+          report_type?: string | null
+          report_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          family_id?: string
+          generated_by?: string
+          id?: string
+          report_data?: Json
+          report_type?: string | null
+          report_url?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -553,6 +688,36 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_mfa_settings: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string
+          id: string
+          mfa_enabled: boolean | null
+          totp_secret: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          mfa_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          mfa_enabled?: boolean | null
+          totp_secret?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
