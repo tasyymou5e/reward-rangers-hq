@@ -79,36 +79,40 @@ const App = () => {
           <Toaster />
           <Sonner />
           <AuthProvider>
-            <AdminAuthProvider>
-              <HashRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/kids" element={
-                    <ProtectedRoute requiredRole="kid">
-                      <KidsPortal />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/parents" element={
-                    <ProtectedRoute requiredRole="parent">
-                      <ParentsPortal />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Admin routes - separate authentication */}
-                  <Route path="/admin/auth" element={<AdminAuth />} />
-                  <Route path="/admin" element={
+            <HashRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/kids" element={
+                  <ProtectedRoute requiredRole="kid">
+                    <KidsPortal />
+                  </ProtectedRoute>
+                } />
+                <Route path="/parents" element={
+                  <ProtectedRoute requiredRole="parent">
+                    <ParentsPortal />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Admin routes - separate authentication */}
+                <Route path="/admin/auth" element={
+                  <AdminAuthProvider>
+                    <AdminAuth />
+                  </AdminAuthProvider>
+                } />
+                <Route path="/admin" element={
+                  <AdminAuthProvider>
                     <AdminProtectedRoute>
                       <AdminPortal />
                     </AdminProtectedRoute>
-                  } />
-                  
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <FeedbackWidget />
-              </HashRouter>
-            </AdminAuthProvider>
+                  </AdminAuthProvider>
+                } />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <FeedbackWidget />
+            </HashRouter>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
