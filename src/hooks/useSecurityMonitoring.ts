@@ -33,7 +33,7 @@ export function useSecurityMonitoring() {
         .from('security_alerts')
         .select(`
           *,
-          profiles!user_id (display_name, email)
+          profiles!security_alerts_user_id_fkey (display_name, email)
         `)
         .order('created_at', { ascending: false })
         .limit(50);

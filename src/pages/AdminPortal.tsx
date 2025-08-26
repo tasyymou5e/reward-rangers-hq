@@ -250,7 +250,7 @@ export default function AdminPortal() {
         .from('user_feedback')
         .select(`
           *,
-          profiles!user_id (display_name, email)
+          profiles!user_feedback_user_id_fkey (display_name, email)
         `)
         .order('created_at', { ascending: false });
       
