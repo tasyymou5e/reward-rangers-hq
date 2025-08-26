@@ -5,9 +5,18 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Users, TrendingUp, Award, Calendar, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain } from "lucide-react";
+import { MFASetup } from "@/components/MFASetup";
+import { FamilyChat } from "@/components/FamilyChat";
+import { PredictiveInsights } from "@/components/PredictiveInsights";
+import { useReportGeneration } from "@/hooks/useReportGeneration";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ParentsPortal() {
+  const { generateWeeklyReport, generating } = useReportGeneration();
+  const { toast } = useToast();
+
   const mockChildren = [
     { name: "Alex", level: 3, points: 125, completedToday: 2, totalChores: 5 },
     { name: "Emma", level: 2, points: 87, completedToday: 3, totalChores: 4 },
@@ -18,6 +27,22 @@ export default function ParentsPortal() {
     { title: "Clean Room", assignedTo: "Emma", status: "pending", points: 25 },
     { title: "Take Out Trash", assignedTo: "Alex", status: "in-progress", points: 15 },
   ];
+
+  const handleGenerateReport = async () => {
+    try {
+      await generateWeeklyReport();
+      toast({
+        title: "Report Generated",
+        description: "Weekly family report has been generated and downloaded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-parents-background">
@@ -136,31 +161,105 @@ export default function ParentsPortal() {
           </Card>
         </section>
 
-        {/* Quick Add Chore */}
-        <section>
-          <Card className="bg-white">
-            <CardHeader>
-              <CardTitle className="text-parents-primary">✨ Quick Add Chore</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder="Chore title..." />
-                <Input placeholder="Points (XP)" type="number" />
-              </div>
-              <Textarea placeholder="Description..." />
-              <div className="flex gap-4">
-                <Button variant="parents" className="flex-1">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Chore
-                </Button>
-                <Button variant="outline">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Schedule Later
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+        {/* Enhanced Features Tabs */}
+        <Tabs defaultValue="chores" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="chores">Quick Add</TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Insights
+            </TabsTrigger>
+            <TabsTrigger value="communication" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Communication
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileDown className="h-4 w-4" />
+              Reports
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="chores" className="space-y-4">
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="text-parents-primary">✨ Quick Add Chore</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Input placeholder="Chore title..." />
+                  <Input placeholder="Points (XP)" type="number" />
+                </div>
+                <Textarea placeholder="Description..." />
+                <div className="flex gap-4">
+                  <Button variant="parents" className="flex-1">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Chore
+                  </Button>
+                  <Button variant="outline">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Schedule Later
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security">
+            <MFASetup />
+          </TabsContent>
+
+          <TabsContent value="insights">
+            <PredictiveInsights />
+          </TabsContent>
+
+          <TabsContent value="communication">
+            <FamilyChat />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <Card className="bg-white border-parents-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-parents-primary">
+                  <FileDown className="h-5 w-5" />
+                  Family Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-2">Export Options</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Generate comprehensive reports for sharing with co-parents, educators, or for your records.
+                    </p>
+                    <Button 
+                      onClick={handleGenerateReport}
+                      disabled={generating}
+                      className="w-full bg-parents-primary hover:bg-parents-primary/90"
+                    >
+                      <FileDown className="h-4 w-4 mr-2" />
+                      {generating ? "Generating..." : "Generate Weekly Report"}
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Report Features</h4>
+                    <ul className="text-sm space-y-2 text-muted-foreground">
+                      <li>• Chore completion statistics</li>
+                      <li>• Individual child progress</li>
+                      <li>• Points and rewards tracking</li>
+                      <li>• Performance trends</li>
+                      <li>• Family communication summary</li>
+                      <li>• PDF format for easy sharing</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
