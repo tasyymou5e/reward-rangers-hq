@@ -2,41 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ChoreQuest Design System - Gamified Chore Management */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
 
+    /* Kids theme - bright and playful */
+    --kids-primary: 268 76% 62%;
+    --kids-primary-foreground: 0 0% 100%;
+    --kids-secondary: 172 76% 55%;
+    --kids-accent: 45 93% 58%;
+    --kids-success: 142 71% 45%;
+    --kids-background: 270 50% 98%;
+
+    /* Parents theme - calm and professional */
+    --parents-primary: 142 71% 45%;
+    --parents-primary-foreground: 0 0% 100%;
+    --parents-secondary: 200 98% 39%;
+    --parents-accent: 39 84% 56%;
+    --parents-background: 150 25% 98%;
+
+    /* Admin theme - professional */
+    --admin-primary: 215 28% 17%;
+    --admin-primary-foreground: 0 0% 100%;
+    --admin-secondary: 210 40% 96%;
+    --admin-accent: 221 83% 53%;
+    --admin-background: 220 13% 97%;
+
+    /* Shared semantic colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 15 23 42;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 15 23 42;
+    --primary: 268 76% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 15 23 42;
+    --muted: 210 40% 96%;
+    --muted-foreground: 100 7% 40%;
+    --accent: 45 93% 58%;
+    --accent-foreground: 15 23 42;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 268 76% 62%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --radius: 1rem;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Gradients */
+    --gradient-kids: linear-gradient(135deg, hsl(var(--kids-primary)), hsl(var(--kids-secondary)));
+    --gradient-parents: linear-gradient(135deg, hsl(var(--parents-primary)), hsl(var(--parents-secondary)));
+    --gradient-admin: linear-gradient(135deg, hsl(var(--admin-primary)), hsl(var(--admin-accent)));
+    --gradient-rainbow: linear-gradient(90deg, hsl(var(--kids-primary)), hsl(var(--kids-secondary)), hsl(var(--kids-accent)));
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Shadows */
+    --shadow-kids: 0 10px 25px -5px hsl(var(--kids-primary) / 0.2);
+    --shadow-parents: 0 10px 25px -5px hsl(var(--parents-primary) / 0.2);
+    --shadow-glow: 0 0 20px hsl(var(--kids-accent) / 0.3);
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    /* Animations */
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
