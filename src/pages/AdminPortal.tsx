@@ -898,47 +898,111 @@ export default function AdminPortal() {
           <TabsContent value="families" className="space-y-6">
             <h2 className="text-2xl font-bold text-admin-primary">Family Management</h2>
             
-            <Card className="bg-white">
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Family Name</TableHead>
-                      <TableHead>Parent</TableHead>
-                      <TableHead>Members</TableHead>
-                      <TableHead>Family Code</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {families.map((family) => (
-                      <TableRow key={family.id}>
-                        <TableCell className="font-medium">{family.name}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div>{family.profiles?.display_name}</div>
-                            <div className="text-sm text-muted-foreground">{family.profiles?.email}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {family.family_members?.length || 0} members
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <code className="bg-muted px-2 py-1 rounded text-xs">
-                            {family.family_code}
-                          </code>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(family.created_at).toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {families.map((family) => (
+                <Card key={family.id} className="bg-white">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-bold text-admin-primary">
+                        {family.name}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <code className="bg-muted px-2 py-1 rounded text-xs">
+                          {family.family_code}
+                        </code>
+                        <Badge variant="outline">
+                          {family.family_members?.length || 0} members
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Created {new Date(family.created_at).toLocaleDateString()}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Parent Information */}
+                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                      <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Parent
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-blue-600">Display Name</p>
+                          <p className="text-sm text-gray-700">{family.profiles?.display_name || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-blue-600">Username</p>
+                          <p className="text-sm text-gray-700">{family.profiles?.username || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-blue-600">Email</p>
+                          <p className="text-sm text-gray-700">{family.profiles?.email || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Children Information */}
+                    {family.family_members && family.family_members.length > 0 && (
+                      <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-400">
+                        <h4 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Children ({family.family_members.length})
+                        </h4>
+                        <div className="space-y-3">
+                          {family.family_members.map((member: any, index: number) => (
+                            <div key={index} className="bg-white p-3 rounded border">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-green-600">Display Name</p>
+                                  <p className="text-sm text-gray-700">{member.profiles?.display_name || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-green-600">Username</p>
+                                  <p className="text-sm text-gray-700">{member.profiles?.username || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-green-600">Email</p>
+                                  <p className="text-sm text-gray-700">{member.profiles?.email || 'N/A'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-green-600">Role</p>
+                                  <Badge className={
+                                    member.profiles?.role === 'parent' ? 'bg-blue-500 text-white' :
+                                    member.profiles?.role === 'kid' ? 'bg-green-500 text-white' :
+                                    'bg-gray-500 text-white'
+                                  }>
+                                    {member.profiles?.role || 'Unknown'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No children message */}
+                    {(!family.family_members || family.family_members.length === 0) && (
+                      <div className="p-4 bg-gray-50 rounded-lg border-l-4 border-gray-400">
+                        <p className="text-gray-600 text-sm italic">No children have joined this family yet.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+
+              {/* No families message */}
+              {families.length === 0 && (
+                <Card className="bg-white">
+                  <CardContent className="p-8 text-center">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Families Found</h3>
+                    <p className="text-gray-500">No family accounts have been created yet.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           {/* Activity Logs */}
