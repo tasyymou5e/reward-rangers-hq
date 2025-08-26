@@ -349,12 +349,18 @@ export default function AdminPortal() {
             onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Sign out button clicked - starting logout process');
+              console.log('=== ADMIN LOGOUT BUTTON CLICKED ===');
               try {
+                console.log('Calling signOut function...');
                 await signOut();
-                console.log('Sign out completed');
+                console.log('=== ADMIN LOGOUT COMPLETED SUCCESSFULLY ===');
               } catch (error) {
-                console.error('Error during sign out:', error);
+                console.error('=== ADMIN LOGOUT ERROR ===', error);
+                console.error('Error details:', {
+                  name: error?.name,
+                  message: error?.message,
+                  stack: error?.stack
+                });
               }
             }}
             className="text-admin-primary border-admin-primary hover:bg-admin-primary hover:text-white"
