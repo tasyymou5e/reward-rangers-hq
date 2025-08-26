@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Shield, Eye, EyeOff, AlertTriangle, ArrowLeft } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,30 +63,39 @@ export default function AdminAuth() {
   }
 
   return (
-    <div className="min-h-screen bg-admin-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-2 border-admin-accent/20">
+    <div className="min-h-screen bg-gradient-admin flex items-center justify-center p-4 relative">
+      {/* Back to home button */}
+      <Link 
+        to="/" 
+        className="absolute top-6 left-6 flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Home
+      </Link>
+      
+      <Card className="w-full max-w-md shadow-2xl border-2 border-white/20 bg-white/95 backdrop-blur-sm">
         <CardHeader className="text-center space-y-6">
-          <div className="mx-auto w-16 h-16 bg-admin-primary rounded-full flex items-center justify-center">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="mx-auto w-20 h-20 bg-gradient-admin rounded-full flex items-center justify-center shadow-lg">
+            <Shield className="w-10 h-10 text-white" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-admin-primary">
-              Administrator Access
+            <CardTitle className="text-3xl font-bold text-admin-primary">
+              Administrator Portal
             </CardTitle>
-            <p className="text-muted-foreground mt-2">
-              Secure login for system administrators
+            <p className="text-admin-primary/70 mt-2 text-sm">
+              Secure access for system administrators only
             </p>
           </div>
         </CardHeader>
         
         <CardContent>
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center gap-2 text-yellow-800">
+          <div className="mb-6 p-4 bg-admin-accent/10 border border-admin-accent/30 rounded-lg">
+            <div className="flex items-center gap-2 text-admin-accent">
               <AlertTriangle className="w-4 h-4" />
               <span className="text-sm font-medium">Restricted Access</span>
             </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              This portal is reserved for authorized administrators only.
+            <p className="text-xs text-admin-primary/70 mt-1">
+              This portal is reserved for authorized administrators only. Unauthorized access is prohibited and monitored.
             </p>
           </div>
 
@@ -145,7 +154,7 @@ export default function AdminAuth() {
 
             <Button
               type="submit"
-              className="w-full bg-admin-primary hover:bg-admin-primary/90 text-white"
+              className="w-full bg-gradient-admin hover:opacity-90 text-white shadow-lg transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -156,15 +165,18 @@ export default function AdminAuth() {
               ) : (
                 <>
                   <Shield className="w-4 h-4 mr-2" />
-                  Sign In to Admin Portal
+                  Access Admin Portal
                 </>
               )}
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-xs text-muted-foreground">
-              Protected by enterprise-grade security
+          <div className="mt-6 pt-6 border-t border-admin-primary/20 text-center">
+            <p className="text-xs text-admin-primary/60">
+              🔒 Protected by enterprise-grade security
+            </p>
+            <p className="text-xs text-admin-primary/50 mt-1">
+              All access attempts are logged and monitored
             </p>
           </div>
         </CardContent>
