@@ -72,24 +72,50 @@ export function useSecurityMonitoring() {
     if (!user) return;
 
     try {
-      // Call security monitoring edge function
+      const clientIP = await getClientIP();
+      
+      // Enhanced security event logging with rate limiting check
       const { data, error } = await supabase.functions.invoke('security-monitor', {
         body: {
           user_id: user.id,
           event_type: eventType,
-          ip_address: await getClientIP(),
+          ip_address: clientIP,
           user_agent: navigator.userAgent,
-          metadata,
+          metadata: {
+            ...metadata,
+            timestamp: new Date().toISOString(),
+            session_id: (await supabase.auth.getSession()).data.session?.access_token?.slice(-8),
+          },
         },
       });
 
       if (error) {
         console.error('Security monitoring error:', error);
+        
+        // Fallback: Log directly to security alerts table
+        await supabase.rpc('log_security_event', {
+          event_type: eventType,
+          user_id_param: user.id,
+          metadata_param: {
+            ...metadata,
+            ip_address: clientIP,
+            user_agent: navigator.userAgent,
+            fallback_logged: true,
+          },
+        });
       } else {
         console.log('Security event logged:', data);
       }
     } catch (error) {
       console.error('Failed to log security event:', error);
+      
+      // Final fallback: Log to console for debugging
+      console.warn('Security Event (unlogged):', {
+        eventType,
+        userId: user.id,
+        metadata,
+        timestamp: new Date().toISOString(),
+      });
     }
   };
 

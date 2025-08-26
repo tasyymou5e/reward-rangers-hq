@@ -88,6 +88,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_rate_limits: {
+        Row: {
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          ip_address: unknown
+          last_attempt: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address: unknown
+          last_attempt?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown
+          last_attempt?: string | null
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           created_at: string | null
@@ -905,6 +935,15 @@ export type Database = {
       }
     }
     Functions: {
+      check_auth_rate_limit: {
+        Args: {
+          block_duration_minutes?: number
+          email_addr?: string
+          ip_addr: unknown
+          max_attempts?: number
+        }
+        Returns: boolean
+      }
       decrypt_mfa_secret: {
         Args: { encoded_text: string }
         Returns: string
@@ -930,6 +969,15 @@ export type Database = {
           event_type: string
           metadata_param?: Json
           user_id_param: string
+        }
+        Returns: undefined
+      }
+      log_security_violation: {
+        Args: {
+          metadata_param?: Json
+          table_name: string
+          user_id_param?: string
+          violation_type: string
         }
         Returns: undefined
       }
