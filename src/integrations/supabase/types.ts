@@ -209,10 +209,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "chores_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "chores_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -255,6 +269,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "families_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -321,6 +342,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -391,6 +419,36 @@ export type Database = {
           report_data?: Json
           report_type?: string | null
           report_url?: string | null
+        }
+        Relationships: []
+      }
+      mfa_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -537,6 +595,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "progress_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rewards: {
@@ -597,10 +662,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rewards_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rewards_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -615,6 +694,13 @@ export type Database = {
             columns: ["redeemed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -690,6 +776,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -768,10 +861,70 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          last_activity: string | null
+          level: number | null
+          points: number | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          streak_days: number | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: never
+          id?: string | null
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          streak_days?: number | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: never
+          id?: string | null
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          streak_days?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      decrypt_mfa_secret: {
+        Args: { encrypted_text: string }
+        Returns: string
+      }
+      encrypt_mfa_secret: {
+        Args: { secret_text: string }
+        Returns: string
+      }
+      get_user_family_ids: {
+        Args: { user_id_param?: string }
+        Returns: string[]
+      }
+      is_family_member: {
+        Args: { family_id_param: string; user_id_param?: string }
+        Returns: boolean
+      }
+      is_family_parent: {
+        Args: { family_id_param: string; user_id_param?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       chore_status: "pending" | "in_progress" | "completed" | "overdue"
