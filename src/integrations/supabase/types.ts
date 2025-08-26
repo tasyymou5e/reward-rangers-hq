@@ -929,24 +929,17 @@ export type Database = {
       }
     }
     Views: {
-      safe_profiles_secure: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          display_name: string | null
-          email: string | null
-          id: string | null
-          last_activity: string | null
-          level: number | null
-          points: number | null
-          role: Database["public"]["Enums"]["user_role"] | null
-          streak_days: number | null
-          username: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      audit_security_definer_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          function_name: string
+          recommendation: string
+          security_level: string
+        }[]
+      }
       can_manage_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -967,6 +960,22 @@ export type Database = {
       encrypt_mfa_secret: {
         Args: { secret_text: string }
         Returns: string
+      }
+      get_accessible_profiles_for_user: {
+        Args: { requesting_user_id?: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          last_activity: string
+          level: number
+          masked_email: string
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
+        }[]
       }
       get_safe_profiles: {
         Args: Record<PropertyKey, never>
