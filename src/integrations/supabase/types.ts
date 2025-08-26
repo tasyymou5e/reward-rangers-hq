@@ -88,6 +88,39 @@ export type Database = {
         }
         Relationships: []
       }
+      approved_affiliates: {
+        Row: {
+          api_key_name: string | null
+          base_url: string
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          api_key_name?: string | null
+          base_url: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          api_key_name?: string | null
+          base_url?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       auth_rate_limits: {
         Row: {
           attempt_count: number | null
@@ -829,13 +862,18 @@ export type Database = {
       wishlist_items: {
         Row: {
           achieved_at: string | null
+          affiliate_id: string | null
           approved_at: string | null
           approved_by: string | null
           created_at: string
           description: string | null
           family_id: string
           id: string
+          item_type: string
+          original_price: number | null
           points_goal: number
+          product_image_url: string | null
+          product_url: string | null
           status: string
           title: string
           updated_at: string
@@ -843,13 +881,18 @@ export type Database = {
         }
         Insert: {
           achieved_at?: string | null
+          affiliate_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
           description?: string | null
           family_id: string
           id?: string
+          item_type?: string
+          original_price?: number | null
           points_goal?: number
+          product_image_url?: string | null
+          product_url?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -857,19 +900,32 @@ export type Database = {
         }
         Update: {
           achieved_at?: string | null
+          affiliate_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
           description?: string | null
           family_id?: string
           id?: string
+          item_type?: string
+          original_price?: number | null
           points_goal?: number
+          product_image_url?: string | null
+          product_url?: string | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "approved_affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

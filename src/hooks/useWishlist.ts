@@ -17,9 +17,18 @@ interface WishlistItem {
   achieved_at?: string;
   created_at: string;
   updated_at: string;
+  item_type?: string;
+  affiliate_id?: string;
+  product_url?: string;
+  product_image_url?: string;
+  original_price?: number;
   profiles?: {
     display_name: string;
     username: string;
+  } | null;
+  approved_affiliates?: {
+    name: string;
+    logo_url?: string;
   } | null;
 }
 
@@ -36,11 +45,17 @@ export function useWishlist() {
     try {
       setLoading(true);
       
-      // For parents, fetch all family wishlist items with user profiles
+      // For parents, fetch all family wishlist items with user profiles and affiliate info
       // For kids, fetch only their own items
       let query = supabase
         .from('wishlist_items')
-        .select('*')
+        .select(`
+          *,
+          approved_affiliates (
+            name,
+            logo_url
+          )
+        `)
         .eq('family_id', family.id);
 
       if (profile?.role !== 'parent') {
@@ -79,7 +94,16 @@ export function useWishlist() {
     }
   };
 
-  const addWishlistItem = async (data: { title: string; description: string; points_goal: number }) => {
+  const addWishlistItem = async (data: { 
+    title: string; 
+    description: string; 
+    points_goal: number;
+    item_type: 'custom' | 'affiliate';
+    affiliate_id?: string;
+    product_url?: string;
+    product_image_url?: string;
+    original_price?: number;
+  }) => {
     if (!user || !family) return;
 
     try {
@@ -91,7 +115,12 @@ export function useWishlist() {
           title: data.title,
           description: data.description,
           points_goal: data.points_goal,
-          status: 'pending'
+          status: 'pending',
+          item_type: data.item_type,
+          affiliate_id: data.affiliate_id,
+          product_url: data.product_url,
+          product_image_url: data.product_image_url,
+          original_price: data.original_price,
         });
 
       if (error) throw error;

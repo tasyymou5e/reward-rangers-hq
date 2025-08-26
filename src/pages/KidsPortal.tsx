@@ -15,7 +15,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WishlistCard } from "@/components/WishlistCard";
-import { WishlistForm } from "@/components/WishlistForm";
+import { EnhancedWishlistForm } from "@/components/EnhancedWishlistForm";
 import { ChoreTimer } from "@/components/ChoreTimer";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { MiniGames } from "@/components/MiniGames";
@@ -510,7 +510,7 @@ export default function KidsPortal() {
             </h3>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <WishlistForm onSubmit={addWishlistItem} isLoading={wishlistLoading} />
+              <EnhancedWishlistForm onSubmit={addWishlistItem} isLoading={wishlistLoading} />
               
               {wishlistItems.map((item) => (
                 <WishlistCard
