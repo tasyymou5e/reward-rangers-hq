@@ -7,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Trophy, Clock, CheckCircle, Gift, Calendar as CalendarIcon, Timer, Sparkles } from "lucide-react";
+import { Star, Trophy, Clock, CheckCircle, Gift, Calendar as CalendarIcon, Timer, Sparkles, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChores } from "@/hooks/useChores";
 import { useFamily } from "@/hooks/useFamily";
+import { useWishlist } from "@/hooks/useWishlist";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { WishlistCard } from "@/components/WishlistCard";
+import { WishlistForm } from "@/components/WishlistForm";
 import { ChoreTimer } from "@/components/ChoreTimer";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { MiniGames } from "@/components/MiniGames";
@@ -22,6 +25,7 @@ export default function KidsPortal() {
   const { user, profile } = useAuth();
   const { chores, completeChore, loading: choresLoading } = useChores();
   const { family, familyMembers } = useFamily();
+  const { wishlistItems, loading: wishlistLoading, addWishlistItem, achieveWishlistItem } = useWishlist();
   const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -326,10 +330,14 @@ export default function KidsPortal() {
         </div>
 
         <Tabs defaultValue="chores" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-5 bg-white shadow-md">
             <TabsTrigger value="chores" className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
               Chores
+            </TabsTrigger>
+            <TabsTrigger value="wishlist" className="flex items-center gap-2">
+              <Heart className="h-4 w-4" />
+              Wishlist
             </TabsTrigger>
             <TabsTrigger value="rewards" className="flex items-center gap-2">
               <Gift className="h-4 w-4" />
@@ -494,6 +502,37 @@ export default function KidsPortal() {
                 ))}
               </div>
             </section>
+          </TabsContent>
+
+          <TabsContent value="wishlist" className="space-y-6">
+            <h3 className="text-2xl font-bold text-kids-primary mb-4 flex items-center gap-2">
+              💝 My Wishlist
+            </h3>
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <WishlistForm onSubmit={addWishlistItem} isLoading={wishlistLoading} />
+              
+              {wishlistItems.map((item) => (
+                <WishlistCard
+                  key={item.id}
+                  item={item}
+                  userPoints={profile?.points || 0}
+                  onAchieve={achieveWishlistItem}
+                />
+              ))}
+            </div>
+            
+            {wishlistItems.length === 0 && !wishlistLoading && (
+              <Card className="bg-gradient-to-br from-kids-accent/10 to-kids-secondary/10">
+                <CardContent className="p-8 text-center">
+                  <Heart className="h-16 w-16 mx-auto mb-4 text-kids-accent" />
+                  <h3 className="text-xl font-bold mb-2">Your Wishlist is Empty!</h3>
+                  <p className="text-muted-foreground">
+                    Add your first wish to start setting goals and earning rewards!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="rewards" className="space-y-6">

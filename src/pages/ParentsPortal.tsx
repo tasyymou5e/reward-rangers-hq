@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain } from "lucide-react";
+import { Plus, Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart } from "lucide-react";
+import { WishlistCard } from "@/components/WishlistCard";
+import { useWishlist } from "@/hooks/useWishlist";
 import { MFASetup } from "@/components/MFASetup";
 import { FamilyChat } from "@/components/FamilyChat";
 import { PredictiveInsights } from "@/components/PredictiveInsights";
@@ -15,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
+  const { wishlistItems, loading: wishlistLoading, approveWishlistItem, rejectWishlistItem } = useWishlist();
   const { toast } = useToast();
 
   const mockChildren = [
@@ -163,8 +166,12 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue="chores" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="chores">Quick Add</TabsTrigger>
+            <TabsTrigger value="wishlist" className="flex items-center gap-2">
+              <Heart className="h-4 w-4" />
+              Wishlist
+            </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Security
@@ -204,6 +211,53 @@ export default function ParentsPortal() {
                     Schedule Later
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="wishlist" className="space-y-4">
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="text-parents-primary">💝 Kids' Wishlist Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Review and approve your children's wishlist items. Help them set realistic goals and earn their dreams!
+                </p>
+                
+                {wishlistLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl animate-spin mb-4">💫</div>
+                    <p>Loading wishlist items...</p>
+                  </div>
+                ) : wishlistItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">No Wishlist Items Yet</h3>
+                    <p className="text-muted-foreground">
+                      Encourage your kids to add items to their wishlist to start setting goals!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {wishlistItems.map((item) => (
+                      <div key={item.id} className="space-y-2">
+                        <WishlistCard
+                          item={item}
+                          userPoints={0}
+                          isParent={true}
+                          onApprove={approveWishlistItem}
+                          onReject={rejectWishlistItem}
+                        />
+                        {item.profiles && (
+                          <div className="text-xs text-muted-foreground text-center">
+                            by {item.profiles.display_name}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
