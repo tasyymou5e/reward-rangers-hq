@@ -165,6 +165,50 @@ export function useAdmin() {
     }
   };
 
+  const createUser = async (userData: {
+    email: string;
+    password: string;
+    display_name: string;
+    role: 'admin' | 'parent' | 'kid';
+  }) => {
+    try {
+      // Use Supabase Admin API to create user with metadata
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: userData
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  };
+
+  const createTestFamily = async (familyData: {
+    familyName: string;
+    parentEmail: string;
+    parentPassword: string;
+    parentName: string;
+    children: Array<{
+      name: string;
+      email: string;
+      password: string;
+    }>;
+  }) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-test-family', {
+        body: familyData
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating test family:', error);
+      throw error;
+    }
+  };
+
   const getAnalytics = async () => {
     try {
       // Fetch various analytics data
@@ -204,6 +248,8 @@ export function useAdmin() {
     updateBadge,
     deleteBadge,
     banUser,
+    createUser,
+    createTestFamily,
     getAnalytics,
     loading,
   };

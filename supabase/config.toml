@@ -1,1 +1,7 @@
 project_id = "rdvkwnoeojjvjuknlsjd"
+
+[functions.create-user]
+verify_jwt = false
+
+[functions.create-test-family] 
+verify_jwt = false

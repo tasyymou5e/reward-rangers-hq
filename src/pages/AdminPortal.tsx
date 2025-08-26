@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
 import { useABTesting } from "@/hooks/useABTesting";
 import { supabase } from "@/integrations/supabase/client";
+import { UserManagementTab } from "@/components/UserManagementTab";
 
 export default function AdminPortal() {
   const { profile, signOut } = useAdminAuth();
@@ -405,10 +406,14 @@ export default function AdminPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-9 bg-white shadow-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="user-mgmt" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              User Mgmt
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -444,6 +449,14 @@ export default function AdminPortal() {
               Activity Logs
             </TabsTrigger>
           </TabsList>
+
+          {/* User Management Tab */}
+          <TabsContent value="user-mgmt" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-admin-primary">User & Family Management</h2>
+            </div>
+            <UserManagementTab />
+          </TabsContent>
 
           {/* Users Management */}
           <TabsContent value="users" className="space-y-6">
