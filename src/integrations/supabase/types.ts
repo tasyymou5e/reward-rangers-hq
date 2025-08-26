@@ -14,7 +14,393 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      badges: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          points_required: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          points_required?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          points_required?: number | null
+        }
+        Relationships: []
+      }
+      chores: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty: string | null
+          due_date: string | null
+          estimated_time_minutes: number | null
+          family_id: string | null
+          id: string
+          points_value: number
+          status: Database["public"]["Enums"]["chore_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          due_date?: string | null
+          estimated_time_minutes?: number | null
+          family_id?: string | null
+          id?: string
+          points_value?: number
+          status?: Database["public"]["Enums"]["chore_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          due_date?: string | null
+          estimated_time_minutes?: number | null
+          family_id?: string | null
+          id?: string
+          points_value?: number
+          status?: Database["public"]["Enums"]["chore_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chores_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      families: {
+        Row: {
+          created_at: string | null
+          family_code: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_code?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_code?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "families_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          family_id: string | null
+          id: string
+          joined_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          family_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          family_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string
+          email: string
+          id: string
+          last_activity: string | null
+          level: number | null
+          points: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name: string
+          email: string
+          id: string
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          streak_days?: number | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string
+          email?: string
+          id?: string
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          streak_days?: number | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      progress_logs: {
+        Row: {
+          action: string
+          chore_id: string | null
+          created_at: string | null
+          family_id: string | null
+          id: string
+          notes: string | null
+          points_earned: number | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          chore_id?: string | null
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          chore_id?: string | null
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          notes?: string | null
+          points_earned?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_logs_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_logs_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          family_id: string | null
+          id: string
+          points_cost: number
+          redeemed_at: string | null
+          redeemed_by: string | null
+          status: Database["public"]["Enums"]["reward_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          points_cost: number
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          status?: Database["public"]["Enums"]["reward_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          family_id?: string | null
+          id?: string
+          points_cost?: number
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          status?: Database["public"]["Enums"]["reward_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rewards_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_badges: {
+        Row: {
+          badge_id: string | null
+          earned_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          badge_id?: string | null
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          badge_id?: string | null
+          earned_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +409,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      chore_status: "pending" | "in_progress" | "completed" | "overdue"
+      reward_status: "available" | "redeemed" | "pending_approval"
+      user_role: "kid" | "parent" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +538,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      chore_status: ["pending", "in_progress", "completed", "overdue"],
+      reward_status: ["available", "redeemed", "pending_approval"],
+      user_role: ["kid", "parent", "admin"],
+    },
   },
 } as const
