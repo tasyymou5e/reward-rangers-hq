@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Home, Star, Trophy } from "lucide-react";
+import { Home, Star, Trophy, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   userType?: "kids" | "parents" | "admin";
@@ -8,6 +10,22 @@ interface HeaderProps {
 }
 
 export function Header({ userType, userName, points }: HeaderProps) {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleHomeClick = () => {
+    navigate("/");
+  };
+
   const getHeaderStyles = () => {
     switch (userType) {
       case "kids":
@@ -46,11 +64,24 @@ export function Header({ userType, userName, points }: HeaderProps) {
           <Button 
             variant={userType ? "outline" : "default"} 
             size="sm"
+            onClick={handleHomeClick}
             className={userType ? "border-white/20 text-white hover:bg-white/10" : ""}
           >
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
+
+          {userName && (
+            <Button 
+              variant={userType ? "outline" : "default"}
+              size="sm"
+              onClick={handleSignOut}
+              className={userType ? "border-white/20 text-white hover:bg-white/10" : ""}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          )}
         </div>
       </div>
     </header>
