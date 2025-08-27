@@ -47,12 +47,14 @@ export function UserManagementTab() {
   }, []);
 
   const loadData = async () => {
+    console.log('Loading initial data...');
     setLoading(true);
     try {
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
       ]);
+      console.log('Initial data loaded:', { usersCount: usersData.length, familiesCount: familiesData.length });
       setUsers(usersData);
       setFamilies(familiesData);
     } catch (error) {
@@ -131,20 +133,29 @@ export function UserManagementTab() {
 
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
+      console.log('Starting user deletion for:', userId, displayName);
       await deleteUser(userId);
+      
+      console.log('User deletion completed, refreshing data...');
       // Force a fresh fetch of all data
+      setLoading(true);
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
       ]);
+      
+      console.log('Fetched fresh data:', { usersCount: usersData.length, familiesCount: familiesData.length });
       setUsers(usersData);
       setFamilies(familiesData);
+      setLoading(false);
+      
       toast({
         title: "Success",
         description: `User ${displayName} deleted successfully`,
       });
     } catch (error) {
       console.error('Error deleting user:', error);
+      setLoading(false);
       toast({
         title: "Error",
         description: "Failed to delete user",
@@ -155,20 +166,29 @@ export function UserManagementTab() {
 
   const handleDeleteFamily = async (familyId: string, familyName: string) => {
     try {
+      console.log('Starting family deletion for:', familyId, familyName);
       await deleteFamily(familyId);
+      
+      console.log('Family deletion completed, refreshing data...');
       // Force a fresh fetch of all data
+      setLoading(true);
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
       ]);
+      
+      console.log('Fetched fresh data:', { usersCount: usersData.length, familiesCount: familiesData.length });
       setUsers(usersData);
       setFamilies(familiesData);
+      setLoading(false);
+      
       toast({
         title: "Success",
         description: `Family ${familyName} and all members deleted successfully`,
       });
     } catch (error) {
       console.error('Error deleting family:', error);
+      setLoading(false);
       toast({
         title: "Error",
         description: "Failed to delete family",
