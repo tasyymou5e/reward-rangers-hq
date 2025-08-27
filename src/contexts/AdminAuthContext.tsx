@@ -30,7 +30,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .eq('role', 'admin') // Only allow admin profiles
+        .in('role', ['admin', 'full_admin', 'read_only_admin', 'report_admin']) // Allow all admin roles
         .maybeSingle(); // Use maybeSingle to avoid errors if no data
       
       if (error) {
@@ -39,7 +39,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Verify the user is actually an admin
-      if (!data || data.role !== 'admin') {
+      if (!data || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(data.role)) {
         console.warn('User is not an admin, signing out');
         throw new Error('Unauthorized: Admin access required');
       }
@@ -177,7 +177,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Profile verification failed');
         }
 
-        if (!profileData || profileData.role !== 'admin') {
+        if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
           console.warn('User is not an admin');
           await supabase.auth.signOut();
           throw new Error('Unauthorized: Admin access required');

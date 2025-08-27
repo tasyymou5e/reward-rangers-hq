@@ -66,6 +66,14 @@ export default function AdminPortal() {
     assignUserToVariant 
   } = useABTesting();
 
+  // Permission helpers
+  const isFullAdmin = () => ['admin', 'full_admin'].includes(profile?.role);
+  const isReadOnlyAdmin = () => profile?.role === 'read_only_admin';
+  const isReportAdmin = () => profile?.role === 'report_admin';
+  const canModify = () => !isReadOnlyAdmin(); // Read-only admins cannot modify
+  const canManageUsers = () => isFullAdmin(); // Only full admins can manage users
+  const canGenerateReports = () => ['admin', 'full_admin', 'report_admin'].includes(profile?.role);
+
   const [users, setUsers] = useState<any[]>([]);
   const [families, setFamilies] = useState<any[]>([]);
   const [chores, setChores] = useState<any[]>([]);
@@ -343,7 +351,22 @@ export default function AdminPortal() {
             <Shield className="h-8 w-8 text-admin-primary" />
             <div>
               <h1 className="text-3xl font-bold text-admin-primary">Admin Dashboard</h1>
-              <p className="text-muted-foreground">System administration and monitoring</p>
+              <div className="flex items-center gap-4">
+                <p className="text-muted-foreground">System administration and monitoring</p>
+                <Badge className={
+                  ['admin', 'full_admin'].includes(profile?.role) ? 'bg-red-500 text-white' :
+                  profile?.role === 'read_only_admin' ? 'bg-blue-500 text-white' :
+                  profile?.role === 'report_admin' ? 'bg-purple-500 text-white' :
+                  'bg-gray-500 text-white'
+                }>
+                  {profile?.role?.replace('_', ' ') || 'Unknown Role'}
+                </Badge>
+                {isReadOnlyAdmin() && (
+                  <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                    Read Only Access
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           <Button 
@@ -429,10 +452,12 @@ export default function AdminPortal() {
               <Users className="h-4 w-4" />
               Admins
             </TabsTrigger>
-            <TabsTrigger value="user-mgmt" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              User Mgmt
-            </TabsTrigger>
+            {canManageUsers() && (
+              <TabsTrigger value="user-mgmt" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                User Mgmt
+              </TabsTrigger>
+            )}
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Security
@@ -442,43 +467,53 @@ export default function AdminPortal() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Feedback
-            </TabsTrigger>
-            <TabsTrigger value="abtesting" className="flex items-center gap-2">
-              <TestTube className="h-4 w-4" />
-              A/B Tests
-            </TabsTrigger>
+            {canModify() && (
+              <TabsTrigger value="feedback" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+              </TabsTrigger>
+            )}
+            {canModify() && (
+              <TabsTrigger value="abtesting" className="flex items-center gap-2">
+                <TestTube className="h-4 w-4" />
+                A/B Tests
+              </TabsTrigger>
+            )}
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
-            <TabsTrigger value="badges" className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Badges
-            </TabsTrigger>
+            {canModify() && (
+              <TabsTrigger value="badges" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                Badges
+              </TabsTrigger>
+            )}
             <TabsTrigger value="families" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Families
             </TabsTrigger>
-            <TabsTrigger value="affiliates" className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4" />
-              Affiliates
-            </TabsTrigger>
+            {canModify() && (
+              <TabsTrigger value="affiliates" className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Affiliates
+              </TabsTrigger>
+            )}
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Activity Logs
             </TabsTrigger>
           </TabsList>
 
-          {/* User Management Tab */}
-          <TabsContent value="user-mgmt" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-admin-primary">User & Family Management</h2>
-            </div>
-            <UserManagementTab />
-          </TabsContent>
+          {/* User Management Tab - Only for Full Admins */}
+          {canManageUsers() && (
+            <TabsContent value="user-mgmt" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-admin-primary">User & Family Management</h2>
+              </div>
+              <UserManagementTab />
+            </TabsContent>
+          )}
 
           {/* Users Management */}
           <TabsContent value="users" className="space-y-6">
@@ -537,24 +572,33 @@ export default function AdminPortal() {
                             Active
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedUser(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleBanUser(user.id, "Admin action")}
-                            >
-                              <Ban className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                         <TableCell>
+                           <div className="flex gap-2">
+                             {canModify() && (
+                               <>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => setSelectedUser(user)}
+                                 >
+                                   <Edit className="h-4 w-4" />
+                                 </Button>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => handleBanUser(user.id, "Admin action")}
+                                 >
+                                   <Ban className="h-4 w-4" />
+                                 </Button>
+                               </>
+                             )}
+                             {!canModify() && (
+                               <Badge variant="outline" className="text-xs">
+                                 Read Only Access
+                               </Badge>
+                             )}
+                           </div>
+                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -617,18 +661,23 @@ export default function AdminPortal() {
                             {alert.resolved ? 'Resolved' : 'Active'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {!alert.resolved && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => resolveAlert(alert.id)}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              Resolve
-                            </Button>
-                          )}
-                        </TableCell>
+                         <TableCell>
+                           {!alert.resolved && canModify() && (
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => resolveAlert(alert.id)}
+                             >
+                               <CheckCircle className="h-4 w-4" />
+                               Resolve
+                             </Button>
+                           )}
+                           {!canModify() && (
+                             <Badge variant="outline" className="text-xs">
+                               Read Only
+                             </Badge>
+                           )}
+                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -682,37 +731,42 @@ export default function AdminPortal() {
                         <span className="text-xs text-muted-foreground">
                           {new Date(item.created_at).toLocaleDateString()}
                         </span>
-                        {item.status === 'pending' && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MessageSquare className="h-4 w-4 mr-2" />
-                                Respond
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Respond to Feedback</DialogTitle>
-                              </DialogHeader>
-                              <form onSubmit={(e) => {
-                                e.preventDefault();
-                                const form = e.target as HTMLFormElement;
-                                const response = (form.elements.namedItem('response') as HTMLTextAreaElement).value;
-                                handleResolveFeedback(item.id, response);
-                              }}>
-                                <div className="space-y-4">
-                                  <div>
-                                    <Label htmlFor="response">Response</Label>
-                                    <Textarea name="response" placeholder="Enter your response..." required />
-                                  </div>
-                                  <Button type="submit" className="w-full">
-                                    Send Response
-                                  </Button>
-                                </div>
-                              </form>
-                            </DialogContent>
-                          </Dialog>
-                        )}
+                         {item.status === 'pending' && canModify() && (
+                           <Dialog>
+                             <DialogTrigger asChild>
+                               <Button variant="outline" size="sm">
+                                 <MessageSquare className="h-4 w-4 mr-2" />
+                                 Respond
+                               </Button>
+                             </DialogTrigger>
+                             <DialogContent>
+                               <DialogHeader>
+                                 <DialogTitle>Respond to Feedback</DialogTitle>
+                               </DialogHeader>
+                               <form onSubmit={(e) => {
+                                 e.preventDefault();
+                                 const form = e.target as HTMLFormElement;
+                                 const response = (form.elements.namedItem('response') as HTMLTextAreaElement).value;
+                                 handleResolveFeedback(item.id, response);
+                               }}>
+                                 <div className="space-y-4">
+                                   <div>
+                                     <Label htmlFor="response">Response</Label>
+                                     <Textarea name="response" placeholder="Enter your response..." required />
+                                   </div>
+                                   <Button type="submit" className="w-full">
+                                     Send Response
+                                   </Button>
+                                 </div>
+                               </form>
+                             </DialogContent>
+                           </Dialog>
+                         )}
+                         {!canModify() && (
+                           <Badge variant="outline" className="text-xs">
+                             Read Only
+                           </Badge>
+                         )}
                       </div>
                     </div>
                   </CardContent>
@@ -725,10 +779,12 @@ export default function AdminPortal() {
           <TabsContent value="abtesting" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-admin-primary">A/B Testing</h2>
-              <Button onClick={() => setShowABTestDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Test
-              </Button>
+              {canModify() && (
+                <Button onClick={() => setShowABTestDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Test
+                </Button>
+              )}
             </div>
 
             <div className="grid gap-4">
@@ -752,16 +808,18 @@ export default function AdminPortal() {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                          View Results
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => updateABTest(test.id, { active: !test.active })}>
-                          <Settings className="h-4 w-4" />
-                          {test.active ? 'Disable' : 'Enable'}
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <Button variant="outline" size="sm">
+                           <Eye className="h-4 w-4" />
+                           View Results
+                         </Button>
+                         {canModify() && (
+                           <Button variant="outline" size="sm" onClick={() => updateABTest(test.id, { active: !test.active })}>
+                             <Settings className="h-4 w-4" />
+                             {test.active ? 'Disable' : 'Enable'}
+                           </Button>
+                         )}
+                       </div>
                     </div>
                     <div className="grid gap-2">
                       <p className="text-sm font-medium">Variants:</p>
@@ -887,10 +945,12 @@ export default function AdminPortal() {
           <TabsContent value="badges" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-admin-primary">Badge Management</h2>
-              <Button onClick={() => openBadgeDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Badge
-              </Button>
+              {canModify() && (
+                <Button onClick={() => openBadgeDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Badge
+                </Button>
+              )}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -898,23 +958,25 @@ export default function AdminPortal() {
                 <Card key={badge.id} className="bg-white">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="text-4xl">{badge.icon || '🏆'}</div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openBadgeDialog(badge)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteBadge(badge.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                       <div className="text-4xl">{badge.icon || '🏆'}</div>
+                       {canModify() && (
+                         <div className="flex gap-2">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => openBadgeDialog(badge)}
+                           >
+                             <Edit className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => handleDeleteBadge(badge.id)}
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       )}
                     </div>
                     
                     <h3 className="font-bold text-lg mb-2">{badge.name}</h3>
