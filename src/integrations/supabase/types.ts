@@ -1074,6 +1074,10 @@ export type Database = {
           username: string
         }[]
       }
+      get_client_ip_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_family_data_secure: {
         Args: { family_id_param: string; requesting_user_id?: string }
         Returns: {
@@ -1191,6 +1195,10 @@ export type Database = {
         Args: { user_id_param?: string }
         Returns: string[]
       }
+      has_parental_authority: {
+        Args: { child_user_id: string; requesting_user_id?: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1264,12 +1272,24 @@ export type Database = {
         Args: { new_email: string }
         Returns: undefined
       }
+      validate_child_data_access_secure: {
+        Args: {
+          access_type: string
+          child_user_id: string
+          requesting_user_id?: string
+        }
+        Returns: boolean
+      }
       validate_family_access: {
         Args: {
           family_id_param: string
           required_role?: string
           user_id_param?: string
         }
+        Returns: boolean
+      }
+      validate_family_code_secure: {
+        Args: { code: string }
         Returns: boolean
       }
     }
