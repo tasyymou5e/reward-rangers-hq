@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError || !profile || profile.role !== 'admin') {
-      console.log('Unauthorized user creation attempt:', { userId: user.id, role: profile?.role });
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { 
@@ -82,8 +81,6 @@ Deno.serve(async (req) => {
 
     const { email, password, display_name, role } = await req.json();
 
-    console.log('Creating user:', { email, display_name, role });
-
     // Create user in auth.users table
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -96,11 +93,10 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      console.error('Auth error:', authError);
       throw authError;
     }
 
-    console.log('User created in auth:', authUser.user?.id);
+    
 
     // The profile will be created automatically by the trigger
     // But we need to update the role since the trigger sets it to 'parent' by default
@@ -111,7 +107,6 @@ Deno.serve(async (req) => {
         .eq('id', authUser.user.id);
 
       if (profileError) {
-        console.error('Profile update error:', profileError);
         throw profileError;
       }
     }
@@ -131,7 +126,6 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error creating user:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to create user' 

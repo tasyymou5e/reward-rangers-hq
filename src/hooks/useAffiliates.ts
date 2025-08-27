@@ -33,7 +33,6 @@ export function useAffiliates() {
       if (error) throw error;
       setAffiliates(data || []);
     } catch (error) {
-      // Error fetching affiliates (logging removed for production)
       toast({
         title: "Error",
         description: "Failed to load affiliate partners",

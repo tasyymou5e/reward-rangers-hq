@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { childName, childEmail, familyId }: InviteChildRequest = await req.json();
 
-    console.log("Creating child invitation:", { childName, childEmail, familyId, parentId: user.id });
+    
 
     // Verify the parent owns this family
     const { data: family, error: familyError } = await supabaseClient
@@ -67,8 +67,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(-12) + "Aa1!";
+    // Generate a cryptographically secure temporary password
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const randomBytes = new Uint8Array(12);
+    crypto.getRandomValues(randomBytes);
+    const tempPassword = Array.from(randomBytes, byte => charset[byte % charset.length]).join('') + 'Aa1!';
 
     // Create the child user account
     const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
@@ -84,14 +87,11 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (userError) {
-      console.error("Error creating user:", userError);
       return new Response(
         JSON.stringify({ error: `Failed to create user account: ${userError.message}` }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    console.log("User created successfully:", newUser.user?.id);
 
     // Add the child to the family
     const { error: memberError } = await supabaseClient
@@ -102,7 +102,6 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
     if (memberError) {
-      console.error("Error adding family member:", memberError);
       // Clean up the created user if family member insertion fails
       await supabaseClient.auth.admin.deleteUser(newUser.user.id);
       return new Response(
@@ -110,8 +109,6 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    console.log("Child added to family successfully");
 
     // Send invitation email
     const appUrl = Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app") || "https://your-app.lovable.app";
@@ -195,11 +192,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (emailResponse.error) {
-      console.error("Error sending email:", emailResponse.error);
-      // Don't fail the whole process if email fails, just log it
+      // Email failed but don't fail the whole process
     }
-
-    console.log("Invitation process completed successfully");
 
     return new Response(
       JSON.stringify({
@@ -215,7 +209,6 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error("Error in invite-child function:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal server error" }),
       {

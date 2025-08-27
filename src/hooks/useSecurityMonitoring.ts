@@ -41,7 +41,7 @@ export function useSecurityMonitoring() {
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
-      // Error loading security alerts (logging removed for production)
+      // Failed to load security alerts
     } finally {
       setLoading(false);
     }
@@ -90,8 +90,6 @@ export function useSecurityMonitoring() {
       });
 
       if (error) {
-        // Security monitoring error (logging removed for production)
-        
         // Fallback: Log directly to security alerts table
         await supabase.rpc('log_security_event', {
           event_type: eventType,
@@ -103,12 +101,9 @@ export function useSecurityMonitoring() {
             fallback_logged: true,
           },
         });
-      } else {
-        // Security event logged successfully (removed console logging for production security)
       }
     } catch (error) {
-      // Failed to log security event (logging removed for production)
-      // Security events are now handled securely without console exposure
+      // Security event logging failed - handled silently for production security
     }
   };
 
@@ -145,7 +140,6 @@ export function useSecurityMonitoring() {
         )
       );
     } catch (error) {
-      // Error resolving alert (logging removed for production)
       throw error;
     }
   };

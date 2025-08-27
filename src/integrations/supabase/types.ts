@@ -953,6 +953,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_auth_rate_limit_secure: {
+        Args: {
+          block_duration_minutes?: number
+          email_addr?: string
+          ip_addr: unknown
+          max_attempts?: number
+        }
+        Returns: boolean
+      }
       decrypt_mfa_secret: {
         Args: { encoded_text: string }
         Returns: string
