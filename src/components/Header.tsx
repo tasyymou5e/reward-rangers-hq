@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Star, Trophy, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { NotificationBell } from "./NotificationBell";
 
 interface HeaderProps {
   userType?: "kids" | "parents" | "admin";
@@ -54,6 +55,7 @@ export function Header({ userType, userName, points }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          <NotificationBell />
           {userType === "kids" && points !== undefined && (
             <div className="flex items-center space-x-2 bg-white/20 rounded-full px-4 py-2">
               <Star className="h-5 w-5 text-kids-accent" />

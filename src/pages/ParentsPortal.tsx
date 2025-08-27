@@ -5,9 +5,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus, ExternalLink } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus, ExternalLink, CheckCircle } from "lucide-react";
 import { WishlistCard } from "@/components/WishlistCard";
 import { ChoreAssignmentForm } from "@/components/ChoreAssignmentForm";
+import { ChoreApprovalCard } from "@/components/ChoreApprovalCard";
 import { AddChildForm } from "@/components/AddChildForm";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useFamily } from "@/hooks/useFamily";
@@ -23,7 +24,7 @@ export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
   const { wishlistItems, loading: wishlistLoading, approveWishlistItem, rejectWishlistItem } = useWishlist();
   const { family, familyMembers, loading: familyLoading } = useFamily();
-  const { chores, loading: choresLoading } = useChores();
+  const { chores, approveChore, rejectChore, loading: choresLoading } = useChores();
   const { toast } = useToast();
 
   // Filter family members to show only children (not parents)
@@ -67,6 +68,9 @@ export default function ParentsPortal() {
     points: chore.points_value,
     difficulty: chore.difficulty,
   }));
+
+  // Filter chores pending approval
+  const pendingApprovalChores = chores.filter(chore => chore.status === 'pending_approval');
 
   const handleGenerateReport = async () => {
     try {
@@ -285,8 +289,17 @@ export default function ParentsPortal() {
         </section>
 
         {/* Enhanced Features Tabs */}
-        <Tabs defaultValue="chores" className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
+        <Tabs defaultValue={pendingApprovalChores.length > 0 ? "approvals" : "chores"} className="w-full">
+          <TabsList className="grid w-full grid-cols-9">
+            {pendingApprovalChores.length > 0 && (
+              <TabsTrigger value="approvals" className="flex items-center gap-2 relative">
+                <CheckCircle className="h-4 w-4" />
+                Approvals
+                <Badge className="ml-1 bg-red-500 text-white text-xs h-5 w-5 p-0 flex items-center justify-center">
+                  {pendingApprovalChores.length}
+                </Badge>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="children">
               <UserPlus className="h-4 w-4 mr-1" />
               Children
@@ -317,6 +330,37 @@ export default function ParentsPortal() {
               Shopping
             </TabsTrigger>
           </TabsList>
+
+          {pendingApprovalChores.length > 0 && (
+            <TabsContent value="approvals" className="space-y-4">
+              <Card className="bg-white">
+                <CardHeader>
+                  <CardTitle className="text-parents-primary flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Chore Approvals
+                    <Badge className="bg-red-500 text-white">
+                      {pendingApprovalChores.length} pending
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-6">
+                    Review and approve completed chores to award points to your children.
+                  </p>
+                  <div className="grid gap-4">
+                    {pendingApprovalChores.map((chore) => (
+                      <ChoreApprovalCard
+                        key={chore.id}
+                        chore={chore}
+                        onApprove={approveChore}
+                        onReject={rejectChore}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="children" className="space-y-4">
             <Card className="bg-white">

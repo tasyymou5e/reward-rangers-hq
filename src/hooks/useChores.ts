@@ -96,48 +96,81 @@ export function useChores() {
     }
   };
 
-  const completeChore = async (choreId: string) => {
+  const submitChoreForApproval = async (choreId: string) => {
     if (!user) return;
 
     try {
-      // Update chore status
+      // Update chore status to pending approval
       await updateChore(choreId, {
-        status: 'completed',
+        status: 'pending_approval',
         completed_at: new Date().toISOString(),
       });
 
+      // TODO: Notify parents for approval
+    } catch (error) {
+      console.error('Error submitting chore for approval:', error);
+      throw error;
+    }
+  };
+
+  const approveChore = async (choreId: string) => {
+    if (!user) return;
+
+    try {
       // Find the chore to get points value
       const chore = chores.find(c => c.id === choreId);
-      if (chore) {
-        // Add progress log
+      if (!chore) return;
+
+      // Update chore status to completed
+      await updateChore(choreId, {
+        status: 'completed',
+      });
+
+      // Add progress log
+      await supabase
+        .from('progress_logs')
+        .insert({
+          user_id: chore.assigned_to,
+          chore_id: choreId,
+          family_id: family?.id,
+          action: 'completed',
+          points_earned: chore.points_value,
+        });
+
+      // Update user points
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('points')
+        .eq('id', chore.assigned_to)
+        .single();
+
+      if (profile) {
         await supabase
-          .from('progress_logs')
-          .insert({
-            user_id: user.id,
-            chore_id: choreId,
-            family_id: family?.id,
-            action: 'completed',
-            points_earned: chore.points_value,
-          });
-
-        // Update user points
-        const { data: profile } = await supabase
           .from('profiles')
-          .select('points')
-          .eq('id', user.id)
-          .single();
-
-        if (profile) {
-          await supabase
-            .from('profiles')
-            .update({
-              points: (profile.points || 0) + chore.points_value,
-            })
-            .eq('id', user.id);
-        }
+          .update({
+            points: (profile.points || 0) + chore.points_value,
+          })
+          .eq('id', chore.assigned_to);
       }
+
+      // TODO: Notify child of approval
+
+      await fetchChores();
     } catch (error) {
-      console.error('Error completing chore:', error);
+      console.error('Error approving chore:', error);
+      throw error;
+    }
+  };
+
+  const rejectChore = async (choreId: string) => {
+    try {
+      // Update chore status back to pending
+      await updateChore(choreId, {
+        status: 'pending',
+        completed_at: null,
+      });
+    } catch (error) {
+      console.error('Error rejecting chore:', error);
       throw error;
     }
   };
@@ -154,7 +187,9 @@ export function useChores() {
     createChore,
     createBulkChores,
     updateChore,
-    completeChore,
+    submitChoreForApproval,
+    approveChore,
+    rejectChore,
     refetchChores: fetchChores,
   };
 }

@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Trophy, Clock, CheckCircle, Gift, Calendar as CalendarIcon, Timer, Sparkles, Heart } from "lucide-react";
+import { Star, Trophy, Clock, CheckCircle, Gift, Calendar as CalendarIcon, Timer, Sparkles, Heart, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChores } from "@/hooks/useChores";
 import { useFamily } from "@/hooks/useFamily";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useChoreCalendar } from "@/hooks/useChoreCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WishlistCard } from "@/components/WishlistCard";
@@ -21,12 +22,14 @@ import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { MiniGames } from "@/components/MiniGames";
 import { MotivationJournal } from "@/components/MotivationJournal";
 import { AffiliateDisplay } from "@/components/AffiliateDisplay";
+import { ChoreSelectionModal } from "@/components/ChoreSelectionModal";
 
 export default function KidsPortal() {
   const { user, profile } = useAuth();
-  const { chores, completeChore, loading: choresLoading } = useChores();
+  const { chores, submitChoreForApproval, loading: choresLoading } = useChores();
   const { family, familyMembers } = useFamily();
   const { wishlistItems, loading: wishlistLoading, addWishlistItem, achieveWishlistItem } = useWishlist();
+  const { calendarEntries, markCalendarChoreCompleted } = useChoreCalendar();
   const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -48,6 +51,7 @@ export default function KidsPortal() {
   });
   const completedChores = myChores.filter(chore => chore.status === 'completed');
   const pendingChores = myChores.filter(chore => chore.status === 'pending');
+  const pendingApprovalChores = myChores.filter(chore => chore.status === 'pending_approval');
 
   // Calculate level based on points
   const getLevel = (points: number) => Math.floor(points / 100) + 1;
@@ -110,10 +114,10 @@ export default function KidsPortal() {
     }
   };
 
-  const handleCompleteChore = async (choreId: string) => {
+const handleSubmitChoreForApproval = async (choreId: string) => {
     try {
       const chore = myChores.find(c => c.id === choreId);
-      await completeChore(choreId);
+      await submitChoreForApproval(choreId);
       
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
@@ -123,8 +127,8 @@ export default function KidsPortal() {
       setShowMiniGames(true);
       
       toast({
-        title: "🎉 Chore Completed!",
-        description: `You earned ${chore?.points_value || 0} points! Play a game to earn bonus points!`,
+        title: "📝 Chore Submitted!",
+        description: `${chore?.title} submitted for parent approval!`,
       });
       
       // Check for new badges
@@ -420,7 +424,7 @@ export default function KidsPortal() {
                               duration={chore.estimated_time_minutes || 15}
                               onComplete={() => {
                                 setActiveTimer(null);
-                                handleCompleteChore(chore.id);
+                                handleSubmitChoreForApproval(chore.id);
                               }}
                               onStop={() => setActiveTimer(null)}
                             />
@@ -429,15 +433,20 @@ export default function KidsPortal() {
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Completed! 🎉
                             </Button>
-                          ) : (
+                           ) : chore.status === 'pending_approval' ? (
+                            <Button disabled className="w-full bg-yellow-500 text-white">
+                              <Clock className="h-4 w-4 mr-2" />
+                              Waiting for Approval...
+                            </Button>
+                           ) : (
                             <>
                               <Button 
                                 variant="kids" 
-                                onClick={() => handleCompleteChore(chore.id)}
+                                onClick={() => submitChoreForApproval(chore.id)}
                                 className="flex-1"
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Complete
+                                Submit for Approval
                               </Button>
                               {chore.estimated_time_minutes && (
                                 <Button
@@ -631,9 +640,17 @@ export default function KidsPortal() {
           </TabsContent>
 
           <TabsContent value="calendar" className="space-y-6">
-            <h3 className="text-2xl font-bold text-kids-primary mb-4 flex items-center gap-2">
-              📅 My Schedule
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-kids-primary flex items-center gap-2">
+                📅 My Schedule
+              </h3>
+              <ChoreSelectionModal>
+                <Button variant="kids">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Chore to Calendar
+                </Button>
+              </ChoreSelectionModal>
+            </div>
             
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="bg-white">
