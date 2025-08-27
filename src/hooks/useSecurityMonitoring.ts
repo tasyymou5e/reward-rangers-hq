@@ -109,6 +109,40 @@ export function useSecurityMonitoring() {
       }
     } catch (error) {
       // Security event logging failed - handled silently for production security
+      console.error('Security event logging failed:', error);
+    }
+  };
+
+  const createSecurityAlert = async (
+    alertType: string,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    description: string,
+    metadata: any = {}
+  ) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('security_alerts')
+        .insert({
+          user_id: user.id,
+          alert_type: alertType,
+          severity,
+          description,
+          metadata: {
+            ...metadata,
+            timestamp: new Date().toISOString(),
+            ip_address: await getClientIP(),
+            user_agent: navigator.userAgent,
+          }
+        });
+
+      if (error) throw error;
+
+      // Refresh alerts to show the new one
+      await loadSecurityAlerts();
+    } catch (error) {
+      console.error('Failed to create security alert:', error);
     }
   };
 
@@ -165,6 +199,7 @@ export function useSecurityMonitoring() {
     alerts,
     loading,
     logSecurityEvent,
+    createSecurityAlert,
     resolveAlert,
     getUnresolvedAlertsCount,
     getAlertsByType,

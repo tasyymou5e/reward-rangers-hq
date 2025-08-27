@@ -1074,6 +1074,21 @@ export type Database = {
           username: string
         }[]
       }
+      get_family_data_secure: {
+        Args: { family_id_param: string; requesting_user_id?: string }
+        Returns: {
+          created_at: string
+          family_code: string
+          id: string
+          name: string
+          parent_id: string
+          updated_at: string
+        }[]
+      }
+      get_mfa_backup_codes_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       get_mfa_settings_secure: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1092,6 +1107,38 @@ export type Database = {
           has_totp_secret: boolean
           mfa_enabled: boolean
           updated_at: string
+        }[]
+      }
+      get_profile_by_id_secure: {
+        Args: { requesting_user_id?: string; target_user_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          email_masked: string
+          id: string
+          last_activity: string
+          level: number
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
+        }[]
+      }
+      get_profiles_secure: {
+        Args: { requesting_user_id?: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          email_masked: string
+          id: string
+          last_activity: string
+          level: number
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
         }[]
       }
       get_safe_family_profiles: {
@@ -1211,6 +1258,10 @@ export type Database = {
           p_mfa_enabled: boolean
           p_totp_secret?: string
         }
+        Returns: undefined
+      }
+      update_profile_email_secure: {
+        Args: { new_email: string }
         Returns: undefined
       }
       validate_family_access: {

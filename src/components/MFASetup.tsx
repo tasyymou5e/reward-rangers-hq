@@ -23,7 +23,7 @@ export function MFASetup() {
     try {
       // Use secure function instead of direct table access
       const { data, error } = await supabase
-        .rpc('get_mfa_settings_secure');
+        .rpc('get_mfa_status_safe');
 
       if (data && data.length > 0 && !error) {
         const settings = data[0];
@@ -36,15 +36,22 @@ export function MFASetup() {
       }
     } catch (error) {
       console.error('Error fetching MFA status:', error);
-      
-      // Log security event for failed access
-      await supabase.rpc('log_security_event', {
-        event_type: 'mfa_status_fetch_failed',
-        user_id_param: user.id,
-        metadata_param: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
-        }
+    }
+  };
+
+  const fetchBackupCodes = async () => {
+    if (!user || !mfaEnabled) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_mfa_backup_codes_secure');
+      if (error) throw error;
+      setBackupCodes(data || []);
+    } catch (error) {
+      console.error('Error fetching backup codes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load backup codes. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -76,7 +83,8 @@ export function MFASetup() {
       if (error) throw error;
 
       setMfaEnabled(true);
-      setBackupCodes(newBackupCodes); // Show codes temporarily for user to save
+      // Fetch backup codes securely after enabling MFA
+      await fetchBackupCodes();
       
       toast({
         title: "MFA Enabled",
@@ -177,6 +185,12 @@ export function MFASetup() {
     fetchMFAStatus();
   }, [user]);
 
+  useEffect(() => {
+    if (mfaEnabled) {
+      fetchBackupCodes();
+    }
+  }, [mfaEnabled, user]);
+
   return (
     <Card className="bg-white border-parents-primary/20">
       <CardHeader>
@@ -212,31 +226,43 @@ export function MFASetup() {
           </Alert>
         )}
 
-        {mfaEnabled && backupCodes.length > 0 && (
+        {mfaEnabled && (
           <div className="space-y-3">
-            <h4 className="font-medium text-parents-primary">Backup Recovery Codes</h4>
-            <p className="text-sm text-muted-foreground">
-              Save these codes in a secure location. Each code can only be used once.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {backupCodes.map((code, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
-                  <code className="text-sm font-mono flex-1">{code}</code>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(code)}
-                    className="h-6 w-6 p-0"
-                  >
-                    {copiedCode === code ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-parents-primary">Backup Recovery Codes</h4>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={fetchBackupCodes}
+                disabled={loading}
+              >
+                Load Codes
+              </Button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Click "Load Codes" to securely view your backup codes. Save them in a secure location.
+            </p>
+            {backupCodes.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {backupCodes.map((code, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                    <code className="text-sm font-mono flex-1">{code}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(code)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {copiedCode === code ? (
+                        <Check className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
