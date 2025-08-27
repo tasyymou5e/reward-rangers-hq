@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecurityMonitoring } from '@/hooks/useSecurityMonitoring';
 
 interface AuthContextType {
   user: User | null;
@@ -21,8 +20,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  const { logSecurityEvent } = useSecurityMonitoring();
+
+  // Direct security logging function to avoid circular dependency
+  const logSecurityEvent = async (eventType: string, metadata: any = {}) => {
+    try {
+      await supabase.rpc('log_security_event_with_rate_limit', {
+        event_type: eventType,
+        user_id_param: user?.id || null,
+        metadata_param: metadata
+      });
+    } catch (error) {
+      // Silently handle security logging errors to avoid breaking auth flow
+      console.error('Security logging error:', error);
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -39,13 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(profileData);
       
       // Log successful profile access for security monitoring
-      logSecurityEvent('profile_accessed_secure', {
+      await logSecurityEvent('profile_accessed_secure', {
         user_id: userId,
         access_method: 'auth_context'
       });
     } catch (error) {
       // Log failed profile access attempt
-      logSecurityEvent('profile_access_failed', {
+      await logSecurityEvent('profile_access_failed', {
         user_id: userId,
         error: error instanceof Error ? error.message : 'Unknown error',
         access_method: 'auth_context'
