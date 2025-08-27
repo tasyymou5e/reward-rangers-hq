@@ -19,7 +19,9 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
     );
   }
 
-  if (!user || !profile || profile.role !== 'admin') {
+  // Accept all admin role types for security fix
+  const adminRoles = ['admin', 'full_admin', 'read_only_admin', 'report_admin'];
+  if (!user || !profile || !adminRoles.includes(profile.role)) {
     return <Navigate to="/admin/auth" replace />;
   }
 

@@ -77,13 +77,15 @@ export function MFASetup() {
 
       if (error) throw error;
 
-      // Log security event
-      await supabase.rpc('log_security_event', {
+      // Log security event with rate limiting
+      await supabase.rpc('log_security_event_with_rate_limit', {
         event_type: 'mfa_enabled',
         user_id_param: user.id,
         metadata_param: {
           success: true,
-          ip_address: 'unknown', // Would get from request in production
+          method: 'totp',
+          backup_codes_generated: newBackupCodes.length,
+          timestamp: new Date().toISOString(),
           user_agent: navigator.userAgent
         }
       });
@@ -98,14 +100,15 @@ export function MFASetup() {
     } catch (error) {
       console.error('Error enabling MFA:', error);
       
-      // Log failed attempt
+      // Log failed attempt with rate limiting
       if (user) {
-        await supabase.rpc('log_security_event', {
+        await supabase.rpc('log_security_event_with_rate_limit', {
           event_type: 'mfa_enable_failed',
           user_id_param: user.id,
           metadata_param: {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
             user_agent: navigator.userAgent
           }
         });

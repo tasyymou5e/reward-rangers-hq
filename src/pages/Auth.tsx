@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { PasswordValidation } from "@/components/PasswordValidation";
 import { LogIn, UserPlus, Users, Crown, Shield } from "lucide-react";
 
 export default function Auth() {
@@ -17,6 +18,7 @@ export default function Auth() {
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("parent");
   const [loading, setLoading] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
@@ -24,6 +26,17 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Enhanced password validation for signup
+    if (isSignUp && !isPasswordValid) {
+      toast({
+        title: "Password Requirements",
+        description: "Please ensure your password meets all security requirements.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -177,6 +190,12 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              {isSignUp && (
+                <PasswordValidation 
+                  password={password} 
+                  onValidationChange={setIsPasswordValid}
+                />
+              )}
             </div>
             
             <Button 

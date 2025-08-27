@@ -74,33 +74,38 @@ export function useSecurityMonitoring() {
     try {
       const clientIP = await getClientIP();
       
-      // Enhanced security event logging with rate limiting check
-      const { data, error } = await supabase.functions.invoke('security-monitor', {
-        body: {
-          user_id: user.id,
-          event_type: eventType,
+      // Use enhanced rate-limited security event logging
+      const { error } = await supabase.rpc('log_security_event_with_rate_limit', {
+        event_type: eventType,
+        user_id_param: user.id,
+        metadata_param: {
+          ...metadata,
           ip_address: clientIP,
           user_agent: navigator.userAgent,
-          metadata: {
-            ...metadata,
-            timestamp: new Date().toISOString(),
-            session_id: (await supabase.auth.getSession()).data.session?.access_token?.slice(-8),
-          },
+          timestamp: new Date().toISOString(),
+          session_id: (await supabase.auth.getSession()).data.session?.access_token?.slice(-8),
         },
       });
 
       if (error) {
-        // Fallback: Log directly to security alerts table
-        await supabase.rpc('log_security_event', {
-          event_type: eventType,
-          user_id_param: user.id,
-          metadata_param: {
-            ...metadata,
-            ip_address: clientIP,
-            user_agent: navigator.userAgent,
-            fallback_logged: true,
-          },
-        });
+        // Fallback: Log directly to security alerts table (with basic rate limiting)
+        const recentEvents = alerts.filter(
+          alert => alert.alert_type === eventType && 
+          new Date(alert.created_at) > new Date(Date.now() - 60000)
+        ).length;
+        
+        if (recentEvents < 5) { // Basic client-side rate limiting
+          await supabase.rpc('log_security_event', {
+            event_type: eventType,
+            user_id_param: user.id,
+            metadata_param: {
+              ...metadata,
+              ip_address: clientIP,
+              user_agent: navigator.userAgent,
+              fallback_logged: true,
+            },
+          });
+        }
       }
     } catch (error) {
       // Security event logging failed - handled silently for production security
