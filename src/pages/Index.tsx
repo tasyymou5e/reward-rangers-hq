@@ -3,12 +3,14 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogIn, UserPlus } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { LogIn, UserPlus, Moon, Sun } from "lucide-react";
 import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   // Auto-redirect authenticated users to their appropriate portal
   useEffect(() => {
@@ -57,6 +59,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-kids-background/30">
       <Header />
+      
+      {/* Dark Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          onClick={toggleTheme}
+          variant="outline"
+          size="sm"
+          className="bg-background/80 backdrop-blur-sm border-2 hover:scale-110 transition-transform duration-200"
+        >
+          {isDark ? (
+            <Sun className="h-4 w-4 text-yellow-500" />
+          ) : (
+            <Moon className="h-4 w-4 text-blue-600" />
+          )}
+        </Button>
+      </div>
       
       <div className="container mx-auto px-6 py-12">
         <div className="text-center mb-12 space-y-4">
