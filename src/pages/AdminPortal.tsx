@@ -427,7 +427,7 @@ export default function AdminPortal() {
           <TabsList className="grid w-full grid-cols-10 bg-white shadow-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Users
+              Admins
             </TabsTrigger>
             <TabsTrigger value="user-mgmt" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -483,12 +483,12 @@ export default function AdminPortal() {
           {/* Users Management */}
           <TabsContent value="users" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-admin-primary">User Management</h2>
+              <h2 className="text-2xl font-bold text-admin-primary">Admin Management</h2>
               <div className="flex gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Search users..."
+                    placeholder="Search admins..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
@@ -511,7 +511,7 @@ export default function AdminPortal() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
+                    {filteredUsers.filter(user => user.role === 'admin').map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div>
