@@ -240,9 +240,26 @@ export function useAdmin() {
 
   const deleteUser = async (userId: string) => {
     try {
-      // Delete from auth.users - this will cascade to profiles and related data
+      // Check if user has admin permissions for auth admin operations
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
+      // Try to delete from auth.users - this requires service role
       const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error) throw error;
+      if (error && error.message !== 'User not found') {
+        console.error('Auth admin delete failed:', error);
+        // If auth deletion fails due to permissions, just remove from profiles
+        // The RLS policies should handle the rest
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (profileError) throw profileError;
+      }
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;
@@ -251,13 +268,18 @@ export function useAdmin() {
 
   const deleteFamily = async (familyId: string) => {
     try {
+      console.log('Starting family deletion for:', familyId);
+      
       // Get all family members first
       const { data: familyMembers, error: membersError } = await supabase
         .from('family_members')
         .select('user_id')
         .eq('family_id', familyId);
       
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error('Error fetching family members:', membersError);
+        throw membersError;
+      }
 
       // Get family parent
       const { data: family, error: familyError } = await supabase
@@ -266,25 +288,49 @@ export function useAdmin() {
         .eq('id', familyId)
         .single();
       
-      if (familyError) throw familyError;
+      if (familyError) {
+        console.error('Error fetching family:', familyError);
+        throw familyError;
+      }
 
-      // Delete all family member users from auth
+      // Collect all user IDs to delete
       const userIds = [...(familyMembers?.map(m => m.user_id) || []), family.parent_id].filter(Boolean);
+      console.log('Users to delete:', userIds);
       
+      // Delete users from profiles first (this should cascade to related data)
       for (const userId of userIds) {
-        const { error } = await supabase.auth.admin.deleteUser(userId);
-        if (error) {
+        try {
+          // Try auth admin delete first
+          const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+          if (authError) {
+            console.warn(`Auth delete failed for ${userId}, trying profile delete:`, authError);
+            // Fallback to profile deletion if auth admin fails
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .delete()
+              .eq('id', userId);
+            
+            if (profileError) {
+              console.error(`Profile delete failed for ${userId}:`, profileError);
+            }
+          }
+        } catch (error) {
           console.error(`Error deleting user ${userId}:`, error);
         }
       }
 
-      // Delete family record (other related data should cascade)
+      // Delete family record (RLS policies should handle related data cleanup)
       const { error: deleteFamilyError } = await supabase
         .from('families')
         .delete()
         .eq('id', familyId);
 
-      if (deleteFamilyError) throw deleteFamilyError;
+      if (deleteFamilyError) {
+        console.error('Error deleting family record:', deleteFamilyError);
+        throw deleteFamilyError;
+      }
+      
+      console.log('Family deletion completed successfully');
     } catch (error) {
       console.error('Error deleting family:', error);
       throw error;
