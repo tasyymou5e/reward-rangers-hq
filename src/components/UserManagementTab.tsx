@@ -233,16 +233,16 @@ export function UserManagementTab() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Create Individual User */}
-        <Card>
+        <Card className="border-2 border-blue-200 bg-blue-50/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-blue-700">
               <UserPlus className="h-5 w-5" />
-              Create User
+              Create Admin & User Accounts
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create individual admin, parent, or kid users for testing and administration.
+            <p className="text-sm text-blue-600 mb-4 font-medium">
+              ✨ Create admin users with different permission levels (Full Admin, Read Only, Report Admin), as well as parent and kid users for testing and administration.
             </p>
             <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
               <DialogTrigger asChild>
@@ -255,7 +255,7 @@ export function UserManagementTab() {
                 <DialogHeader>
                   <DialogTitle>Create New User</DialogTitle>
                   <DialogDescription>
-                    Create a new user account with specified role and credentials.
+                    Create admin users with role-based permissions (Full Admin, Read Only, Report Admin) or regular parent/kid accounts.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -289,20 +289,23 @@ export function UserManagementTab() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="role">Role</Label>
-                     <Select value={newUser.role} onValueChange={(value: "admin" | "full_admin" | "read_only_admin" | "report_admin" | "parent" | "kid") => setNewUser(prev => ({ ...prev, role: value }))}>
-                       <SelectTrigger>
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="admin">Legacy Admin (Full Access)</SelectItem>
-                         <SelectItem value="full_admin">Full Admin</SelectItem>
-                         <SelectItem value="read_only_admin">Read Only Admin</SelectItem>
-                         <SelectItem value="report_admin">Report Generation Admin</SelectItem>
-                         <SelectItem value="parent">Parent</SelectItem>
-                         <SelectItem value="kid">Kid</SelectItem>
-                       </SelectContent>
-                     </Select>
+                    <Label htmlFor="role">User Role</Label>
+                    <Select value={newUser.role} onValueChange={(value: "admin" | "full_admin" | "read_only_admin" | "report_admin" | "parent" | "kid") => setNewUser(prev => ({ ...prev, role: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">🔴 Legacy Admin (Full Access)</SelectItem>
+                        <SelectItem value="full_admin">🔴 Full Admin (Complete Access)</SelectItem>
+                        <SelectItem value="read_only_admin">🔵 Read Only Admin (View Only)</SelectItem>
+                        <SelectItem value="report_admin">🟣 Report Admin (Reports & Limited)</SelectItem>
+                        <SelectItem value="parent">👨‍👩‍👧‍👦 Parent (Family Manager)</SelectItem>
+                        <SelectItem value="kid">🧒 Kid (Family Member)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Admin roles provide access to the admin portal with different permission levels
+                    </p>
                   </div>
                 </div>
                 <DialogFooter>
