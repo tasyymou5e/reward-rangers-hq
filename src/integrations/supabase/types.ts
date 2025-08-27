@@ -217,6 +217,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chore_calendar: {
+        Row: {
+          chore_id: string
+          completed: boolean
+          created_at: string
+          family_id: string
+          id: string
+          scheduled_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chore_id: string
+          completed?: boolean
+          created_at?: string
+          family_id: string
+          id?: string
+          scheduled_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chore_id?: string
+          completed?: boolean
+          created_at?: string
+          family_id?: string
+          id?: string
+          scheduled_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chores: {
         Row: {
           assigned_to: string | null
@@ -532,6 +565,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           what_helped?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1069,6 +1138,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      notify_child_chore_approved: {
+        Args: { chore_id_param: string }
+        Returns: undefined
+      }
+      notify_parents_chore_approval: {
+        Args: { chore_id_param: string }
+        Returns: undefined
+      }
       validate_family_access: {
         Args: {
           family_id_param: string
@@ -1079,7 +1156,12 @@ export type Database = {
       }
     }
     Enums: {
-      chore_status: "pending" | "in_progress" | "completed" | "overdue"
+      chore_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "overdue"
+        | "pending_approval"
       reward_status: "available" | "redeemed" | "pending_approval"
       user_role:
         | "kid"
@@ -1215,7 +1297,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      chore_status: ["pending", "in_progress", "completed", "overdue"],
+      chore_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "overdue",
+        "pending_approval",
+      ],
       reward_status: ["available", "redeemed", "pending_approval"],
       user_role: [
         "kid",
