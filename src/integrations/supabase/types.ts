@@ -1001,7 +1001,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mfa_status_safe: {
+        Row: {
+          backup_codes_count: number | null
+          created_at: string | null
+          has_totp_secret: boolean | null
+          mfa_enabled: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          backup_codes_count?: never
+          created_at?: string | null
+          has_totp_secret?: never
+          mfa_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          backup_codes_count?: never
+          created_at?: string | null
+          has_totp_secret?: never
+          mfa_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       audit_security_definer_usage: {
@@ -1042,7 +1068,15 @@ export type Database = {
         Args: { encoded_text: string }
         Returns: string
       }
+      decrypt_mfa_secret_secure: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
       encrypt_mfa_secret: {
+        Args: { secret_text: string }
+        Returns: string
+      }
+      encrypt_mfa_secret_secure: {
         Args: { secret_text: string }
         Returns: string
       }
@@ -1060,6 +1094,16 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           streak_days: number
           username: string
+        }[]
+      }
+      get_mfa_settings_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          backup_codes_count: number
+          created_at: string
+          has_totp_secret: boolean
+          mfa_enabled: boolean
+          updated_at: string
         }[]
       }
       get_safe_family_profiles: {
@@ -1171,6 +1215,14 @@ export type Database = {
       }
       notify_parents_chore_approval: {
         Args: { chore_id_param: string }
+        Returns: undefined
+      }
+      update_mfa_settings_secure: {
+        Args: {
+          p_backup_codes?: string[]
+          p_mfa_enabled: boolean
+          p_totp_secret?: string
+        }
         Returns: undefined
       }
       validate_family_access: {

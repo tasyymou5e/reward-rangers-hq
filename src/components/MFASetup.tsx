@@ -21,18 +21,31 @@ export function MFASetup() {
     if (!user) return;
 
     try {
+      // Use secure function instead of direct table access
       const { data, error } = await supabase
-        .from('user_mfa_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .rpc('get_mfa_settings_secure');
 
-      if (data && !error) {
-        setMfaEnabled(data.mfa_enabled);
-        setBackupCodes(data.backup_codes || []);
+      if (data && data.length > 0 && !error) {
+        const settings = data[0];
+        setMfaEnabled(settings.mfa_enabled);
+        // Don't store actual backup codes in state for security
+        setBackupCodes([]);
+      } else if (!error) {
+        setMfaEnabled(false);
+        setBackupCodes([]);
       }
     } catch (error) {
       console.error('Error fetching MFA status:', error);
+      
+      // Log security event for failed access
+      await supabase.rpc('log_security_event', {
+        event_type: 'mfa_status_fetch_failed',
+        user_id_param: user.id,
+        metadata_param: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        }
+      });
     }
   };
 
@@ -50,52 +63,24 @@ export function MFASetup() {
     try {
       setLoading(true);
       const newBackupCodes = generateBackupCodes();
+      const totpSecret = 'totp_secret_' + Date.now() + '_' + Math.random().toString(36);
       
-      // Use the secure encryption function for storing sensitive data
-      const { data: encryptedSecret } = await supabase
-        .rpc('encrypt_mfa_secret', { 
-          secret_text: 'mock_secret_' + Date.now() 
-        });
-
-      const { data: encryptedCodes } = await supabase
-        .rpc('encrypt_mfa_secret', { 
-          secret_text: JSON.stringify(newBackupCodes) 
-        });
-
-      if (!encryptedSecret || !encryptedCodes) {
-        throw new Error('Failed to encrypt MFA data');
-      }
-      
+      // Use secure function for MFA management
       const { error } = await supabase
-        .from('user_mfa_settings')
-        .upsert({
-          user_id: user.id,
-          mfa_enabled: true,
-          backup_codes: [encryptedCodes], // Store as encrypted array
-          totp_secret: encryptedSecret,
+        .rpc('update_mfa_settings_secure', {
+          p_mfa_enabled: true,
+          p_totp_secret: totpSecret,
+          p_backup_codes: newBackupCodes
         });
 
       if (error) throw error;
 
-      // Log security event with rate limiting
-      await supabase.rpc('log_security_event_with_rate_limit', {
-        event_type: 'mfa_enabled',
-        user_id_param: user.id,
-        metadata_param: {
-          success: true,
-          method: 'totp',
-          backup_codes_generated: newBackupCodes.length,
-          timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent
-        }
-      });
-
       setMfaEnabled(true);
-      setBackupCodes(newBackupCodes);
+      setBackupCodes(newBackupCodes); // Show codes temporarily for user to save
       
       toast({
         title: "MFA Enabled",
-        description: "Multi-factor authentication has been enabled for your account.",
+        description: "Multi-factor authentication has been enabled. Save your backup codes!",
       });
     } catch (error) {
       console.error('Error enabling MFA:', error);
@@ -130,27 +115,15 @@ export function MFASetup() {
     try {
       setLoading(true);
       
+      // Use secure function for MFA management
       const { error } = await supabase
-        .from('user_mfa_settings')
-        .update({
-          mfa_enabled: false,
-          backup_codes: [],
-          totp_secret: null
-        })
-        .eq('user_id', user.id);
+        .rpc('update_mfa_settings_secure', {
+          p_mfa_enabled: false,
+          p_totp_secret: null,
+          p_backup_codes: null
+        });
 
       if (error) throw error;
-
-      // Log security event
-      await supabase.rpc('log_security_event', {
-        event_type: 'mfa_disabled',
-        user_id_param: user.id,
-        metadata_param: {
-          success: true,
-          ip_address: 'unknown',
-          user_agent: navigator.userAgent
-        }
-      });
 
       setMfaEnabled(false);
       setBackupCodes([]);
@@ -164,7 +137,7 @@ export function MFASetup() {
       
       // Log failed attempt
       if (user) {
-        await supabase.rpc('log_security_event', {
+        await supabase.rpc('log_security_event_with_rate_limit', {
           event_type: 'mfa_disable_failed',
           user_id_param: user.id,
           metadata_param: {
