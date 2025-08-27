@@ -22,6 +22,7 @@ export function UserManagementTab() {
   const [users, setUsers] = useState<any[]>([]);
   const [families, setFamilies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   
   const [newUser, setNewUser] = useState({
     email: "",
@@ -47,16 +48,14 @@ export function UserManagementTab() {
   }, []);
 
   const loadData = async () => {
-    console.log('Loading initial data...');
-    setLoading(true);
     try {
-      const [usersData, familiesData] = await Promise.all([
-        fetchAllUsers(),
-        fetchAllFamilies()
-      ]);
-      console.log('Initial data loaded:', { usersCount: usersData.length, familiesCount: familiesData.length });
-      setUsers(usersData);
-      setFamilies(familiesData);
+      // Loading initial data...
+      const usersData = await fetchAllUsers();
+      const familiesData = await fetchAllFamilies();
+      
+      setUsers(usersData || []);
+      setFamilies(familiesData || []);
+      // Initial data loaded: users and families
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -157,10 +156,10 @@ export function UserManagementTab() {
 
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
-      console.log('Starting user deletion for:', userId, displayName);
+      // Starting user deletion
       await deleteUser(userId);
       
-      console.log('User deletion completed, refreshing data...');
+      // User deletion completed, refreshing data
       // Force a fresh fetch of all data
       setLoading(true);
       const [usersData, familiesData] = await Promise.all([
@@ -168,7 +167,7 @@ export function UserManagementTab() {
         fetchAllFamilies()
       ]);
       
-      console.log('Fetched fresh data:', { usersCount: usersData.length, familiesCount: familiesData.length });
+      // Fetched fresh data successfully
       setUsers(usersData);
       setFamilies(familiesData);
       setLoading(false);
@@ -190,10 +189,10 @@ export function UserManagementTab() {
 
   const handleDeleteFamily = async (familyId: string, familyName: string) => {
     try {
-      console.log('Starting family deletion for:', familyId, familyName);
+      // Starting family deletion
       await deleteFamily(familyId);
       
-      console.log('Family deletion completed, refreshing data...');
+      // Family deletion completed, refreshing data
       // Force a fresh fetch of all data and clear existing state first
       setLoading(true);
       setFamilies([]); // Clear current families to force re-render
@@ -204,11 +203,7 @@ export function UserManagementTab() {
         fetchAllFamilies()
       ]);
       
-      console.log('Fetched fresh data after family deletion:', { 
-        usersCount: usersData.length, 
-        familiesCount: familiesData.length,
-        deletedFamilyId: familyId 
-      });
+      // Fetched fresh data after family deletion successfully
       
       setUsers(usersData);
       setFamilies(familiesData);

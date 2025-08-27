@@ -598,11 +598,11 @@ export default function AdminPortal() {
             onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('=== ADMIN LOGOUT BUTTON CLICKED ===');
+              // Admin logout button clicked
               try {
-                console.log('Calling signOut function...');
+                // Calling signOut function...
                 await signOut();
-                console.log('=== ADMIN LOGOUT COMPLETED SUCCESSFULLY ===');
+                // Admin logout completed successfully
               } catch (error) {
                 console.error('=== ADMIN LOGOUT ERROR ===', error);
                 console.error('Error details:', {

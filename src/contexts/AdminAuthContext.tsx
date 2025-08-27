@@ -25,7 +25,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       setProfileLoading(true);
-      console.log('Fetching admin profile for:', userId);
+      // Fetching admin profile securely
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -44,7 +44,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Unauthorized: Admin access required');
       }
       
-      console.log('Admin profile loaded:', data);
+      // Admin profile loaded successfully
       setProfile(data);
     } catch (error) {
       console.error('Error fetching admin profile:', error);
@@ -77,11 +77,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           async (event, session) => {
             if (!mounted || isSigningOut) return;
             
-            console.log('Auth state change:', event, session?.user?.id);
+            // Auth state change detected
             
             // Only update state if we're not in the middle of signing out
             if (event === 'SIGNED_OUT' || !session) {
-              console.log('User signed out or session ended');
+              // User signed out or session ended
               if (mounted && !isSigningOut) {
                 setSession(null);
                 setUser(null);
@@ -151,7 +151,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Attempting admin sign in for:', email);
+      // Attempting admin sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -164,7 +164,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       // Check if user is admin after successful login
       if (data.user) {
-        console.log('User signed in, checking admin status');
+        // User signed in, checking admin status
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -183,7 +183,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Unauthorized: Admin access required');
         }
         
-        console.log('Admin access confirmed');
+        // Admin access confirmed
       }
 
       return { data, error: null };
@@ -195,43 +195,43 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     if (isSigningOut) {
-      console.log('Sign out already in progress, skipping');
+      // Sign out already in progress, skipping
       return;
     }
     
     try {
-      console.log('Admin signOut function called - starting process');
+      // Admin signOut function called - starting process
       setIsSigningOut(true);
       
       // Clear local state first to prevent loops
-      console.log('Clearing local auth state immediately');
+      // Clearing local auth state immediately
       setUser(null);
       setSession(null);
       setProfile(null);
       setLoading(false);
       
       // Try to sign out from Supabase, but don't fail if session is missing
-      console.log('Attempting supabase auth signOut');
+      // Attempting supabase auth signOut
       try {
         const { error } = await supabase.auth.signOut();
         if (error && error.message !== 'Auth session missing!') {
           console.error('Supabase sign out error:', error);
         } else {
-          console.log('Supabase sign out completed (or session was already gone)');
+          // Supabase sign out completed (or session was already gone)
         }
       } catch (authError: any) {
         // AuthSessionMissingError is actually fine when signing out
         if (authError.message?.includes('Auth session missing')) {
-          console.log('Session was already missing - this is fine for sign out');
+          // Session was already missing - this is fine for sign out
         } else {
           console.error('Unexpected auth error:', authError);
         }
       }
       
-      console.log('Sign out process completed successfully');
+      // Sign out process completed successfully
       
       // Safe navigation that avoids security errors
-      console.log('Safely navigating to admin auth');
+      // Safely navigating to admin auth
       try {
         // Use a more secure approach to navigation
         if (typeof window !== 'undefined' && window.location) {
@@ -239,7 +239,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           try {
             localStorage.removeItem('sb-rdvkwnoeojjvjuknlsjd-auth-token');
           } catch (storageError) {
-            console.log('Could not clear localStorage, proceeding anyway');
+            // Could not clear localStorage, proceeding anyway
           }
           
           // Navigate using hash router

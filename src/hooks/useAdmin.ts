@@ -8,13 +8,13 @@ export function useAdmin() {
 
   const fetchAllUsers = async () => {
     try {
-      console.log('Admin fetching all users...');
+      // Admin fetching all users...
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
-      console.log('Users query result:', { data, error, count: data?.length });
+      // Users query completed
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -25,7 +25,7 @@ export function useAdmin() {
 
   const fetchAllFamilies = async () => {
     try {
-      console.log('Admin fetching all families...');
+      // Admin fetching all families...
       const { data, error } = await supabase
         .from('families')
         .select(`
@@ -38,7 +38,7 @@ export function useAdmin() {
         `)
         .order('created_at', { ascending: false });
       
-      console.log('Families query result:', { data, error, count: data?.length });
+      // Families query completed
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -269,7 +269,7 @@ export function useAdmin() {
 
   const deleteFamily = async (familyId: string) => {
     try {
-      console.log('Starting family deletion for:', familyId);
+      // Starting family deletion
       
       // Get all family members first
       const { data: familyMembers, error: membersError } = await supabase
@@ -296,7 +296,7 @@ export function useAdmin() {
 
       // Collect all user IDs to delete
       const userIds = [...(familyMembers?.map(m => m.user_id) || []), family.parent_id].filter(Boolean);
-      console.log('Users to delete:', userIds);
+      // Users to delete identified
       
       // Delete users from profiles first (this should cascade to related data)
       for (const userId of userIds) {
@@ -314,10 +314,10 @@ export function useAdmin() {
             if (profileError) {
               console.error(`Profile delete failed for ${userId}:`, profileError);
             } else {
-              console.log(`Successfully deleted profile for ${userId}`);
+              // Successfully deleted profile
             }
           } else {
-            console.log(`Successfully deleted auth user ${userId}`);
+            // Successfully deleted auth user
           }
         } catch (error) {
           console.error(`Error deleting user ${userId}:`, error);
@@ -333,7 +333,7 @@ export function useAdmin() {
       if (deleteMembersError) {
         console.error('Error deleting family members:', deleteMembersError);
       } else {
-        console.log('Successfully deleted family members');
+        // Successfully deleted family members
       }
 
       // Delete family record last
@@ -346,10 +346,10 @@ export function useAdmin() {
         console.error('Error deleting family record:', deleteFamilyError);
         throw deleteFamilyError;
       } else {
-        console.log('Successfully deleted family record');
+        // Successfully deleted family record
       }
       
-      console.log('Family deletion completed successfully');
+      // Family deletion completed successfully
     } catch (error) {
       console.error('Error deleting family:', error);
       throw error;

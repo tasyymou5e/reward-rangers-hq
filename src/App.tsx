@@ -70,7 +70,7 @@ class ErrorBoundary extends React.Component<
 }
 
 const App = () => {
-  console.log('App component rendering');
+  // App component rendering
   
   return (
     <ErrorBoundary>
