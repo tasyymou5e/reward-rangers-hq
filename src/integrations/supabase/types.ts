@@ -1001,33 +1001,7 @@ export type Database = {
       }
     }
     Views: {
-      mfa_status_safe: {
-        Row: {
-          backup_codes_count: number | null
-          created_at: string | null
-          has_totp_secret: boolean | null
-          mfa_enabled: boolean | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          backup_codes_count?: never
-          created_at?: string | null
-          has_totp_secret?: never
-          mfa_enabled?: boolean | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          backup_codes_count?: never
-          created_at?: string | null
-          has_totp_secret?: never
-          mfa_enabled?: boolean | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       audit_security_definer_usage: {
@@ -1064,6 +1038,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_old_mfa_data: {
+        Args: { days_old?: number }
+        Returns: number
+      }
       decrypt_mfa_secret: {
         Args: { encoded_text: string }
         Returns: string
@@ -1097,6 +1075,16 @@ export type Database = {
         }[]
       }
       get_mfa_settings_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          backup_codes_count: number
+          created_at: string
+          has_totp_secret: boolean
+          mfa_enabled: boolean
+          updated_at: string
+        }[]
+      }
+      get_mfa_status_safe: {
         Args: Record<PropertyKey, never>
         Returns: {
           backup_codes_count: number
