@@ -131,6 +131,30 @@ export function UserManagementTab() {
     }));
   };
 
+  const canDeleteUser = (user: any) => {
+    // Don't allow deletion of admin users
+    if (user.role === 'admin') {
+      return { canDelete: false, reason: "Admin users cannot be deleted" };
+    }
+    // Additional validation can be added here
+    return { canDelete: true, reason: null };
+  };
+
+  const getUserFamilyInfo = (user: any) => {
+    // Find which family this user belongs to
+    for (const family of families) {
+      // Check if user is the parent
+      if (family.parent_id === user.id) {
+        return { familyName: family.name, role: 'Parent' };
+      }
+      // Check if user is a family member (child)
+      if (family.family_members?.some((member: any) => member.user_id === user.id)) {
+        return { familyName: family.name, role: 'Child' };
+      }
+    }
+    return { familyName: 'No Family', role: 'N/A' };
+  };
+
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
       console.log('Starting user deletion for:', userId, displayName);
@@ -457,60 +481,80 @@ export function UserManagementTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <p className="text-center text-muted-foreground">Loading users...</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.display_name}</TableCell>
-                      <TableCell className="capitalize">{user.role}</TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete User</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete {user.display_name}? This action cannot be undone and will remove all associated data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteUser(user.id, user.display_name)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete User
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {users.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+             {loading ? (
+               <p className="text-center text-muted-foreground">Loading users...</p>
+             ) : (
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Name</TableHead>
+                     <TableHead>Role</TableHead>
+                     <TableHead>Family</TableHead>
+                     <TableHead>Family Role</TableHead>
+                     <TableHead>Actions</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {users.filter(user => user.role !== 'admin').map((user) => {
+                     const familyInfo = getUserFamilyInfo(user);
+                     const deleteValidation = canDeleteUser(user);
+                     
+                     return (
+                       <TableRow key={user.id}>
+                         <TableCell>{user.display_name}</TableCell>
+                         <TableCell className="capitalize">{user.role}</TableCell>
+                         <TableCell>{familyInfo.familyName}</TableCell>
+                         <TableCell>{familyInfo.role}</TableCell>
+                         <TableCell>
+                           {deleteValidation.canDelete ? (
+                             <AlertDialog>
+                               <AlertDialogTrigger asChild>
+                                 <Button variant="ghost" size="sm">
+                                   <Trash2 className="h-4 w-4 text-destructive" />
+                                 </Button>
+                               </AlertDialogTrigger>
+                               <AlertDialogContent>
+                                 <AlertDialogHeader>
+                                   <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                   <AlertDialogDescription>
+                                     Are you sure you want to delete {user.display_name}? This action cannot be undone and will remove all associated data.
+                                   </AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                 <AlertDialogFooter>
+                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                   <AlertDialogAction 
+                                     onClick={() => handleDeleteUser(user.id, user.display_name)}
+                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                   >
+                                     Delete User
+                                   </AlertDialogAction>
+                                 </AlertDialogFooter>
+                               </AlertDialogContent>
+                             </AlertDialog>
+                           ) : (
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               disabled
+                               title={deleteValidation.reason || "Cannot delete this user"}
+                             >
+                               <Trash2 className="h-4 w-4 text-muted-foreground" />
+                             </Button>
+                           )}
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                   {users.filter(user => user.role !== 'admin').length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={5} className="text-center text-muted-foreground">
+                         No non-admin users found
+                       </TableCell>
+                     </TableRow>
+                   )}
+                 </TableBody>
+               </Table>
+             )}
           </CardContent>
         </Card>
 
