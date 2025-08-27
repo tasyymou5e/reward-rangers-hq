@@ -132,12 +132,19 @@ export function UserManagementTab() {
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
       await deleteUser(userId);
-      await loadData(); // Refresh data
+      // Force a fresh fetch of all data
+      const [usersData, familiesData] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllFamilies()
+      ]);
+      setUsers(usersData);
+      setFamilies(familiesData);
       toast({
         title: "Success",
         description: `User ${displayName} deleted successfully`,
       });
     } catch (error) {
+      console.error('Error deleting user:', error);
       toast({
         title: "Error",
         description: "Failed to delete user",
@@ -149,12 +156,19 @@ export function UserManagementTab() {
   const handleDeleteFamily = async (familyId: string, familyName: string) => {
     try {
       await deleteFamily(familyId);
-      await loadData(); // Refresh data
+      // Force a fresh fetch of all data
+      const [usersData, familiesData] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllFamilies()
+      ]);
+      setUsers(usersData);
+      setFamilies(familiesData);
       toast({
         title: "Success",
         description: `Family ${familyName} and all members deleted successfully`,
       });
     } catch (error) {
+      console.error('Error deleting family:', error);
       toast({
         title: "Error",
         description: "Failed to delete family",
