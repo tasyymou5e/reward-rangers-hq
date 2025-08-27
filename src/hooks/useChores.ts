@@ -106,7 +106,7 @@ export function useChores() {
         completed_at: new Date().toISOString(),
       });
 
-      // TODO: Notify parents for approval
+      // TODO: Notify parents for approval (function will be created)
     } catch (error) {
       console.error('Error submitting chore for approval:', error);
       throw error;
@@ -153,7 +153,7 @@ export function useChores() {
           .eq('id', chore.assigned_to);
       }
 
-      // TODO: Notify child of approval
+      // TODO: Notify child of approval (function will be created)
 
       await fetchChores();
     } catch (error) {
