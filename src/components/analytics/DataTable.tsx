@@ -97,7 +97,7 @@ export function DataTable({
   };
 
   const handleFilter = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ ...prev, [key]: value === "all" ? "" : value }));
     setCurrentPage(1);
   };
 
@@ -150,14 +150,14 @@ export function DataTable({
           {columns.filter(col => col.filterable).map(col => (
             <Select 
               key={col.key} 
-              value={filters[col.key] || ""} 
+              value={filters[col.key] || "all"} 
               onValueChange={(value) => handleFilter(col.key, value)}
             >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder={`Filter ${col.label}`} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All {col.label}</SelectItem>
+                <SelectItem value="all">All {col.label}</SelectItem>
                 {Array.from(new Set(data.map(row => row[col.key])))
                   .filter(Boolean)
                   .map(value => (
