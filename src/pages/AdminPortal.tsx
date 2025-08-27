@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -40,8 +42,13 @@ import {
   Eye,
   X,
   ExternalLink,
-  UserPlus
+  UserPlus,
+  FileText,
+  Download,
+  Calendar as CalendarIcon
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function AdminPortal() {
   const { profile, signOut } = useAdminAuth();
@@ -106,6 +113,13 @@ export default function AdminPortal() {
     display_name: "",
     role: "full_admin" as "admin" | "full_admin" | "read_only_admin" | "report_admin",
   });
+
+  // Report generation state
+  const [reportType, setReportType] = useState("family_progress");
+  const [reportDateFrom, setReportDateFrom] = useState<Date>();
+  const [reportDateTo, setReportDateTo] = useState<Date>();
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportData, setReportData] = useState<any>(null);
 
   const [newABTest, setNewABTest] = useState({
     name: "",
@@ -365,6 +379,182 @@ export default function AdminPortal() {
     }
   };
 
+  const generateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      let data = {};
+      const fromDate = reportDateFrom ? reportDateFrom.toISOString() : null;
+      const toDate = reportDateTo ? reportDateTo.toISOString() : null;
+
+      switch (reportType) {
+        case "family_progress":
+          data = await generateFamilyProgressReport(fromDate, toDate);
+          break;
+        case "chore_completion":
+          data = await generateChoreCompletionReport(fromDate, toDate);
+          break;
+        case "user_activity":
+          data = await generateUserActivityReport(fromDate, toDate);
+          break;
+        case "system_overview":
+          data = await generateSystemOverviewReport();
+          break;
+        default:
+          data = {};
+      }
+      
+      setReportData(data);
+      toast({
+        title: "Report generated successfully",
+        description: `${reportType.replace('_', ' ')} report is ready`,
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const generateFamilyProgressReport = async (fromDate: string | null, toDate: string | null) => {
+    const { data: families } = await supabase
+      .from('families')
+      .select(`
+        *,
+        family_members!inner(
+          user_id,
+          profiles!inner(display_name, role)
+        )
+      `);
+
+    const { data: completedChores } = await supabase
+      .from('chores')
+      .select(`
+        *,
+        families!inner(name),
+        profiles!inner(display_name)
+      `)
+      .eq('status', 'completed')
+      .gte('completed_at', fromDate || '2000-01-01')
+      .lte('completed_at', toDate || '2099-12-31');
+
+    return {
+      totalFamilies: families?.length || 0,
+      completedChores: completedChores?.length || 0,
+      familyDetails: families?.map(family => ({
+        name: family.name,
+        memberCount: family.family_members?.length || 0,
+        completedChores: completedChores?.filter(chore => chore.family_id === family.id).length || 0
+      })) || []
+    };
+  };
+
+  const generateChoreCompletionReport = async (fromDate: string | null, toDate: string | null) => {
+    const { data: chores } = await supabase
+      .from('chores')
+      .select(`
+        *,
+        profiles!inner(display_name),
+        families!inner(name)
+      `)
+      .gte('created_at', fromDate || '2000-01-01')
+      .lte('created_at', toDate || '2099-12-31');
+
+    const completed = chores?.filter(chore => chore.status === 'completed').length || 0;
+    const pending = chores?.filter(chore => chore.status === 'pending').length || 0;
+    const total = chores?.length || 0;
+
+    return {
+      total,
+      completed,
+      pending,
+      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      choresByFamily: chores?.reduce((acc: any, chore) => {
+        const familyName = chore.families?.name || 'Unknown';
+        if (!acc[familyName]) {
+          acc[familyName] = { total: 0, completed: 0 };
+        }
+        acc[familyName].total++;
+        if (chore.status === 'completed') {
+          acc[familyName].completed++;
+        }
+        return acc;
+      }, {}) || {}
+    };
+  };
+
+  const generateUserActivityReport = async (fromDate: string | null, toDate: string | null) => {
+    const { data: progressLogs } = await supabase
+      .from('progress_logs')
+      .select(`
+        *,
+        profiles!inner(display_name, role),
+        families!inner(name)
+      `)
+      .gte('created_at', fromDate || '2000-01-01')
+      .lte('created_at', toDate || '2099-12-31');
+
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('*');
+
+    return {
+      totalUsers: users?.length || 0,
+      activeUsers: progressLogs?.length || 0,
+      activityByRole: users?.reduce((acc: any, user) => {
+        if (!acc[user.role]) acc[user.role] = 0;
+        acc[user.role]++;
+        return acc;
+      }, {}) || {},
+      recentActivity: progressLogs?.slice(0, 10) || []
+    };
+  };
+
+  const generateSystemOverviewReport = async () => {
+    const analytics = await getAnalytics();
+    
+    const { data: securityAlerts } = await supabase
+      .from('security_alerts')
+      .select('*')
+      .eq('resolved', false);
+
+    const { data: feedback } = await supabase
+      .from('user_feedback')
+      .select('*')
+      .eq('status', 'pending');
+
+    return {
+      ...analytics,
+      unresolvedAlerts: securityAlerts?.length || 0,
+      pendingFeedback: feedback?.length || 0,
+      systemHealth: 'Good' // This could be calculated based on various metrics
+    };
+  };
+
+  const exportReport = () => {
+    if (!reportData) return;
+
+    const reportContent = JSON.stringify(reportData, null, 2);
+    const blob = new Blob([reportContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportType}_report_${format(new Date(), 'yyyy-MM-dd')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report exported",
+      description: "Report has been downloaded to your device",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-admin-background flex items-center justify-center">
@@ -483,7 +673,7 @@ export default function AdminPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-10 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-11 bg-white shadow-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Admins
@@ -515,10 +705,12 @@ export default function AdminPortal() {
                 A/B Tests
               </TabsTrigger>
             )}
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
+            {canGenerateReports() && (
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Reports
+              </TabsTrigger>
+            )}
             {canModify() && (
               <TabsTrigger value="badges" className="flex items-center gap-2">
                 <Trophy className="h-4 w-4" />
@@ -528,6 +720,10 @@ export default function AdminPortal() {
             <TabsTrigger value="families" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Families
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </TabsTrigger>
             {canModify() && (
               <TabsTrigger value="affiliates" className="flex items-center gap-2">
@@ -924,6 +1120,277 @@ export default function AdminPortal() {
               </DialogContent>
             </Dialog>
           </TabsContent>
+
+          {/* Reports Tab */}
+          {canGenerateReports() && (
+            <TabsContent value="reports" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-admin-primary">Report Generation</h2>
+                <Badge className={
+                  ['admin', 'full_admin'].includes(profile?.role) ? 'bg-red-500 text-white' :
+                  profile?.role === 'report_admin' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
+                }>
+                  {profile?.role?.replace('_', ' ') || 'Unknown Role'}
+                </Badge>
+              </div>
+
+              {/* Report Configuration */}
+              <Card className="bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Generate Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="report-type">Report Type</Label>
+                      <Select value={reportType} onValueChange={setReportType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select report type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="family_progress">📊 Family Progress Report</SelectItem>
+                          <SelectItem value="chore_completion">✅ Chore Completion Report</SelectItem>
+                          <SelectItem value="user_activity">👥 User Activity Report</SelectItem>
+                          <SelectItem value="system_overview">🔍 System Overview Report</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Date From</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !reportDateFrom && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {reportDateFrom ? format(reportDateFrom, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={reportDateFrom}
+                            onSelect={setReportDateFrom}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div>
+                      <Label>Date To</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !reportDateTo && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {reportDateTo ? format(reportDateTo, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={reportDateTo}
+                            onSelect={setReportDateTo}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <Button 
+                      onClick={generateReport} 
+                      disabled={generatingReport}
+                      className="bg-admin-primary hover:bg-admin-primary/90"
+                    >
+                      {generatingReport ? (
+                        <>
+                          <Clock className="mr-2 h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Generate Report
+                        </>
+                      )}
+                    </Button>
+                    
+                    {reportData && (
+                      <Button variant="outline" onClick={exportReport}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Export Report
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Report Results */}
+              {reportData && (
+                <Card className="bg-white">
+                  <CardHeader>
+                    <CardTitle>Report Results</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {reportType === 'family_progress' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <p className="text-2xl font-bold text-blue-700">{reportData.totalFamilies}</p>
+                            <p className="text-blue-600">Total Families</p>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{reportData.completedChores}</p>
+                            <p className="text-green-600">Completed Chores</p>
+                          </div>
+                          <div className="text-center p-4 bg-purple-50 rounded-lg">
+                            <p className="text-2xl font-bold text-purple-700">
+                              {reportData.totalFamilies > 0 ? Math.round(reportData.completedChores / reportData.totalFamilies) : 0}
+                            </p>
+                            <p className="text-purple-600">Avg. Chores/Family</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-semibold mb-2">Family Details</h3>
+                          <div className="space-y-2">
+                            {reportData.familyDetails?.map((family: any, index: number) => (
+                              <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span>{family.name}</span>
+                                <div className="text-sm text-gray-600">
+                                  {family.memberCount} members • {family.completedChores} chores completed
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {reportType === 'chore_completion' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <p className="text-2xl font-bold text-blue-700">{reportData.total}</p>
+                            <p className="text-blue-600">Total Chores</p>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{reportData.completed}</p>
+                            <p className="text-green-600">Completed</p>
+                          </div>
+                          <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                            <p className="text-2xl font-bold text-yellow-700">{reportData.pending}</p>
+                            <p className="text-yellow-600">Pending</p>
+                          </div>
+                          <div className="text-center p-4 bg-purple-50 rounded-lg">
+                            <p className="text-2xl font-bold text-purple-700">{reportData.completionRate}%</p>
+                            <p className="text-purple-600">Completion Rate</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-semibold mb-2">Completion by Family</h3>
+                          <div className="space-y-2">
+                            {Object.entries(reportData.choresByFamily || {}).map(([familyName, data]: [string, any]) => (
+                              <div key={familyName} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span>{familyName}</span>
+                                <div className="text-sm text-gray-600">
+                                  {data.completed}/{data.total} ({Math.round((data.completed / data.total) * 100)}%)
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {reportType === 'user_activity' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <p className="text-2xl font-bold text-blue-700">{reportData.totalUsers}</p>
+                            <p className="text-blue-600">Total Users</p>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{reportData.activeUsers}</p>
+                            <p className="text-green-600">Active Users</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-semibold mb-2">Users by Role</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            {Object.entries(reportData.activityByRole || {}).map(([role, count]: [string, any]) => (
+                              <div key={role} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span className="capitalize">{role.replace('_', ' ')}</span>
+                                <Badge variant="outline">{count}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {reportType === 'system_overview' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <p className="text-2xl font-bold text-blue-700">{reportData.totalUsers}</p>
+                            <p className="text-blue-600">Total Users</p>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{reportData.totalFamilies}</p>
+                            <p className="text-green-600">Active Families</p>
+                          </div>
+                          <div className="text-center p-4 bg-purple-50 rounded-lg">
+                            <p className="text-2xl font-bold text-purple-700">{reportData.totalChores}</p>
+                            <p className="text-purple-600">Total Chores</p>
+                          </div>
+                          <div className="text-center p-4 bg-orange-50 rounded-lg">
+                            <p className="text-2xl font-bold text-orange-700">{reportData.completionRate}%</p>
+                            <p className="text-orange-600">Completion Rate</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="text-center p-4 bg-red-50 rounded-lg">
+                            <p className="text-2xl font-bold text-red-700">{reportData.unresolvedAlerts}</p>
+                            <p className="text-red-600">Security Alerts</p>
+                          </div>
+                          <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                            <p className="text-2xl font-bold text-yellow-700">{reportData.pendingFeedback}</p>
+                            <p className="text-yellow-600">Pending Feedback</p>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <p className="text-2xl font-bold text-green-700">{reportData.systemHealth}</p>
+                            <p className="text-green-600">System Health</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           {/* Analytics */}
           <TabsContent value="analytics" className="space-y-6">
