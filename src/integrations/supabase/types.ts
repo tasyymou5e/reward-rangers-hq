@@ -1066,7 +1066,13 @@ export type Database = {
     Enums: {
       chore_status: "pending" | "in_progress" | "completed" | "overdue"
       reward_status: "available" | "redeemed" | "pending_approval"
-      user_role: "kid" | "parent" | "admin"
+      user_role:
+        | "kid"
+        | "parent"
+        | "admin"
+        | "full_admin"
+        | "read_only_admin"
+        | "report_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1196,7 +1202,14 @@ export const Constants = {
     Enums: {
       chore_status: ["pending", "in_progress", "completed", "overdue"],
       reward_status: ["available", "redeemed", "pending_approval"],
-      user_role: ["kid", "parent", "admin"],
+      user_role: [
+        "kid",
+        "parent",
+        "admin",
+        "full_admin",
+        "read_only_admin",
+        "report_admin",
+      ],
     },
   },
 } as const
