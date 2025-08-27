@@ -7,6 +7,7 @@ interface Affiliate {
   name: string;
   logo_url?: string;
   base_url: string;
+  custom_url?: string;
   is_active: boolean;
 }
 
@@ -20,7 +21,7 @@ export function useAffiliates() {
       setLoading(true);
       let query = supabase
         .from('approved_affiliates')
-        .select('id, name, logo_url, base_url, is_active, api_key_name, created_at, updated_at')
+        .select('id, name, logo_url, base_url, custom_url, is_active, api_key_name, created_at, updated_at')
         .order('name');
       
       // For regular users, only show active affiliates

@@ -71,7 +71,7 @@ export function AffiliateDisplay({
             <div
               key={affiliate.id}
               className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => window.open(affiliate.base_url, '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(affiliate.custom_url || affiliate.base_url, '_blank', 'noopener,noreferrer')}
             >
               <div className="flex items-center gap-3">
                 {affiliate.logo_url ? (

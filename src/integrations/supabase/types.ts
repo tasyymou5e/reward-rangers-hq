@@ -93,6 +93,7 @@ export type Database = {
           api_key_name: string | null
           base_url: string
           created_at: string
+          custom_url: string | null
           id: string
           is_active: boolean
           logo_url: string | null
@@ -103,6 +104,7 @@ export type Database = {
           api_key_name?: string | null
           base_url: string
           created_at?: string
+          custom_url?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           api_key_name?: string | null
           base_url?: string
           created_at?: string
+          custom_url?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null

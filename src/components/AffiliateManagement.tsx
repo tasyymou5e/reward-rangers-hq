@@ -17,6 +17,7 @@ interface Affiliate {
   name: string;
   logo_url?: string;
   base_url: string;
+  custom_url?: string;
   api_key_name?: string;
   is_active: boolean;
   created_at: string;
@@ -34,6 +35,7 @@ export function AffiliateManagement() {
     name: '',
     logo_url: '',
     base_url: '',
+    custom_url: '',
     api_key_name: '',
     is_active: true,
   });
@@ -84,6 +86,7 @@ export function AffiliateManagement() {
             name: formData.name.trim(),
             logo_url: formData.logo_url.trim() || null,
             base_url: formData.base_url.trim(),
+            custom_url: formData.custom_url.trim() || null,
             api_key_name: formData.api_key_name.trim() || null,
             is_active: formData.is_active,
             updated_at: new Date().toISOString(),
@@ -103,6 +106,7 @@ export function AffiliateManagement() {
             name: formData.name.trim(),
             logo_url: formData.logo_url.trim() || null,
             base_url: formData.base_url.trim(),
+            custom_url: formData.custom_url.trim() || null,
             api_key_name: formData.api_key_name.trim() || null,
             is_active: formData.is_active,
           });
@@ -134,6 +138,7 @@ export function AffiliateManagement() {
       name: affiliate.name,
       logo_url: affiliate.logo_url || '',
       base_url: affiliate.base_url,
+      custom_url: affiliate.custom_url || '',
       api_key_name: affiliate.api_key_name || '',
       is_active: affiliate.is_active,
     });
@@ -198,6 +203,7 @@ export function AffiliateManagement() {
       name: '',
       logo_url: '',
       base_url: '',
+      custom_url: '',
       api_key_name: '',
       is_active: true,
     });
@@ -252,36 +258,48 @@ export function AffiliateManagement() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="base_url">Base URL *</Label>
-                  <Input
-                    id="base_url"
-                    value={formData.base_url}
-                    onChange={(e) => setFormData({ ...formData, base_url: e.target.value })}
-                    placeholder="https://example.com"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="logo_url">Logo URL</Label>
-                  <Input
-                    id="logo_url"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                    placeholder="https://example.com/logo.png"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="api_key_name">API Key Name</Label>
-                  <Input
-                    id="api_key_name"
-                    value={formData.api_key_name}
-                    onChange={(e) => setFormData({ ...formData, api_key_name: e.target.value })}
-                    placeholder="AFFILIATE_API_KEY"
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="base_url">Base URL *</Label>
+                   <Input
+                     id="base_url"
+                     value={formData.base_url}
+                     onChange={(e) => setFormData({ ...formData, base_url: e.target.value })}
+                     placeholder="https://example.com"
+                     required
+                   />
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="custom_url">Custom Portal URL</Label>
+                   <Input
+                     id="custom_url"
+                     value={formData.custom_url}
+                     onChange={(e) => setFormData({ ...formData, custom_url: e.target.value })}
+                     placeholder="https://portal.example.com (optional)"
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="api_key_name">API Key Name</Label>
+                   <Input
+                     id="api_key_name"
+                     value={formData.api_key_name}
+                     onChange={(e) => setFormData({ ...formData, api_key_name: e.target.value })}
+                     placeholder="AFFILIATE_API_KEY"
+                   />
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="logo_url">Logo URL</Label>
+                   <Input
+                     id="logo_url"
+                     value={formData.logo_url}
+                     onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                     placeholder="https://example.com/logo.png"
+                   />
+                 </div>
+                 <div></div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch
@@ -326,31 +344,47 @@ export function AffiliateManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Base URL</TableHead>
-                  <TableHead>Logo</TableHead>
-                  <TableHead>API Key</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Base URL</TableHead>
+                <TableHead>Portal URL</TableHead>
+                <TableHead>Logo</TableHead>
+                <TableHead>API Key</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {affiliates.map((affiliate) => (
                   <TableRow key={affiliate.id}>
                     <TableCell className="font-medium">{affiliate.name}</TableCell>
-                    <TableCell>
-                      <a
-                        href={affiliate.base_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline flex items-center gap-1"
-                      >
-                        {affiliate.base_url}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </TableCell>
-                    <TableCell>
+                     <TableCell>
+                       <a
+                         href={affiliate.base_url}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="text-blue-600 hover:underline flex items-center gap-1"
+                       >
+                         {affiliate.base_url}
+                         <ExternalLink className="h-3 w-3" />
+                       </a>
+                     </TableCell>
+                     <TableCell>
+                       {affiliate.custom_url ? (
+                         <a
+                           href={affiliate.custom_url}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="text-blue-600 hover:underline flex items-center gap-1"
+                         >
+                           {affiliate.custom_url}
+                           <ExternalLink className="h-3 w-3" />
+                         </a>
+                       ) : (
+                         <span className="text-muted-foreground text-sm">Uses base URL</span>
+                       )}
+                     </TableCell>
+                     <TableCell>
                       {affiliate.logo_url ? (
                         <img
                           src={affiliate.logo_url}
