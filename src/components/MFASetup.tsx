@@ -35,7 +35,10 @@ export function MFASetup() {
         setBackupCodes([]);
       }
     } catch (error) {
-      console.error('Error fetching MFA status:', error);
+      // Use secure logging in production
+      if (import.meta.env.DEV) {
+        console.error('Error fetching MFA status:', error);
+      }
     }
   };
 
@@ -47,7 +50,9 @@ export function MFASetup() {
       if (error) throw error;
       setBackupCodes(data || []);
     } catch (error) {
-      console.error('Error fetching backup codes:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching backup codes:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load backup codes. Please try again.",
@@ -59,7 +64,13 @@ export function MFASetup() {
   const generateBackupCodes = () => {
     const codes = [];
     for (let i = 0; i < 10; i++) {
-      codes.push(Math.random().toString(36).substring(2, 10).toUpperCase());
+      // Use cryptographically secure random generation
+      const randomBytes = new Uint8Array(8);
+      crypto.getRandomValues(randomBytes);
+      const code = Array.from(randomBytes, byte => 
+        byte.toString(16).padStart(2, '0')
+      ).join('').substring(0, 8).toUpperCase();
+      codes.push(code);
     }
     return codes;
   };
@@ -70,7 +81,12 @@ export function MFASetup() {
     try {
       setLoading(true);
       const newBackupCodes = generateBackupCodes();
-      const totpSecret = 'totp_secret_' + Date.now() + '_' + Math.random().toString(36);
+      // Generate cryptographically secure TOTP secret
+      const secretBytes = new Uint8Array(32);
+      crypto.getRandomValues(secretBytes);
+      const totpSecret = Array.from(secretBytes, byte => 
+        byte.toString(16).padStart(2, '0')
+      ).join('');
       
       // Use secure function for MFA management
       const { error } = await supabase
@@ -91,7 +107,9 @@ export function MFASetup() {
         description: "Multi-factor authentication has been enabled. Save your backup codes!",
       });
     } catch (error) {
-      console.error('Error enabling MFA:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error enabling MFA:', error);
+      }
       
       // Log failed attempt with rate limiting
       if (user) {
@@ -141,7 +159,9 @@ export function MFASetup() {
         description: "Multi-factor authentication has been disabled.",
       });
     } catch (error) {
-      console.error('Error disabling MFA:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error disabling MFA:', error);
+      }
       
       // Log failed attempt
       if (user) {
@@ -177,7 +197,9 @@ export function MFASetup() {
         description: "Backup code copied to clipboard.",
       });
     } catch (error) {
-      console.error('Failed to copy:', error);
+      if (import.meta.env.DEV) {
+        console.error('Failed to copy:', error);
+      }
     }
   };
 
