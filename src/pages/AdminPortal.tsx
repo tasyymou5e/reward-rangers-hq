@@ -21,6 +21,7 @@ import { useABTesting } from "@/hooks/useABTesting";
 import { supabase } from "@/integrations/supabase/client";
 import { UserManagementTab } from "@/components/UserManagementTab";
 import { AffiliateManagement } from "@/components/AffiliateManagement";
+import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
 import { 
   Users, 
   Shield, 
@@ -1394,60 +1395,7 @@ export default function AdminPortal() {
 
           {/* Analytics */}
           <TabsContent value="analytics" className="space-y-6">
-            <h2 className="text-2xl font-bold text-admin-primary">System Analytics</h2>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="bg-white">
-                <CardHeader>
-                  <CardTitle>Usage Statistics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span>Total Chores Created:</span>
-                    <span className="font-bold">{analytics.totalChores}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Chores Completed:</span>
-                    <span className="font-bold">{analytics.completedChores}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Completion Rate:</span>
-                    <span className="font-bold">{analytics.completionRate}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Active Families:</span>
-                    <span className="font-bold">{analytics.totalFamilies}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {progressLogs.slice(0, 5).map((log, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <div className="flex-1">
-                          <div className="text-sm">
-                            <span className="font-medium">{log.profiles?.display_name}</span>
-                            {" "}
-                            <span className="text-muted-foreground">{log.action}</span>
-                            {" "}
-                            <span className="font-medium">{log.chores?.title}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(log.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <AnalyticsDashboard />
           </TabsContent>
 
           {/* Badges Management */}
