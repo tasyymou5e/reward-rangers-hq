@@ -32,6 +32,7 @@ export function useAdmin() {
           *,
           profiles!parent_id (display_name, email),
           family_members (
+            user_id,
             profiles (display_name, role)
           )
         `)
