@@ -1,6 +1,6 @@
 # ChoreQuest - Comprehensive Knowledge Document
 
-**Last Updated:** December 2024  
+**Last Updated:** August 2025  
 **Project Type:** Gamified Family Chore Management System  
 **Technology Stack:** React + TypeScript + Supabase + Tailwind CSS
 
@@ -424,7 +424,31 @@ All colors use HSL format and CSS custom properties:
 
 ---
 
-## Recent Security Updates
+## Recent Updates & Improvements
+
+### Admin Portal Enhancements (August 2025)
+
+1. **Enhanced User Management Interface**
+   - **Admin User Protection**: Admin users are now hidden from the "Manage Users" table to prevent accidental deletion
+   - **User Deletion Validation**: Added `canDeleteUser()` function that prevents deletion of admin users with clear UI feedback
+   - **Family Information Display**: Added new columns showing which family each user belongs to and their role (Parent/Child)
+   - **Improved User Experience**: Disabled delete buttons show helpful tooltips for non-deletable users
+
+2. **Family Management Improvements**
+   - **Detailed Member Display**: Family management now shows individual family member names instead of just counts
+   - **Role Identification**: Clear labeling of Parent vs Child roles for each family member
+   - **Enhanced Data Fetching**: Fixed family member queries to include `user_id` for proper user-family relationship mapping
+   - **Better Visual Layout**: Each family member displayed on separate lines with clear hierarchy
+
+3. **RLS Policy Updates**
+   - **Admin Deletion Rights**: Updated RLS policies to ensure admins can delete families and related records
+   - **Enhanced Security**: Added proper admin override policies for family management operations
+   - **Cascade Deletion Support**: Improved policies to support proper cascading deletion of family data
+
+4. **Data Integrity Improvements**
+   - **Family Member Mapping**: Fixed `getUserFamilyInfo()` function to properly match users with their families
+   - **Real-time Updates**: Improved UI refresh mechanisms after deletion operations
+   - **Error Handling**: Better error messages and user feedback for failed operations
 
 ### Database Security Enhancements (December 2024)
 
@@ -479,16 +503,27 @@ RETURNS TABLE(function_name text, security_level text, recommendation text)
 ### User Management
 The admin portal provides comprehensive user and family management capabilities:
 
-#### Individual User Management
-- **Create Users**: Admin can create individual users with specific roles (admin, parent, kid)
-- **Delete Users**: Single user deletion with confirmation dialogs
-- **User Overview**: Table view of all users with role information
-- **Role Management**: Assign appropriate roles during user creation
+#### Enhanced User Management Interface (Latest Updates)
+- **Admin Protection**: Admin users are automatically filtered out from the management interface to prevent accidental deletion
+- **Family Relationship Display**: New columns show:
+  - Which family each user belongs to
+  - Whether the user is a Parent or Child in that family
+- **Smart Deletion Controls**: 
+  - Admin users show disabled delete buttons with explanatory tooltips
+  - Clear validation prevents unauthorized deletion attempts
+- **Enhanced Data Mapping**: Improved `getUserFamilyInfo()` function correctly matches users to families
+
+#### Enhanced Family Management Interface (Latest Updates)
+- **Detailed Member Listing**: Instead of member counts, shows actual names of all family members
+- **Clear Role Identification**: Each family member clearly labeled as (Parent) or (Child)
+- **Hierarchical Display**: Parent listed first, followed by children, each on separate lines
+- **Visual Improvements**: Better spacing and typography for improved readability
+- **Data Integrity**: Fixed family member queries to include proper user ID mapping
 
 #### Family Management
 - **Create Test Families**: Complete family setup with parent and multiple children
 - **Delete Families**: Remove entire families including all members and associated data
-- **Family Overview**: Table view showing family names and member counts
+- **Family Overview**: Table view showing family names and detailed member information
 - **Bulk Operations**: Family deletion removes all associated users and data
 
 #### Security Features
