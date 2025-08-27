@@ -170,14 +170,22 @@ export function UserManagementTab() {
       await deleteFamily(familyId);
       
       console.log('Family deletion completed, refreshing data...');
-      // Force a fresh fetch of all data
+      // Force a fresh fetch of all data and clear existing state first
       setLoading(true);
+      setFamilies([]); // Clear current families to force re-render
+      setUsers([]); // Clear current users to force re-render
+      
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
       ]);
       
-      console.log('Fetched fresh data:', { usersCount: usersData.length, familiesCount: familiesData.length });
+      console.log('Fetched fresh data after family deletion:', { 
+        usersCount: usersData.length, 
+        familiesCount: familiesData.length,
+        deletedFamilyId: familyId 
+      });
+      
       setUsers(usersData);
       setFamilies(familiesData);
       setLoading(false);
