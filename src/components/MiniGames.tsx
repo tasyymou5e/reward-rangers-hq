@@ -42,7 +42,7 @@ export function MiniGames({ isOpen, onClose, onComplete, choreTitle }: MiniGames
   const emojis = ['🎈', '🌟', '🎁', '🚀', '🦄', '🌈', '🎨', '🎪'];
 
   useEffect(() => {
-    if (isOpen && !selectedGame) {
+    if (isOpen) {
       resetGames();
     }
   }, [isOpen]);
