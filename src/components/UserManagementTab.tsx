@@ -27,7 +27,7 @@ export function UserManagementTab() {
     email: "",
     password: "",
     display_name: "",
-    role: "parent" as "admin" | "parent" | "kid",
+    role: "parent" as "admin" | "full_admin" | "read_only_admin" | "report_admin" | "parent" | "kid",
   });
   
   const [newFamily, setNewFamily] = useState({
@@ -132,8 +132,8 @@ export function UserManagementTab() {
   };
 
   const canDeleteUser = (user: any) => {
-    // Don't allow deletion of admin users
-    if (user.role === 'admin') {
+    // Don't allow deletion of any admin users
+    if (['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)) {
       return { canDelete: false, reason: "Admin users cannot be deleted" };
     }
     // Additional validation can be added here
@@ -290,16 +290,19 @@ export function UserManagementTab() {
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select value={newUser.role} onValueChange={(value: "admin" | "parent" | "kid") => setNewUser(prev => ({ ...prev, role: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="parent">Parent</SelectItem>
-                        <SelectItem value="kid">Kid</SelectItem>
-                      </SelectContent>
-                    </Select>
+                     <Select value={newUser.role} onValueChange={(value: "admin" | "full_admin" | "read_only_admin" | "report_admin" | "parent" | "kid") => setNewUser(prev => ({ ...prev, role: value }))}>
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="admin">Legacy Admin (Full Access)</SelectItem>
+                         <SelectItem value="full_admin">Full Admin</SelectItem>
+                         <SelectItem value="read_only_admin">Read Only Admin</SelectItem>
+                         <SelectItem value="report_admin">Report Generation Admin</SelectItem>
+                         <SelectItem value="parent">Parent</SelectItem>
+                         <SelectItem value="kid">Kid</SelectItem>
+                       </SelectContent>
+                     </Select>
                   </div>
                 </div>
                 <DialogFooter>
@@ -495,7 +498,7 @@ export function UserManagementTab() {
                    </TableRow>
                  </TableHeader>
                  <TableBody>
-                   {users.filter(user => user.role !== 'admin').map((user) => {
+                   {users.filter(user => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)).map((user) => {
                      const familyInfo = getUserFamilyInfo(user);
                      const deleteValidation = canDeleteUser(user);
                      
@@ -545,7 +548,7 @@ export function UserManagementTab() {
                        </TableRow>
                      );
                    })}
-                   {users.filter(user => user.role !== 'admin').length === 0 && (
+                   {users.filter(user => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)).length === 0 && (
                      <TableRow>
                        <TableCell colSpan={5} className="text-center text-muted-foreground">
                          No non-admin users found
@@ -649,20 +652,29 @@ export function UserManagementTab() {
            <CardTitle>User Management Instructions</CardTitle>
          </CardHeader>
          <CardContent>
-           <div className="space-y-3 text-sm">
-             <div>
-               <strong>Admin Users:</strong> Full access to admin portal, can manage all users and families.
-             </div>
-             <div>
-               <strong>Parent Users:</strong> Can create families, manage children, assign chores, and approve rewards.
-             </div>
-             <div>
-               <strong>Kid Users:</strong> Can view and complete assigned chores, track progress, and request rewards.
-             </div>
-             <div>
-               <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
-             </div>
-           </div>
+            <div className="space-y-3 text-sm">
+              <div>
+                <strong>Legacy Admin:</strong> Full access to admin portal with all permissions (legacy role).
+              </div>
+              <div>
+                <strong>Full Admin:</strong> Complete administrative access - can manage users, families, and all settings.
+              </div>
+              <div>
+                <strong>Read Only Admin:</strong> Can view all data and reports but cannot make changes to users or families.
+              </div>
+              <div>
+                <strong>Report Admin:</strong> Can generate and view reports, limited modification capabilities.
+              </div>
+              <div>
+                <strong>Parent Users:</strong> Can create families, manage children, assign chores, and approve rewards.
+              </div>
+              <div>
+                <strong>Kid Users:</strong> Can view and complete assigned chores, track progress, and request rewards.
+              </div>
+              <div>
+                <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
+              </div>
+            </div>
          </CardContent>
        </Card>
      </div>

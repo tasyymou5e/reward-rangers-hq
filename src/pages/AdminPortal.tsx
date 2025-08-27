@@ -511,7 +511,7 @@ export default function AdminPortal() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.filter(user => user.role === 'admin').map((user) => (
+                    {filteredUsers.filter(user => ['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)).map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div>
@@ -519,15 +519,17 @@ export default function AdminPortal() {
                             <div className="text-sm text-muted-foreground">{user.email}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge className={
-                            user.role === 'admin' ? 'bg-red-500 text-white' :
-                            user.role === 'parent' ? 'bg-blue-500 text-white' :
-                            'bg-green-500 text-white'
-                          }>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
+                         <TableCell>
+                           <Badge className={
+                             ['admin', 'full_admin'].includes(user.role) ? 'bg-red-500 text-white' :
+                             user.role === 'read_only_admin' ? 'bg-blue-500 text-white' :
+                             user.role === 'report_admin' ? 'bg-purple-500 text-white' :
+                             user.role === 'parent' ? 'bg-green-500 text-white' :
+                             'bg-gray-500 text-white'
+                           }>
+                             {user.role.replace('_', ' ')}
+                           </Badge>
+                         </TableCell>
                         <TableCell>{user.points || 0}</TableCell>
                         <TableCell>{user.level || 1}</TableCell>
                         <TableCell>

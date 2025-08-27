@@ -940,6 +940,10 @@ export type Database = {
           security_level: string
         }[]
       }
+      can_generate_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       can_manage_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: boolean

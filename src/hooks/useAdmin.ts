@@ -174,7 +174,7 @@ export function useAdmin() {
     email: string;
     password: string;
     display_name: string;
-    role: 'admin' | 'parent' | 'kid';
+    role: 'admin' | 'full_admin' | 'read_only_admin' | 'report_admin' | 'parent' | 'kid';
   }) => {
     try {
       // Get the current session for authorization
