@@ -230,12 +230,30 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Sign out process completed successfully');
       
-      // Force navigation to admin auth page
-      console.log('Forcing navigation to admin auth');
-      setTimeout(() => {
-        window.location.hash = '#/admin/auth';
-        window.location.reload();
-      }, 100);
+      // Safe navigation that avoids security errors
+      console.log('Safely navigating to admin auth');
+      try {
+        // Use a more secure approach to navigation
+        if (typeof window !== 'undefined' && window.location) {
+          // Clear any stored auth data first
+          try {
+            localStorage.removeItem('sb-rdvkwnoeojjvjuknlsjd-auth-token');
+          } catch (storageError) {
+            console.log('Could not clear localStorage, proceeding anyway');
+          }
+          
+          // Navigate using hash router
+          window.location.replace('#/admin/auth');
+        }
+      } catch (navError) {
+        console.error('Navigation error:', navError);
+        // Fallback: force page reload to clear state
+        try {
+          window.location.reload();
+        } catch (reloadError) {
+          console.error('Could not reload page:', reloadError);
+        }
+      }
       
     } catch (error) {
       console.error('Sign out error:', error);
