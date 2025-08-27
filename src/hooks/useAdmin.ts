@@ -238,6 +238,59 @@ export function useAdmin() {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    try {
+      // Delete from auth.users - this will cascade to profiles and related data
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  };
+
+  const deleteFamily = async (familyId: string) => {
+    try {
+      // Get all family members first
+      const { data: familyMembers, error: membersError } = await supabase
+        .from('family_members')
+        .select('user_id')
+        .eq('family_id', familyId);
+      
+      if (membersError) throw membersError;
+
+      // Get family parent
+      const { data: family, error: familyError } = await supabase
+        .from('families')
+        .select('parent_id')
+        .eq('id', familyId)
+        .single();
+      
+      if (familyError) throw familyError;
+
+      // Delete all family member users from auth
+      const userIds = [...(familyMembers?.map(m => m.user_id) || []), family.parent_id].filter(Boolean);
+      
+      for (const userId of userIds) {
+        const { error } = await supabase.auth.admin.deleteUser(userId);
+        if (error) {
+          console.error(`Error deleting user ${userId}:`, error);
+        }
+      }
+
+      // Delete family record (other related data should cascade)
+      const { error: deleteFamilyError } = await supabase
+        .from('families')
+        .delete()
+        .eq('id', familyId);
+
+      if (deleteFamilyError) throw deleteFamilyError;
+    } catch (error) {
+      console.error('Error deleting family:', error);
+      throw error;
+    }
+  };
+
   const getAnalytics = async () => {
     try {
       // Fetch various analytics data
@@ -279,6 +332,8 @@ export function useAdmin() {
     banUser,
     createUser,
     createTestFamily,
+    deleteUser,
+    deleteFamily,
     getAnalytics,
     loading,
   };

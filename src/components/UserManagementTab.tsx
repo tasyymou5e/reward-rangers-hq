@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,15 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
-import { UserPlus, Users, Trash2 } from "lucide-react";
+import { UserPlus, Users, Trash2, UserMinus, UsersIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export function UserManagementTab() {
-  const { createUser, createTestFamily } = useAdmin();
+  const { createUser, createTestFamily, deleteUser, deleteFamily, fetchAllUsers, fetchAllFamilies } = useAdmin();
   const { toast } = useToast();
   
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [families, setFamilies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [newUser, setNewUser] = useState({
     email: "",
@@ -37,11 +42,32 @@ export function UserManagementTab() {
     }>,
   });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [usersData, familiesData] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllFamilies()
+      ]);
+      setUsers(usersData);
+      setFamilies(familiesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateUser = async () => {
     try {
       await createUser(newUser);
       setShowUserDialog(false);
       setNewUser({ email: "", password: "", display_name: "", role: "parent" });
+      await loadData(); // Refresh data
       toast({
         title: "Success",
         description: `${newUser.role} user created successfully`,
@@ -66,6 +92,7 @@ export function UserManagementTab() {
         parentName: "",
         children: [{ name: "", email: "", password: "" }],
       });
+      await loadData(); // Refresh data
       toast({
         title: "Success",
         description: `Test family created successfully with family code: ${result.family.family_code}`,
@@ -100,6 +127,40 @@ export function UserManagementTab() {
         i === index ? { ...child, [field]: value } : child
       )
     }));
+  };
+
+  const handleDeleteUser = async (userId: string, displayName: string) => {
+    try {
+      await deleteUser(userId);
+      await loadData(); // Refresh data
+      toast({
+        title: "Success",
+        description: `User ${displayName} deleted successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteFamily = async (familyId: string, familyName: string) => {
+    try {
+      await deleteFamily(familyId);
+      await loadData(); // Refresh data
+      toast({
+        title: "Success",
+        description: `Family ${familyName} and all members deleted successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete family",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -339,6 +400,143 @@ export function UserManagementTab() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* User and Family Management */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Existing Users */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserMinus className="h-5 w-5" />
+              Manage Users
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p className="text-center text-muted-foreground">Loading users...</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.display_name}</TableCell>
+                      <TableCell className="capitalize">{user.role}</TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {user.display_name}? This action cannot be undone and will remove all associated data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteUser(user.id, user.display_name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete User
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                        No users found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Existing Families */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="h-5 w-5" />
+              Manage Families
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p className="text-center text-muted-foreground">Loading families...</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Family Name</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {families.map((family) => (
+                    <TableRow key={family.id}>
+                      <TableCell>{family.name}</TableCell>
+                      <TableCell>
+                        {1 + (family.family_members?.length || 0)} members
+                      </TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Family</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the family "{family.name}"? This will permanently delete all family members, chores, and associated data. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteFamily(family.id, family.name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Family
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {families.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground">
+                        No families found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
