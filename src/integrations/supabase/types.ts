@@ -1120,6 +1120,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_any_admin_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_family_member: {
         Args: { family_id_param: string; user_id_param?: string }
         Returns: boolean
