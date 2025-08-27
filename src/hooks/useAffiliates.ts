@@ -15,14 +15,20 @@ export function useAffiliates() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchAffiliates = async () => {
+  const fetchAffiliates = async (adminView = false) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('approved_affiliates')
-        .select('id, name, logo_url, base_url, is_active')
-        .eq('is_active', true)
+        .select('id, name, logo_url, base_url, is_active, api_key_name, created_at, updated_at')
         .order('name');
+      
+      // For regular users, only show active affiliates
+      if (!adminView) {
+        query = query.eq('is_active', true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setAffiliates(data || []);
@@ -46,5 +52,6 @@ export function useAffiliates() {
     affiliates,
     loading,
     refetchAffiliates: fetchAffiliates,
+    fetchAffiliates,
   };
 }

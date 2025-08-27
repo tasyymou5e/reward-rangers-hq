@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus, ExternalLink } from "lucide-react";
 import { WishlistCard } from "@/components/WishlistCard";
 import { ChoreAssignmentForm } from "@/components/ChoreAssignmentForm";
 import { AddChildForm } from "@/components/AddChildForm";
@@ -16,6 +16,7 @@ import { MFASetup } from "@/components/MFASetup";
 import { FamilyChat } from "@/components/FamilyChat";
 import { PredictiveInsights } from "@/components/PredictiveInsights";
 import { useReportGeneration } from "@/hooks/useReportGeneration";
+import { AffiliateDisplay } from "@/components/AffiliateDisplay";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ParentsPortal() {
@@ -285,7 +286,7 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue="chores" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="children">
               <UserPlus className="h-4 w-4 mr-1" />
               Children
@@ -310,6 +311,10 @@ export default function ParentsPortal() {
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileDown className="h-4 w-4" />
               Reports
+            </TabsTrigger>
+            <TabsTrigger value="shopping" className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Shopping
             </TabsTrigger>
           </TabsList>
 
@@ -504,6 +509,13 @@ export default function ParentsPortal() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="shopping">
+            <AffiliateDisplay 
+              title="Partner Stores" 
+              description="Discover trusted retail partners where your family can shop for rewards"
+            />
           </TabsContent>
         </Tabs>
       </div>

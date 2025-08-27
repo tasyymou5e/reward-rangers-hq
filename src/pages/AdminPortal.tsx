@@ -29,7 +29,8 @@ import {
   TestTube,
   Settings,
   Eye,
-  X
+  X,
+  ExternalLink
 } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -38,6 +39,7 @@ import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
 import { useABTesting } from "@/hooks/useABTesting";
 import { supabase } from "@/integrations/supabase/client";
 import { UserManagementTab } from "@/components/UserManagementTab";
+import { AffiliateManagement } from "@/components/AffiliateManagement";
 
 export default function AdminPortal() {
   const { profile, signOut } = useAdminAuth();
@@ -422,7 +424,7 @@ export default function AdminPortal() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 bg-white shadow-md">
+          <TabsList className="grid w-full grid-cols-10 bg-white shadow-md">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Users
@@ -459,6 +461,10 @@ export default function AdminPortal() {
             <TabsTrigger value="families" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Families
+            </TabsTrigger>
+            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Affiliates
             </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
@@ -1032,6 +1038,11 @@ export default function AdminPortal() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Affiliates Management */}
+          <TabsContent value="affiliates" className="space-y-6">
+            <AffiliateManagement />
           </TabsContent>
 
           {/* Activity Logs */}

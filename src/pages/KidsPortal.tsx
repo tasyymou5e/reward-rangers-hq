@@ -20,6 +20,7 @@ import { ChoreTimer } from "@/components/ChoreTimer";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { MiniGames } from "@/components/MiniGames";
 import { MotivationJournal } from "@/components/MotivationJournal";
+import { AffiliateDisplay } from "@/components/AffiliateDisplay";
 
 export default function KidsPortal() {
   const { user, profile } = useAuth();
@@ -576,6 +577,12 @@ export default function KidsPortal() {
                 </Card>
               ))}
             </div>
+            
+            {/* Affiliate Partners */}
+            <AffiliateDisplay 
+              title="🛍️ Cool Stores" 
+              description="Check out these awesome stores where you can spend your points!"
+            />
           </TabsContent>
 
           <TabsContent value="badges" className="space-y-6">
