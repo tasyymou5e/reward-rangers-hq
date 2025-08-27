@@ -1093,6 +1093,21 @@ export type Database = {
           username: string
         }[]
       }
+      get_safe_profiles_limited: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          id: string
+          last_activity: string
+          level: number
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          streak_days: number
+          username: string
+        }[]
+      }
       get_user_family_ids: {
         Args: { user_id_param?: string }
         Returns: string[]
