@@ -578,77 +578,93 @@ export function UserManagementTab() {
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {families.map((family) => (
-                    <TableRow key={family.id}>
-                      <TableCell>{family.name}</TableCell>
-                      <TableCell>
-                        {1 + (family.family_members?.length || 0)} members
-                      </TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Family</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete the family "{family.name}"? This will permanently delete all family members, chores, and associated data. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteFamily(family.id, family.name)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Family
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {families.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
-                        No families found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                 <TableBody>
+                   {families.map((family) => (
+                     <TableRow key={family.id}>
+                       <TableCell>{family.name}</TableCell>
+                       <TableCell>
+                         <div className="space-y-1">
+                           {/* Parent */}
+                           <div className="text-sm">
+                             <span className="font-medium">{family.profiles?.display_name}</span>
+                             <span className="text-muted-foreground ml-1">(Parent)</span>
+                           </div>
+                           {/* Children */}
+                           {family.family_members?.map((member: any, index: number) => (
+                             <div key={index} className="text-sm">
+                               <span className="font-medium">{member.profiles?.display_name}</span>
+                               <span className="text-muted-foreground ml-1">(Child)</span>
+                             </div>
+                           ))}
+                           {(!family.family_members || family.family_members.length === 0) && (
+                             <div className="text-sm text-muted-foreground">No children</div>
+                           )}
+                         </div>
+                       </TableCell>
+                       <TableCell>
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button variant="ghost" size="sm">
+                               <Trash2 className="h-4 w-4 text-destructive" />
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Delete Family</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 Are you sure you want to delete the family "{family.name}"? This will permanently delete all family members, chores, and associated data. This action cannot be undone.
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction 
+                                 onClick={() => handleDeleteFamily(family.id, family.name)}
+                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                               >
+                                 Delete Family
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                   {families.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={3} className="text-center text-muted-foreground">
+                         No families found
+                       </TableCell>
+                     </TableRow>
+                   )}
+                 </TableBody>
+               </Table>
+             )}
+           </CardContent>
+         </Card>
+       </div>
 
-      {/* Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>User Management Instructions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <div>
-              <strong>Admin Users:</strong> Full access to admin portal, can manage all users and families.
-            </div>
-            <div>
-              <strong>Parent Users:</strong> Can create families, manage children, assign chores, and approve rewards.
-            </div>
-            <div>
-              <strong>Kid Users:</strong> Can view and complete assigned chores, track progress, and request rewards.
-            </div>
-            <div>
-              <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+       {/* Instructions */}
+       <Card>
+         <CardHeader>
+           <CardTitle>User Management Instructions</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="space-y-3 text-sm">
+             <div>
+               <strong>Admin Users:</strong> Full access to admin portal, can manage all users and families.
+             </div>
+             <div>
+               <strong>Parent Users:</strong> Can create families, manage children, assign chores, and approve rewards.
+             </div>
+             <div>
+               <strong>Kid Users:</strong> Can view and complete assigned chores, track progress, and request rewards.
+             </div>
+             <div>
+               <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+     </div>
+   );
+ }
