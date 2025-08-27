@@ -1037,6 +1037,10 @@ export type Database = {
         Args: { family_id_param: string; user_id_param?: string }
         Returns: boolean
       }
+      is_full_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_security_event: {
         Args: {
           event_type: string
