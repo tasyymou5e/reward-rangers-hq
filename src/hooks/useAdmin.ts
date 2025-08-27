@@ -312,14 +312,30 @@ export function useAdmin() {
             
             if (profileError) {
               console.error(`Profile delete failed for ${userId}:`, profileError);
+            } else {
+              console.log(`Successfully deleted profile for ${userId}`);
             }
+          } else {
+            console.log(`Successfully deleted auth user ${userId}`);
           }
         } catch (error) {
           console.error(`Error deleting user ${userId}:`, error);
         }
       }
 
-      // Delete family record (RLS policies should handle related data cleanup)
+      // Delete family members first to avoid foreign key issues
+      const { error: deleteMembersError } = await supabase
+        .from('family_members')
+        .delete()
+        .eq('family_id', familyId);
+
+      if (deleteMembersError) {
+        console.error('Error deleting family members:', deleteMembersError);
+      } else {
+        console.log('Successfully deleted family members');
+      }
+
+      // Delete family record last
       const { error: deleteFamilyError } = await supabase
         .from('families')
         .delete()
@@ -328,6 +344,8 @@ export function useAdmin() {
       if (deleteFamilyError) {
         console.error('Error deleting family record:', deleteFamilyError);
         throw deleteFamilyError;
+      } else {
+        console.log('Successfully deleted family record');
       }
       
       console.log('Family deletion completed successfully');
