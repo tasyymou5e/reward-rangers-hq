@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, Eye, EyeOff, AlertTriangle, ArrowLeft } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { CaptchaWidget } from "@/components/CaptchaWidget";
+
 
 export default function AdminAuth() {
   const { user, loading, signIn } = useAdminAuth();
@@ -18,8 +18,6 @@ export default function AdminAuth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaError, setCaptchaError] = useState("");
 
   // Redirect if already authenticated as admin
   if (user) {
@@ -30,16 +28,9 @@ export default function AdminAuth() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    setCaptchaError("");
-
-    if (!captchaToken) {
-      setCaptchaError("Please complete the captcha verification");
-      setIsLoading(false);
-      return;
-    }
 
     try {
-      const { error } = await signIn(email, password, captchaToken);
+      const { error } = await signIn(email, password);
       
       if (error) {
         setError(error.message);
@@ -61,20 +52,6 @@ export default function AdminAuth() {
     }
   };
 
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-    setCaptchaError("");
-  };
-
-  const handleCaptchaError = () => {
-    setCaptchaToken(null);
-    setCaptchaError("Captcha verification failed. Please try again.");
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-    setCaptchaError("Captcha expired. Please verify again.");
-  };
 
   if (loading) {
     return (
@@ -170,20 +147,6 @@ export default function AdminAuth() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-admin-primary font-medium">
-                Security Verification
-              </Label>
-              <CaptchaWidget
-                onVerify={handleCaptchaVerify}
-                onError={handleCaptchaError}
-                onExpire={handleCaptchaExpire}
-                className="flex justify-center"
-              />
-              {captchaError && (
-                <p className="text-sm text-destructive">{captchaError}</p>
-              )}
-            </div>
 
             {error && (
               <Alert variant="destructive">

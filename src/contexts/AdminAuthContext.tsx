@@ -7,7 +7,7 @@ interface AdminAuthContextType {
   session: Session | null;
   profile: any | null;
   loading: boolean;
-  signIn: (email: string, password: string, captchaToken?: string) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -149,21 +149,13 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isSigningOut]); // Add isSigningOut as dependency
 
-  const signIn = async (email: string, password: string, captchaToken?: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
       // Attempting admin sign in
-      const authRequest: any = {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      };
-      
-      if (captchaToken) {
-        authRequest.options = {
-          captchaToken,
-        };
-      }
-      
-      const { data, error } = await supabase.auth.signInWithPassword(authRequest);
+      });
 
       if (error) {
         console.error('Sign in error:', error);

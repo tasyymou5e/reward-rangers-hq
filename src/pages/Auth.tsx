@@ -8,8 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordValidation } from "@/components/PasswordValidation";
-import { CaptchaWidget } from "@/components/CaptchaWidget";
-import { LogIn, UserPlus, Users, Crown, Shield, RefreshCcw } from "lucide-react";
+
+import { LogIn, UserPlus, Users, Crown, Shield } from "lucide-react";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,40 +20,11 @@ export default function Auth() {
   const [role, setRole] = useState("parent");
   const [loading, setLoading] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const [showCaptcha, setShowCaptcha] = useState(true);
   
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-    setCaptchaError(null);
-  };
-
-  const handleCaptchaError = (error: string) => {
-    setCaptchaError(error);
-    setCaptchaToken(null);
-    toast({
-      title: "Captcha Error",
-      description: "Please complete the security verification again.",
-      variant: "destructive",
-    });
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-    setCaptchaError(null);
-  };
-
-  const resetCaptcha = () => {
-    setCaptchaToken(null);
-    setCaptchaError(null);
-    setShowCaptcha(false);
-    setTimeout(() => setShowCaptcha(true), 100);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,16 +34,6 @@ export default function Auth() {
       toast({
         title: "Password Requirements",
         description: "Please ensure your password meets all security requirements.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Require captcha verification
-    if (!captchaToken) {
-      toast({
-        title: "Security Verification Required",
-        description: "Please complete the captcha verification to continue.",
         variant: "destructive",
       });
       return;
@@ -87,28 +48,17 @@ export default function Auth() {
           display_name: displayName,
           username: username,
           role: role
-        }, captchaToken);
+        });
       } else {
-        result = await signIn(email, password, captchaToken);
+        result = await signIn(email, password);
       }
 
       if (result.error) {
-        // Handle captcha-specific errors
-        if (result.error.message.includes('captcha')) {
-          setCaptchaError('Captcha verification failed');
-          resetCaptcha();
-          toast({
-            title: "Security Verification Failed",
-            description: "Please complete the captcha verification again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Authentication Error",
-            description: result.error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Authentication Error",
+          description: result.error.message,
+          variant: "destructive",
+        });
       } else {
         toast({
           title: isSignUp ? "Account Created!" : "Welcome Back!",
@@ -123,8 +73,6 @@ export default function Auth() {
         }
       }
     } catch (error: any) {
-      // Reset captcha on any error
-      resetCaptcha();
       toast({
         title: "Error",
         description: error.message,
@@ -252,45 +200,11 @@ export default function Auth() {
               )}
             </div>
 
-            {/* Captcha Security Verification */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Security Verification</Label>
-              <div className="flex flex-col space-y-2">
-                <CaptchaWidget
-                  onVerify={handleCaptchaVerify}
-                  onError={handleCaptchaError}
-                  onExpire={handleCaptchaExpire}
-                  visible={showCaptcha}
-                  className="flex justify-center"
-                />
-                {captchaError && (
-                  <div className="flex items-center justify-between text-sm text-destructive">
-                    <span>Verification failed</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetCaptcha}
-                      className="h-auto p-1 text-xs"
-                    >
-                      <RefreshCcw className="h-3 w-3 mr-1" />
-                      Retry
-                    </Button>
-                  </div>
-                )}
-                {captchaToken && (
-                  <div className="text-sm text-success flex items-center">
-                    <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
-                    Security verification completed
-                  </div>
-                )}
-              </div>
-            </div>
             
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !captchaToken}
+              disabled={loading}
               variant={isSignUp ? "default" : "default"}
             >
               {loading ? (
