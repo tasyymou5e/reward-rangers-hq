@@ -1114,18 +1114,19 @@ export type Database = {
         }[]
       }
       get_profile_by_id_secure: {
-        Args: { requesting_user_id?: string; target_user_id: string }
+        Args: { requesting_user_id: string; target_user_id: string }
         Returns: {
           avatar_url: string
           created_at: string
           display_name: string
-          email_masked: string
+          email: string
           id: string
           last_activity: string
           level: number
           points: number
-          role: Database["public"]["Enums"]["user_role"]
+          role: string
           streak_days: number
+          updated_at: string
           username: string
         }[]
       }
@@ -1208,6 +1209,10 @@ export type Database = {
         Returns: boolean
       }
       is_any_admin_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
