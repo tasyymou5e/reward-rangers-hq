@@ -59,7 +59,7 @@ export default function AdminSecurityCenter() {
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Permission helpers
   const isFullAdmin = () => ['admin', 'full_admin'].includes(profile?.role);
@@ -112,7 +112,7 @@ export default function AdminSecurityCenter() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -268,7 +268,7 @@ export default function AdminSecurityCenter() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">

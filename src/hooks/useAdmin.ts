@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useAdmin() {
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchAllUsers = async () => {
     try {
@@ -398,6 +398,6 @@ export function useAdmin() {
     deleteUser,
     deleteFamily,
     getAnalytics,
-    loading,
+    loading: isLoading,
   };
 }

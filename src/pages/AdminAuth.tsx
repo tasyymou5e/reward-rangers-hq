@@ -16,7 +16,7 @@ export default function AdminAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Redirect if already authenticated as admin
@@ -26,7 +26,7 @@ export default function AdminAuth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setAuthLoading(true);
     setError("");
 
     try {
@@ -48,7 +48,7 @@ export default function AdminAuth() {
     } catch (err: any) {
       setError(err.message || "Authentication failed");
     } finally {
-      setIsLoading(false);
+      setAuthLoading(false);
     }
   };
 
@@ -158,9 +158,9 @@ export default function AdminAuth() {
             <Button
               type="submit"
               className="w-full bg-gradient-admin hover:opacity-90 text-white shadow-lg transition-all duration-300"
-              disabled={isLoading}
+              disabled={authLoading}
             >
-              {isLoading ? (
+              {authLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Authenticating...

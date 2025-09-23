@@ -20,7 +20,7 @@ export default function Auth() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("parent");
-  const [loading, setLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   
   const { signIn, signUp } = useAuth();
@@ -54,7 +54,7 @@ export default function Auth() {
       return;
     }
     
-    setLoading(true);
+    setAuthLoading(true);
 
     try {
       let result;
@@ -117,7 +117,7 @@ export default function Auth() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setAuthLoading(false);
     }
   };
 
@@ -243,10 +243,10 @@ export default function Auth() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || isBlocked}
+              disabled={authLoading || isBlocked}
               variant={isSignUp ? "default" : "default"}
             >
-              {loading ? (
+              {authLoading ? (
                 "Processing..."
               ) : isBlocked ? (
                 `Blocked (${Math.ceil(getRemainingBlockTime() / 60000)}m)`

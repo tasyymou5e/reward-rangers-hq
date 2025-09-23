@@ -9,11 +9,11 @@ import { useAdmin } from '@/hooks/useAdmin';
 export function useAdminBridge() {
   const adminAuth = useAdminAuth();
   const admin = useAdmin();
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Set loading state based on admin auth loading state
-    setLoading(adminAuth.loading);
+    setIsLoading(adminAuth.loading);
   }, [adminAuth.loading]);
 
   // Return combined admin functionality with proper auth context
@@ -22,7 +22,7 @@ export function useAdminBridge() {
     user: adminAuth.user,
     profile: adminAuth.profile,
     session: adminAuth.session,
-    loading,
+    loading: isLoading,
     
     // Admin operations
     ...admin,

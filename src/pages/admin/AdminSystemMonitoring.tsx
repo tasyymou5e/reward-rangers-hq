@@ -44,7 +44,7 @@ export default function AdminSystemMonitoring() {
 
   const [systemMetrics, setSystemMetrics] = useState<SystemMetric[]>([]);
   const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadSystemData();
@@ -76,7 +76,7 @@ export default function AdminSystemMonitoring() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -158,7 +158,7 @@ export default function AdminSystemMonitoring() {
   const dbConnections = getMetricStatus(systemMetrics, 'db_connections');
   const responseTime = getMetricStatus(systemMetrics, 'avg_response_time');
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">

@@ -7,10 +7,10 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Users, Search } from "lucide-react";
 
 export default function AdminUsers() {
-  const { loading, canManageUsers } = useAdminBridge();
+  const { loading: isLoading, canManageUsers } = useAdminBridge();
   const [searchTerm, setSearchTerm] = useState("");
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">

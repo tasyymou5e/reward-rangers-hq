@@ -21,7 +21,7 @@ export function UserManagementTab() {
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [families, setFamilies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   
   const [newUser, setNewUser] = useState({
@@ -59,7 +59,7 @@ export function UserManagementTab() {
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -161,7 +161,7 @@ export function UserManagementTab() {
       
       // User deletion completed, refreshing data
       // Force a fresh fetch of all data
-      setLoading(true);
+      setIsLoading(true);
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
@@ -170,7 +170,7 @@ export function UserManagementTab() {
       // Fetched fresh data successfully
       setUsers(usersData);
       setFamilies(familiesData);
-      setLoading(false);
+      setIsLoading(false);
       
       toast({
         title: "Success",
@@ -178,7 +178,7 @@ export function UserManagementTab() {
       });
     } catch (error) {
       console.error('Error deleting user:', error);
-      setLoading(false);
+      setIsLoading(false);
       toast({
         title: "Error",
         description: "Failed to delete user",
@@ -194,7 +194,7 @@ export function UserManagementTab() {
       
       // Family deletion completed, refreshing data
       // Force a fresh fetch of all data and clear existing state first
-      setLoading(true);
+      setIsLoading(true);
       setFamilies([]); // Clear current families to force re-render
       setUsers([]); // Clear current users to force re-render
       
@@ -207,7 +207,7 @@ export function UserManagementTab() {
       
       setUsers(usersData);
       setFamilies(familiesData);
-      setLoading(false);
+      setIsLoading(false);
       
       toast({
         title: "Success",
@@ -215,7 +215,7 @@ export function UserManagementTab() {
       });
     } catch (error) {
       console.error('Error deleting family:', error);
-      setLoading(false);
+      setIsLoading(false);
       toast({
         title: "Error",
         description: "Failed to delete family",
@@ -482,7 +482,7 @@ export function UserManagementTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-             {loading ? (
+             {isLoading ? (
                <p className="text-center text-muted-foreground">Loading users...</p>
              ) : (
                <Table>
@@ -568,7 +568,7 @@ export function UserManagementTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {isLoading ? (
               <p className="text-center text-muted-foreground">Loading families...</p>
             ) : (
               <Table>

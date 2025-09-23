@@ -44,14 +44,14 @@ export default function AdminDashboard() {
     activeUsers: 0,
     unresolvedAlerts: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
   const loadDashboardData = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const [
         users,
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
     }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
