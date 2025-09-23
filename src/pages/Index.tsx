@@ -102,7 +102,7 @@ const Index = () => {
           )}
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <PortalCard
             title="Kids Portal"
             description="Complete chores, earn points, and unlock amazing rewards!"
@@ -117,14 +117,6 @@ const Index = () => {
             icon="👨‍👩‍👧‍👦"
             variant="parents"
             onClick={() => handlePortalNavigation("parents")}
-          />
-          
-          <PortalCard
-            title="Admin Panel"
-            description="System administration, user management, and analytics dashboard."
-            icon="⚙️"
-            variant="admin"
-            onClick={() => handlePortalNavigation("admin")}
           />
         </div>
 
