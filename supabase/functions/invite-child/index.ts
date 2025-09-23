@@ -11,7 +11,7 @@ const corsHeaders = {
 
 interface InviteChildRequest {
   childName: string;
-  childEmail: string;
+  childPassword: string;
   familyId: string;
 }
 
@@ -48,9 +48,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { childName, childEmail, familyId }: InviteChildRequest = await req.json();
+    const { childName, childPassword, familyId }: InviteChildRequest = await req.json();
 
-    
+    // Get parent's profile to generate child email
+    const { data: parentProfile, error: parentError } = await supabaseClient
+      .from("profiles")
+      .select("email")
+      .eq("id", user.id)
+      .single();
+
+    if (parentError || !parentProfile) {
+      return new Response(
+        JSON.stringify({ error: "Parent profile not found" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Generate unique child email from parent email
+    const parentEmailBase = parentProfile.email.split('@')[0];
+    const domain = parentProfile.email.split('@')[1];
+    const timestamp = Date.now();
+    const childEmail = `${parentEmailBase}+child_${childName.toLowerCase().replace(/\s+/g, '')}_${timestamp}@${domain}`;
 
     // Verify the parent owns this family
     const { data: family, error: familyError } = await supabaseClient
@@ -67,16 +85,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate a cryptographically secure temporary password
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const randomBytes = new Uint8Array(12);
-    crypto.getRandomValues(randomBytes);
-    const tempPassword = Array.from(randomBytes, byte => charset[byte % charset.length]).join('') + 'Aa1!';
-
-    // Create the child user account
+    // Create the child user account with parent-provided password
     const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
       email: childEmail,
-      password: tempPassword,
+      password: childPassword,
       email_confirm: true,
       user_metadata: {
         display_name: childName,
@@ -155,9 +167,9 @@ const handler = async (req: Request): Promise<Response> => {
               <h3>🔐 Your Login Information</h3>
               <div class="credentials">
                 <p><strong>Email:</strong> ${childEmail}</p>
-                <p><strong>Temporary Password:</strong> <code>${tempPassword}</code></p>
+                <p><strong>Password:</strong> Your parent has set up your password</p>
               </div>
-              <p><strong>Important:</strong> Please change your password after logging in for the first time!</p>
+              <p><strong>Important:</strong> Ask your parent for your password to log in!</p>
               
               <div style="text-align: center; margin: 20px 0;">
                 <a href="${appUrl}/#/auth" class="button">🚀 Start Your Adventure</a>
@@ -168,8 +180,7 @@ const handler = async (req: Request): Promise<Response> => {
               <h3>📱 Getting Started</h3>
               <ol>
                 <li>Click the "Start Your Adventure" button above</li>
-                <li>Sign in with your email and temporary password</li>
-                <li>Change your password to something you'll remember</li>
+                <li>Ask your parent for your password and sign in</li>
                 <li>Complete your first chore and earn XP!</li>
                 <li>Have fun turning chores into adventures! 🎮</li>
               </ol>
