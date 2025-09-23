@@ -673,8 +673,8 @@ export function UserManagementTab() {
                 <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
               </div>
             </div>
-         </CardContent>
-       </Card>
-     </div>
-   );
- }
+          </CardContent>
+        </Card>
+      </div>
+    );
+}
