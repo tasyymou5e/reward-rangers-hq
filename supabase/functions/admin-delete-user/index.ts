@@ -38,12 +38,6 @@ serve(async (req) => {
       }
     )
 
-    // Create anon client for user verification
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
-
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
     console.log('Auth header received:', authHeader ? 'Present' : 'Missing')
@@ -65,7 +59,6 @@ serve(async (req) => {
         global: { headers: { Authorization: authHeader } }
       }
     )
-    }
 
     // Verify the requesting user has admin permissions
     const { data: { user }, error: authError } = await supabase.auth.getUser(
