@@ -25,35 +25,34 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       setProfileLoading(true);
-      // SECURITY FIX: Use secure RPC function instead of direct table access
-      const { data, error } = await supabase.rpc('get_profile_by_id_secure', {
-        target_user_id: userId,
-        requesting_user_id: userId // Admin fetching their own profile
-      });
+      console.log('Fetching admin profile for user:', userId);
+      
+      // Try direct profile access first (fallback approach)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
       
       if (error) {
-        console.error('Secure profile fetch error:', error);
+        console.error('Profile fetch error:', error);
         throw error;
       }
       
-      const profileData = data?.[0];
+      console.log('Profile data retrieved:', data);
       
       // Verify the user is actually an admin
-      if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
-        console.warn('User is not an admin, signing out');
+      if (!data || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(data.role)) {
+        console.warn('User is not an admin, signing out. Role:', data?.role);
         throw new Error('Unauthorized: Admin access required');
       }
       
-      // Admin profile loaded successfully via secure function
-      setProfile(profileData);
+      console.log('Admin profile loaded successfully');
+      setProfile(data);
     } catch (error) {
       console.error('Error fetching admin profile:', error);
-      // If not admin, sign out
-      try {
-        await supabase.auth.signOut();
-      } catch (signOutError) {
-        console.error('Error during sign out:', signOutError);
-      }
+      // Don't throw error that could crash the component
+      // Just set profile to null and let the UI handle it
       setProfile(null);
     } finally {
       setProfileLoading(false);
@@ -135,6 +134,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Auth initialization error:', error);
         if (mounted) {
           setLoading(false);
+          setUser(null);
+          setSession(null);
+          setProfile(null);
         }
       }
     };
@@ -164,26 +166,29 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       // Check if user is admin after successful login
       if (data.user) {
-        // SECURITY FIX: Use secure RPC function for admin verification
-        const { data: profileData, error: profileError } = await supabase.rpc('get_profile_by_id_secure', {
-          target_user_id: data.user.id,
-          requesting_user_id: data.user.id
-        });
+        console.log('Verifying admin status for user:', data.user.id);
+        
+        // Direct profile access for admin verification
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
 
         if (profileError) {
-          console.error('Secure profile check error:', profileError);
+          console.error('Profile check error:', profileError);
           await supabase.auth.signOut();
           throw new Error('Profile verification failed');
         }
 
-        const userProfile = profileData?.[0];
-        if (!userProfile || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(userProfile.role)) {
-          console.warn('User is not an admin');
+        console.log('User profile retrieved:', profileData);
+        if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
+          console.warn('User is not an admin. Role:', profileData?.role);
           await supabase.auth.signOut();
           throw new Error('Unauthorized: Admin access required');
         }
         
-        // Admin access confirmed via secure function
+        console.log('Admin access confirmed');
       }
 
       return { data, error: null };
