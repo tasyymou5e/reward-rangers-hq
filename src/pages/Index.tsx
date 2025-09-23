@@ -79,7 +79,7 @@ const Index = () => {
       <div className="container mx-auto px-6 py-12">
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-6xl font-bold bg-gradient-rainbow bg-clip-text text-transparent animate-bounce-in">
-            🎯 ChoreQuest
+            🥷 Chore Ninja
           </h1>
           <p className="text-2xl text-muted-foreground max-w-2xl mx-auto">
             Turn chores into an adventure! Gamified task management for families.
