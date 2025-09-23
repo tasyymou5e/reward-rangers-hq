@@ -31,25 +31,27 @@ export function PasswordValidation({ password, onValidationChange }: PasswordVal
     onValidationChange(result.isValid && result.score >= 3);
   }, [password, onValidationChange]);
 
+  // Enhanced requirements per security framework
   const requirements = [
-    { text: 'At least 8 characters', met: password.length >= 8 },
+    { text: 'At least 8 characters (required)', met: password.length >= 8 },
     { text: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
     { text: 'Contains lowercase letter', met: /[a-z]/.test(password) },
     { text: 'Contains number', met: /\d/.test(password) },
     { text: 'Contains special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    { text: 'No common patterns', met: !/(.)\1{2,}/.test(password) },
   ];
 
   const getStrengthColor = (score: number) => {
-    if (score < 2) return 'text-red-600';
-    if (score < 3) return 'text-orange-500';
-    if (score < 4) return 'text-yellow-500';
+    if (score < 3) return 'text-destructive';
+    if (score < 5) return 'text-orange-500';
+    if (score < 7) return 'text-yellow-600';
     return 'text-green-600';
   };
 
   const getStrengthText = (score: number) => {
-    if (score < 2) return 'Weak';
-    if (score < 3) return 'Fair';
-    if (score < 4) return 'Good';
+    if (score < 3) return 'Weak';
+    if (score < 5) return 'Fair';
+    if (score < 7) return 'Good';
     return 'Strong';
   };
 

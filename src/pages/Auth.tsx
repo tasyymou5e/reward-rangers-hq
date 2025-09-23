@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { PasswordValidation } from "@/components/PasswordValidation";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
+import { useSecureAuth } from "@/hooks/useSecureAuth";
+import { secureLog } from "@/utils/secureLogging";
 
 import { LogIn, UserPlus, Users, Crown, Shield } from "lucide-react";
 
@@ -22,12 +24,25 @@ export default function Auth() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   
   const { signIn, signUp } = useAuth();
+  const { secureSignIn, secureSignUp, isBlocked, authAttempts, maxAttempts, getRemainingBlockTime } = useSecureAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Security: Check if user is temporarily blocked
+    if (isBlocked) {
+      const remainingTime = getRemainingBlockTime();
+      toast({
+        title: "Account Temporarily Blocked",
+        description: `Too many failed attempts. Please wait ${Math.ceil(remainingTime / 60000)} minutes before trying again.`,
+        variant: "destructive",
+      });
+      secureLog.warn("Blocked authentication attempt", { email, authAttempts });
+      return;
+    }
     
     // Enhanced password validation for signup
     if (isSignUp && !isPasswordValid) {
@@ -44,20 +59,32 @@ export default function Auth() {
     try {
       let result;
       if (isSignUp) {
-        result = await signUp(email, password, {
+        // Use secure signup with enhanced validation
+        result = await secureSignUp(email, password, {
           display_name: displayName,
           username: username,
           role: role
         });
       } else {
-        result = await signIn(email, password);
+        // Use secure signin with rate limiting and monitoring
+        result = await secureSignIn(email, password);
       }
 
       if (result.error) {
+        // Enhanced error handling with security consideration
+        const sanitizedError = result.error.message.includes('rate limit') 
+          ? "Authentication rate limit exceeded. Please wait before trying again."
+          : result.error.message;
+          
         toast({
           title: "Authentication Error",
-          description: result.error.message,
+          description: sanitizedError,
           variant: "destructive",
+        });
+        
+        secureLog.warn("Authentication failed", { 
+          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+          error: result.error.code 
         });
       } else {
         toast({
@@ -67,15 +94,26 @@ export default function Auth() {
             : "You've been successfully signed in.",
         });
         
+        secureLog.info("Authentication successful", { 
+          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+          type: isSignUp ? 'signup' : 'signin' 
+        });
+        
         // Redirect based on role
         if (!isSignUp) {
           navigate("/");
         }
       }
     } catch (error: any) {
+      // Enhanced error handling with security logging
+      secureLog.error("Authentication error", { 
+        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+        error: error.message 
+      });
+      
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -193,9 +231,10 @@ export default function Auth() {
                 required
               />
               {isSignUp && (
-                <PasswordValidation 
+                <PasswordStrengthIndicator 
                   password={password} 
                   onValidationChange={setIsPasswordValid}
+                  showDetailedFeedback={true}
                 />
               )}
             </div>
@@ -204,11 +243,13 @@ export default function Auth() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading}
+              disabled={loading || isBlocked}
               variant={isSignUp ? "default" : "default"}
             >
               {loading ? (
                 "Processing..."
+              ) : isBlocked ? (
+                `Blocked (${Math.ceil(getRemainingBlockTime() / 60000)}m)`
               ) : (
                 <>
                   {isSignUp ? <UserPlus className="h-4 w-4 mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
@@ -216,6 +257,13 @@ export default function Auth() {
                 </>
               )}
             </Button>
+            
+            {/* Security: Show attempt counter */}
+            {authAttempts > 0 && authAttempts < maxAttempts && (
+              <div className="text-center text-sm text-orange-600 mt-2">
+                {maxAttempts - authAttempts} attempts remaining
+              </div>
+            )}
           </form>
           
           <div className="mt-6 text-center">
