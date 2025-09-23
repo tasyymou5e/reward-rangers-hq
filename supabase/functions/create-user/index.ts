@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (profileError || !profile || !['admin', 'full_admin'].includes(profile.role)) {
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { 
@@ -81,6 +81,35 @@ Deno.serve(async (req) => {
 
     const { email, password, display_name, role } = await req.json();
 
+    // Validate input data
+    if (!email || !password || !display_name || !role) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: email, password, display_name, role' }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
+    // Validate role
+    const validRoles = ['admin', 'full_admin', 'read_only_admin', 'report_admin', 'parent', 'kid'];
+    if (!validRoles.includes(role)) {
+      return new Response(
+        JSON.stringify({ error: `Invalid role. Must be one of: ${validRoles.join(', ')}` }),
+        { 
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
     // Create user in auth.users table
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -93,6 +122,22 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
+      // Log failed user creation attempt
+      await supabaseAdmin
+        .from('security_alerts')
+        .insert({
+          user_id: user.id,
+          alert_type: 'admin_user_creation_failed',
+          severity: 'medium',
+          description: `Admin failed to create user: ${email}`,
+          metadata: {
+            target_email: email,
+            target_role: role,
+            error: authError.message,
+            admin_user_id: user.id,
+            timestamp: new Date().toISOString()
+          }
+        });
       throw authError;
     }
 
@@ -110,6 +155,23 @@ Deno.serve(async (req) => {
         throw profileError;
       }
     }
+
+    // Log successful user creation for security audit
+    await supabaseAdmin
+      .from('security_alerts')
+      .insert({
+        user_id: user.id,
+        alert_type: 'admin_user_creation_success',
+        severity: 'info',
+        description: `Admin created new user: ${display_name} (${email})`,
+        metadata: {
+          created_user_id: authUser.user.id,
+          created_user_email: email,
+          created_user_role: role,
+          admin_user_id: user.id,
+          timestamp: new Date().toISOString()
+        }
+      });
 
     return new Response(
       JSON.stringify({ 

@@ -77,6 +77,15 @@ serve(async (req) => {
       })
     }
 
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      return new Response('Invalid user ID format', { 
+        status: 400, 
+        headers: corsHeaders 
+      })
+    }
+
     // Prevent admin self-deletion
     if (userId === user.id) {
       return new Response('Cannot delete your own account', { 
@@ -92,11 +101,37 @@ serve(async (req) => {
       .eq('id', userId)
       .single()
 
+    // Prevent deletion of other admin users (only allow deletion of lower privilege users)
+    if (targetUser?.role && ['admin', 'full_admin'].includes(targetUser.role)) {
+      return new Response('Cannot delete admin users', { 
+        status: 403, 
+        headers: corsHeaders 
+      })
+    }
+
     // Delete user from auth (this will cascade to related data due to foreign keys)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (deleteError) {
       console.error('Error deleting user from auth:', deleteError)
+      
+      // Log failed deletion attempt
+      await supabaseAdmin
+        .from('security_alerts')
+        .insert({
+          user_id: user.id,
+          alert_type: 'admin_user_deletion_failed',
+          severity: 'high',
+          description: `Admin failed to delete user: ${targetUser?.display_name || 'Unknown'}`,
+          metadata: {
+            target_user_id: userId,
+            target_user_email: targetUser?.email,
+            target_user_role: targetUser?.role,
+            error: deleteError.message,
+            admin_user_id: user.id,
+            timestamp: new Date().toISOString()
+          }
+        });
       
       // If auth deletion fails, try to delete from profiles as fallback
       const { error: profileDeleteError } = await supabaseAdmin
@@ -118,7 +153,7 @@ serve(async (req) => {
       .from('security_alerts')
       .insert({
         user_id: user.id,
-        alert_type: 'admin_user_deletion',
+        alert_type: 'admin_user_deletion_success',
         severity: 'medium',
         description: `Admin deleted user: ${targetUser?.display_name || 'Unknown'}`,
         metadata: {
