@@ -88,6 +88,51 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_role_permissions: {
+        Row: {
+          expires_at: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          metadata: Json | null
+          permission: Database["public"]["Enums"]["admin_permission"]
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          metadata?: Json | null
+          permission: Database["public"]["Enums"]["admin_permission"]
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          metadata?: Json | null
+          permission?: Database["public"]["Enums"]["admin_permission"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_role_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       age_profiles: {
         Row: {
           age_group: string
@@ -273,6 +318,126 @@ export type Database = {
           {
             foreignKeyName: "bonus_rewards_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulk_operations: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_log: string[] | null
+          failed_items: number | null
+          id: string
+          initiated_by: string
+          operation_data: Json
+          operation_type: string
+          processed_items: number | null
+          results: Json | null
+          started_at: string | null
+          status: string | null
+          total_items: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_log?: string[] | null
+          failed_items?: number | null
+          id?: string
+          initiated_by: string
+          operation_data: Json
+          operation_type: string
+          processed_items?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          total_items?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_log?: string[] | null
+          failed_items?: number | null
+          id?: string
+          initiated_by?: string
+          operation_data?: Json
+          operation_type?: string
+          processed_items?: number | null
+          results?: Json | null
+          started_at?: string | null
+          status?: string | null
+          total_items?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_operations_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_account_settings: {
+        Row: {
+          child_id: string
+          communication_settings: Json | null
+          content_restrictions: Json | null
+          created_at: string | null
+          family_id: string
+          id: string
+          parent_id: string
+          password_policy: Json | null
+          safety_settings: Json | null
+          screen_time_limits: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          child_id: string
+          communication_settings?: Json | null
+          content_restrictions?: Json | null
+          created_at?: string | null
+          family_id: string
+          id?: string
+          parent_id: string
+          password_policy?: Json | null
+          safety_settings?: Json | null
+          screen_time_limits?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          child_id?: string
+          communication_settings?: Json | null
+          content_restrictions?: Json | null
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          parent_id?: string
+          password_policy?: Json | null
+          safety_settings?: Json | null
+          screen_time_limits?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_account_settings_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_account_settings_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_account_settings_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -637,6 +802,67 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      family_join_requests: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          family_id: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          processed_at: string | null
+          requester_id: string
+          status: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          family_id: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          processed_at?: string | null
+          requester_id: string
+          status?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          family_id?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          processed_at?: string | null
+          requester_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_join_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_join_requests_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       family_leaderboards: {
         Row: {
@@ -1239,6 +1465,72 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_trail: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          family_context: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          risk_level: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          family_context?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          risk_level?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          family_context?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          risk_level?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_audit_trail_family_context_fkey"
+            columns: ["family_context"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_audit_trail_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_test_results: {
         Row: {
           created_at: string | null
@@ -1467,6 +1759,10 @@ export type Database = {
           security_level: string
         }[]
       }
+      calculate_age_group: {
+        Args: { birth_date: string }
+        Returns: string
+      }
       can_generate_reports: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1508,6 +1804,20 @@ export type Database = {
       cleanup_old_security_test_results: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      create_point_transaction: {
+        Args: {
+          p_bonus_type?: string
+          p_chore_id?: string
+          p_description: string
+          p_family_id: string
+          p_goal_id?: string
+          p_metadata?: Json
+          p_points_amount: number
+          p_transaction_type: string
+          p_user_id: string
+        }
+        Returns: string
       }
       create_system_notification_secure: {
         Args: {
@@ -1673,6 +1983,13 @@ export type Database = {
         Args: { user_id_param?: string }
         Returns: string[]
       }
+      has_admin_permission: {
+        Args: {
+          p_permission: Database["public"]["Enums"]["admin_permission"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       has_parental_authority: {
         Args: { child_user_id: string; requesting_user_id?: string }
         Returns: boolean
@@ -1712,6 +2029,19 @@ export type Database = {
       log_mfa_access_secure: {
         Args: { access_type: string; metadata_param?: Json }
         Returns: undefined
+      }
+      log_security_audit: {
+        Args: {
+          p_action_type: string
+          p_family_context?: string
+          p_metadata?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_resource_id?: string
+          p_resource_type: string
+          p_risk_level?: string
+        }
+        Returns: string
       }
       log_security_event: {
         Args: {
@@ -1784,6 +2114,13 @@ export type Database = {
       }
     }
     Enums: {
+      admin_permission:
+        | "manage_users"
+        | "manage_families"
+        | "view_security_logs"
+        | "manage_system_settings"
+        | "generate_reports"
+        | "bulk_operations"
       chore_status:
         | "pending"
         | "in_progress"
@@ -1925,6 +2262,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_permission: [
+        "manage_users",
+        "manage_families",
+        "view_security_logs",
+        "manage_system_settings",
+        "generate_reports",
+        "bulk_operations",
+      ],
       chore_status: [
         "pending",
         "in_progress",
