@@ -1038,9 +1038,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_rate_limit_enhanced: {
+        Args: {
+          action_type: string
+          max_per_day?: number
+          max_per_hour?: number
+        }
+        Returns: boolean
+      }
       cleanup_old_mfa_data: {
         Args: { days_old?: number }
         Returns: number
+      }
+      create_system_notification_secure: {
+        Args: {
+          notification_data?: Json
+          notification_message: string
+          notification_title: string
+          notification_type?: string
+          target_user_id: string
+        }
+        Returns: string
       }
       decrypt_mfa_secret: {
         Args: { encoded_text: string }
