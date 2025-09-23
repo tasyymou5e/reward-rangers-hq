@@ -25,27 +25,27 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       setProfileLoading(true);
-      // Fetching admin profile securely
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .in('role', ['admin', 'full_admin', 'read_only_admin', 'report_admin']) // Allow all admin roles
-        .maybeSingle(); // Use maybeSingle to avoid errors if no data
+      // SECURITY FIX: Use secure RPC function instead of direct table access
+      const { data, error } = await supabase.rpc('get_profile_by_id_secure', {
+        target_user_id: userId,
+        requesting_user_id: userId // Admin fetching their own profile
+      });
       
       if (error) {
-        console.error('Profile fetch error:', error);
+        console.error('Secure profile fetch error:', error);
         throw error;
       }
       
+      const profileData = data?.[0];
+      
       // Verify the user is actually an admin
-      if (!data || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(data.role)) {
+      if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
         console.warn('User is not an admin, signing out');
         throw new Error('Unauthorized: Admin access required');
       }
       
-      // Admin profile loaded successfully
-      setProfile(data);
+      // Admin profile loaded successfully via secure function
+      setProfile(profileData);
     } catch (error) {
       console.error('Error fetching admin profile:', error);
       // If not admin, sign out
@@ -164,26 +164,26 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       // Check if user is admin after successful login
       if (data.user) {
-        // User signed in, checking admin status
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .maybeSingle();
+        // SECURITY FIX: Use secure RPC function for admin verification
+        const { data: profileData, error: profileError } = await supabase.rpc('get_profile_by_id_secure', {
+          target_user_id: data.user.id,
+          requesting_user_id: data.user.id
+        });
 
         if (profileError) {
-          console.error('Profile check error:', profileError);
+          console.error('Secure profile check error:', profileError);
           await supabase.auth.signOut();
           throw new Error('Profile verification failed');
         }
 
-        if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
+        const userProfile = profileData?.[0];
+        if (!userProfile || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(userProfile.role)) {
           console.warn('User is not an admin');
           await supabase.auth.signOut();
           throw new Error('Unauthorized: Admin access required');
         }
         
-        // Admin access confirmed
+        // Admin access confirmed via secure function
       }
 
       return { data, error: null };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -12,30 +13,42 @@ export function useNotifications() {
     
     try {
       setLoading(true);
-      // Simulate fetching notifications - will be replaced with actual DB calls
-      const mockNotifications = [
-        {
-          id: '1',
-          title: 'Chore Approved!',
-          message: 'Your chore "Clean Room" has been approved!',
-          type: 'chore_approved',
-          read: false,
-          created_at: new Date().toISOString(),
-          data: { chore_id: '123', points_value: 10 }
-        }
-      ];
+      // SECURITY FIX: Fetch real notifications with proper authorization
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
       
-      setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.read).length);
+      setNotifications(data || []);
+      setUnreadCount((data || []).filter(n => !n.read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Fallback to empty state on error
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoading(false);
     }
   };
 
   const markAsRead = async (notificationId: string) => {
+    if (!user) return;
+    
     try {
+      // SECURITY FIX: Update notification in database with proper authorization
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true, updated_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('user_id', user.id); // Ensure user can only update their own notifications
+
+      if (error) throw error;
+
+      // Update local state
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
@@ -49,6 +62,16 @@ export function useNotifications() {
     if (!user) return;
     
     try {
+      // SECURITY FIX: Update all user notifications in database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) throw error;
+
+      // Update local state
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {

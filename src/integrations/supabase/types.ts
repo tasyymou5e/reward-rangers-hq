@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -1227,6 +1227,14 @@ export type Database = {
       is_full_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      join_family_with_code_secure: {
+        Args: { family_code_input: string }
+        Returns: Json
+      }
+      log_mfa_access_secure: {
+        Args: { access_type: string; metadata_param?: Json }
+        Returns: undefined
       }
       log_security_event: {
         Args: {

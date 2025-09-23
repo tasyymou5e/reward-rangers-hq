@@ -45,7 +45,12 @@ export function useSecureProfiles() {
         throw rpcError;
       }
 
-      setProfiles(data || []);
+      // Transform data to match SecureProfile interface
+      const transformedProfiles = (data || []).map((profile: any) => ({
+        ...profile,
+        email_masked: profile.email_masked || profile.email // Handle both field names
+      }));
+      setProfiles(transformedProfiles);
     } catch (err) {
       console.error('Error fetching secure profiles:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch profiles');
@@ -68,7 +73,14 @@ export function useSecureProfiles() {
         throw rpcError;
       }
 
-      return data?.[0] || null;
+      // Transform the data to match SecureProfile interface
+      const profile = data?.[0];
+      if (!profile) return null;
+      
+      return {
+        ...profile,
+        email_masked: profile.email // The secure function already handles email masking
+      };
     } catch (err) {
       console.error('Error fetching profile by ID:', err);
       return null;

@@ -105,30 +105,25 @@ export function useFamily() {
     if (!user) return;
 
     try {
-      // Find family by code
-      const { data: familyData, error: familyError } = await supabase
-        .from('families')
-        .select('*')
-        .eq('family_code', familyCode)
-        .single();
+      // SECURITY FIX: Use secure function to join family without exposing family codes
+      const { data: result, error } = await supabase.rpc('join_family_with_code_secure', {
+        family_code_input: familyCode
+      });
 
-      if (familyError) throw familyError;
+      if (error) throw error;
 
-      // Add user to family
-      const { error: memberError } = await supabase
-        .from('family_members')
-        .insert({
-          family_id: familyData.id,
-          user_id: user.id,
-        });
-
-      if (memberError) throw memberError;
+      // Parse the secure function response - result is a jsonb object
+      const familyResult = result as any;
+      const familyData = {
+        id: familyResult.family_id,
+        name: familyResult.family_name
+      };
 
       setFamily(familyData);
-      await fetchFamilyMembers(familyData.id);
+      await fetchFamilyMembers(familyResult.family_id);
       return familyData;
     } catch (error) {
-      console.error('Error joining family:', error);
+      console.error('Error joining family securely:', error);
       throw error;
     }
   };
