@@ -5,7 +5,3 @@ export { useAdminStore } from './adminStore';
 export { useChoreStore } from './choreStore';
 export { useGamificationStore } from './gamificationStore';
 export { useAnalyticsStore } from './analyticsStore';
-
-// Bridge adapters for backward compatibility
-export { useAuth } from '../hooks/useAuth';
-export { useAdminAuth } from '../hooks/useAdminAuth';
