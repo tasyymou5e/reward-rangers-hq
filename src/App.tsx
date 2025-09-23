@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminAuth from "./pages/AdminAuth";
 import AdminPortal from "./pages/AdminPortal";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import NotFound from "./pages/NotFound";
@@ -105,13 +107,24 @@ const App = () => {
                     <AdminAuth />
                   </AdminAuthProvider>
                 } />
+                
+                {/* New Admin Layout Routes */}
                 <Route path="/admin" element={
                   <AdminAuthProvider>
                     <AdminProtectedRoute>
-                      <AdminPortal />
+                      <AdminLayout />
                     </AdminProtectedRoute>
                   </AdminAuthProvider>
-                } />
+                }>
+                  <Route index element={<AdminPortal />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminPortal />} />
+                  <Route path="families" element={<AdminPortal />} />
+                  <Route path="reports" element={<AdminPortal />} />
+                  <Route path="content" element={<AdminPortal />} />
+                  <Route path="system-monitoring" element={<AdminPortal />} />
+                  <Route path="security-center" element={<AdminPortal />} />
+                </Route>
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
