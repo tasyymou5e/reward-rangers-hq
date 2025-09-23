@@ -23,16 +23,16 @@ interface ChildAccountSettings {
   password_policy: {
     min_length: number;
     require_parent_approval: boolean;
-  };
+  } | any;
   screen_time_limits: any;
   content_restrictions: any;
   communication_settings: {
     allow_family_chat: boolean;
     moderated: boolean;
-  };
+  } | any;
   safety_settings: {
     share_activity_with_parent: boolean;
-  };
+  } | any;
   created_at: string;
   updated_at: string;
 }
@@ -118,13 +118,21 @@ export function useParentChildManagement() {
     settings: Partial<ChildAccountSettings>
   ) => {
     try {
+      // Get family_id from family_members table
+      const user = await supabase.auth.getUser();
+      const { data: familyData } = await supabase
+        .from('families')
+        .select('id')
+        .eq('parent_id', user.data.user?.id)
+        .single();
+
       const { error } = await supabase
         .from('child_account_settings')
         .upsert({
           child_id: childId,
-          parent_id: (await supabase.auth.getUser()).data.user?.id,
-          ...settings,
-          updated_at: new Date().toISOString()
+          parent_id: user.data.user?.id!,
+          family_id: familyData?.id!,
+          ...settings
         });
 
       if (error) throw error;
@@ -287,7 +295,12 @@ export function useParentChildManagement() {
         .eq('parent_id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
-      setChildSettings(data || []);
+      setChildSettings((data || []).map(setting => ({
+        ...setting,
+        password_policy: setting.password_policy as any,
+        communication_settings: setting.communication_settings as any,
+        safety_settings: setting.safety_settings as any,
+      })));
     } catch (err) {
       console.error('Failed to load child settings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load child settings');
@@ -319,7 +332,10 @@ export function useParentChildManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setJoinRequests(data || []);
+      setJoinRequests((data || []).map(request => ({
+        ...request,
+        status: request.status as 'pending' | 'approved' | 'rejected',
+      })));
     } catch (err) {
       console.error('Failed to load join requests:', err);
       setError(err instanceof Error ? err.message : 'Failed to load join requests');

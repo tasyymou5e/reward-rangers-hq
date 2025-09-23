@@ -21,12 +21,13 @@ interface SecurityAuditRecord {
   resource_id?: string;
   old_values?: any;
   new_values?: any;
-  ip_address?: string;
-  user_agent?: string;
-  family_context?: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  family_context?: string | null;
   risk_level: 'low' | 'medium' | 'high' | 'critical';
   metadata: any;
   created_at: string;
+  session_id?: string | null;
 }
 
 interface BulkOperation {
@@ -253,7 +254,14 @@ export function useEnhancedAdmin() {
         .limit(limit);
       
       if (error) throw error;
-      setAuditTrail(data || []);
+      setAuditTrail((data || []).map(record => ({
+        ...record,
+        ip_address: record.ip_address as string | null,
+        user_agent: record.user_agent as string | null,
+        family_context: record.family_context as string | null,
+        session_id: record.session_id as string | null,
+        risk_level: record.risk_level as 'low' | 'medium' | 'high' | 'critical',
+      })));
     } catch (err) {
       console.error('Failed to load audit trail:', err);
       setError(err instanceof Error ? err.message : 'Failed to load audit trail');
@@ -268,7 +276,10 @@ export function useEnhancedAdmin() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setBulkOperations(data || []);
+      setBulkOperations((data || []).map(op => ({
+        ...op,
+        status: op.status as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled',
+      })));
     } catch (err) {
       console.error('Failed to load bulk operations:', err);
       setError(err instanceof Error ? err.message : 'Failed to load bulk operations');
@@ -318,6 +329,9 @@ export function useEnhancedAdmin() {
     // Data loading
     loadPermissions,
     loadAuditTrail,
-    loadBulkOperations
+    loadBulkOperations,
+    
+    // Missing exports for compatibility
+    fetchAuditTrail: loadAuditTrail
   };
 }

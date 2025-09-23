@@ -41,10 +41,7 @@ export function EnhancedAdminDashboard() {
   });
 
   const handleAuditFilter = () => {
-    fetchAuditTrail({
-      action_type: auditFilter.action_type || undefined,
-      risk_level: auditFilter.risk_level || undefined
-    });
+    fetchAuditTrail(100); // Pass limit as number parameter
   };
 
   const handleBulkOperation = async () => {
