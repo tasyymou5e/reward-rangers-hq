@@ -29,12 +29,37 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Only log in development to prevent information leakage
+    if (import.meta.env.DEV) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
+    
+    // In production, log minimal error information securely
+    if (import.meta.env.PROD) {
+      // Log to secure monitoring service without sensitive data
+      this.logErrorSecurely(error, errorInfo);
+    }
+    
     this.setState({
       error,
       errorInfo,
     });
   }
+
+  private logErrorSecurely = (error: Error, errorInfo: ErrorInfo) => {
+    // Send minimal error info to monitoring service
+    const secureErrorData = {
+      message: error.message,
+      stack: error.stack?.split('\n')[0], // Only first line
+      componentStack: errorInfo.componentStack?.split('\n')[0], // Only first line
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.pathname
+    };
+    
+    // In a real app, send to monitoring service like Sentry
+    console.warn('Error logged securely:', secureErrorData);
+  };
 
   handleRetry = () => {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });

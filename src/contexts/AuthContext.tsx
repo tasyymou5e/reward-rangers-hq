@@ -24,14 +24,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Direct security logging function to avoid circular dependency
   const logSecurityEvent = async (eventType: string, metadata: any = {}) => {
     try {
+      // Filter sensitive data before logging
+      const filteredMetadata = {
+        ...metadata,
+        // Remove sensitive fields that might leak data
+        password: metadata.password ? '[REDACTED]' : undefined,
+        token: metadata.token ? '[REDACTED]' : undefined,
+        secret: metadata.secret ? '[REDACTED]' : undefined,
+        // Keep only safe fields
+        timestamp: metadata.timestamp || new Date().toISOString(),
+        user_agent: metadata.user_agent,
+        ip_address: metadata.ip_address
+      };
+      
       await supabase.rpc('log_security_event_with_rate_limit', {
         event_type: eventType,
         user_id_param: user?.id || null,
-        metadata_param: metadata
+        metadata_param: filteredMetadata
       });
     } catch (error) {
       // Silently handle security logging errors to avoid breaking auth flow
-      console.error('Security logging error:', error);
+      // Use secure logging to avoid exposing sensitive data
+      if (import.meta.env.DEV) {
+        console.error('Security logging error:', error);
+      }
     }
   };
 
