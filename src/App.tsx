@@ -95,6 +95,11 @@ const App = () => {
                 } />
                 
                 {/* Admin routes - separate authentication */}
+                <Route path="/admin/login" element={
+                  <AdminAuthProvider>
+                    <AdminAuth />
+                  </AdminAuthProvider>
+                } />
                 <Route path="/admin/auth" element={
                   <AdminAuthProvider>
                     <AdminAuth />

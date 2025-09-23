@@ -49,7 +49,7 @@ const Index = () => {
       return;
     }
     if (portal === "admin") {
-      navigate("/admin/auth");
+      navigate("/admin/login");
       return;
     }
     

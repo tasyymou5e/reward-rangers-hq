@@ -82,7 +82,7 @@ export default function AdminAuth() {
           </div>
           <div>
             <CardTitle className="text-3xl font-bold text-admin-primary">
-              Administrator Portal
+              Admin Login
             </CardTitle>
             <p className="text-admin-primary/70 mt-2 text-sm">
               Secure access for system administrators only
