@@ -239,26 +239,31 @@ export function useAdmin() {
 
   const deleteUser = async (userId: string) => {
     try {
-      // Check if user has admin permissions for auth admin operations
+      // Get the current session for authorization
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
         throw new Error('No valid session found');
       }
 
-      // Try to delete from auth.users - this requires service role
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error && error.message !== 'User not found') {
-        console.error('Auth admin delete failed:', error);
-        // If auth deletion fails due to permissions, just remove from profiles
-        // The RLS policies should handle the rest
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', userId);
-        
-        if (profileError) throw profileError;
+      // Use the secure edge function for user deletion
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to delete user');
       }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to delete user');
+      }
+
+      console.log('User deleted successfully:', data.message);
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;
