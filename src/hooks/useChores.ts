@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from './useFamily';
+import { useNotifications } from './useNotifications';
 
 export function useChores() {
   const { user } = useAuth();
   const { family } = useFamily();
+  const { notifyParentChoreCompletion, notifyChoreApproval } = useNotifications();
   const [chores, setChores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -106,7 +108,15 @@ export function useChores() {
         completed_at: new Date().toISOString(),
       });
 
-      // TODO: Notify parents for approval (function will be created)
+      // Notify parent for approval
+      const chore = chores.find(c => c.id === choreId);
+      if (chore && family?.parent_id) {
+        await notifyParentChoreCompletion(
+          family.parent_id,
+          chore.assigned_to_profile?.display_name || 'Child',
+          chore.title
+        );
+      }
     } catch (error) {
       console.error('Error submitting chore for approval:', error);
       throw error;
@@ -153,7 +163,12 @@ export function useChores() {
           .eq('id', chore.assigned_to);
       }
 
-      // TODO: Notify child of approval (function will be created)
+      // Notify child of approval
+      await notifyChoreApproval(
+        chore.assigned_to,
+        chore.title,
+        chore.points_value
+      );
 
       await fetchChores();
     } catch (error) {
