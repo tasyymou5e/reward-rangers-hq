@@ -156,16 +156,22 @@ export function UserManagementTab() {
 
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
+      console.log(`Starting deletion process for user: ${displayName} (${userId})`);
+      setIsLoading(true);
+      
       // Starting user deletion
       await deleteUser(userId);
       
+      console.log('User deletion completed, refreshing data...');
+      
       // User deletion completed, refreshing data
       // Force a fresh fetch of all data
-      setIsLoading(true);
       const [usersData, familiesData] = await Promise.all([
         fetchAllUsers(),
         fetchAllFamilies()
       ]);
+      
+      console.log('Fresh data fetched successfully');
       
       // Fetched fresh data successfully
       setUsers(usersData);
@@ -177,11 +183,11 @@ export function UserManagementTab() {
         description: `User ${displayName} deleted successfully`,
       });
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error in handleDeleteUser:', error);
       setIsLoading(false);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: `Failed to delete user: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }

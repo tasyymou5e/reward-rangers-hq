@@ -34,7 +34,10 @@ serve(async (req) => {
 
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
+    console.log('Auth header received:', authHeader ? 'Present' : 'Missing')
+    
     if (!authHeader) {
+      console.error('No authorization header found')
       return new Response('Unauthorized', { 
         status: 401, 
         headers: corsHeaders 
@@ -46,7 +49,14 @@ serve(async (req) => {
       authHeader.replace('Bearer ', '')
     )
 
+    console.log('Auth user verification:', { 
+      userId: user?.id, 
+      hasError: !!authError,
+      errorMessage: authError?.message 
+    })
+
     if (authError || !user) {
+      console.error('Auth verification failed:', authError)
       return new Response('Unauthorized', { 
         status: 401, 
         headers: corsHeaders 
@@ -60,7 +70,15 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
+    console.log('Profile check:', { 
+      userId: user.id, 
+      role: profile?.role, 
+      hasError: !!profileError,
+      errorMessage: profileError?.message 
+    })
+
     if (profileError || !profile || !['admin', 'full_admin'].includes(profile.role)) {
+      console.error('Admin role verification failed:', { profile, profileError })
       return new Response('Forbidden: Admin role required', { 
         status: 403, 
         headers: corsHeaders 
@@ -69,8 +87,10 @@ serve(async (req) => {
 
     // Parse request body
     const { userId } = await req.json()
+    console.log('Delete request for userId:', userId)
 
     if (!userId) {
+      console.error('No userId provided in request body')
       return new Response('User ID is required', { 
         status: 400, 
         headers: corsHeaders 
@@ -80,6 +100,7 @@ serve(async (req) => {
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {
+      console.error('Invalid UUID format:', userId)
       return new Response('Invalid user ID format', { 
         status: 400, 
         headers: corsHeaders 
@@ -88,6 +109,7 @@ serve(async (req) => {
 
     // Prevent admin self-deletion
     if (userId === user.id) {
+      console.error('Admin attempted self-deletion')
       return new Response('Cannot delete your own account', { 
         status: 400, 
         headers: corsHeaders 
@@ -95,11 +117,25 @@ serve(async (req) => {
     }
 
     // Get user info before deletion for logging
-    const { data: targetUser } = await supabaseAdmin
+    const { data: targetUser, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('display_name, role, email')
       .eq('id', userId)
       .single()
+
+    console.log('Target user info:', { 
+      targetUser, 
+      hasError: !!fetchError,
+      errorMessage: fetchError?.message 
+    })
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error fetching target user:', fetchError)
+      return new Response('Error fetching user information', { 
+        status: 500, 
+        headers: corsHeaders 
+      })
+    }
 
     // Prevent deletion of other admin users (only allow deletion of lower privilege users)
     if (targetUser?.role && ['admin', 'full_admin'].includes(targetUser.role)) {
