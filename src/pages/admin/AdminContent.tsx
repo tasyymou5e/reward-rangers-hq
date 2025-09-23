@@ -53,14 +53,14 @@ export default function AdminContent() {
   const [showContentDialog, setShowContentDialog] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadContent();
   }, []);
 
   const loadContent = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       // Mock data for content items since table doesn't exist yet
       const data = [
@@ -87,7 +87,7 @@ export default function AdminContent() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -234,7 +234,7 @@ export default function AdminContent() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center space-y-4">
