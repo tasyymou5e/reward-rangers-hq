@@ -10,6 +10,12 @@ import AdminAuth from "./pages/AdminAuth";
 import AdminPortal from "./pages/AdminPortal";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminContent from "./pages/admin/AdminContent";
+import AdminFamilies from "./pages/admin/AdminFamilies";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminSecurityCenter from "./pages/admin/AdminSecurityCenter";
+import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
+import AdminUsers from "./pages/admin/AdminUsers";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import NotFound from "./pages/NotFound";
@@ -116,14 +122,14 @@ const App = () => {
                     </AdminProtectedRoute>
                   </AdminAuthProvider>
                 }>
-                  <Route index element={<AdminPortal />} />
+                  <Route index element={<AdminDashboard />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="users" element={<AdminPortal />} />
-                  <Route path="families" element={<AdminPortal />} />
-                  <Route path="reports" element={<AdminPortal />} />
-                  <Route path="content" element={<AdminPortal />} />
-                  <Route path="system-monitoring" element={<AdminPortal />} />
-                  <Route path="security-center" element={<AdminPortal />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="families" element={<AdminFamilies />} />
+                  <Route path="reports" element={<AdminReports />} />
+                  <Route path="content" element={<AdminContent />} />
+                  <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
+                  <Route path="security-center" element={<AdminSecurityCenter />} />
                 </Route>
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
