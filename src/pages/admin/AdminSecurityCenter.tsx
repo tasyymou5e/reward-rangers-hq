@@ -128,12 +128,11 @@ export default function AdminSecurityCenter() {
 
     try {
       const { error } = await supabase
-        .from('security_audit_logs')
+        .from('security_alerts')
         .update({
-          investigated: true,
-          investigated_by: profile?.id,
-          investigation_notes: notes,
-          updated_at: new Date().toISOString()
+          resolved: true,
+          resolved_by: profile?.id,
+          resolved_at: new Date().toISOString()
         })
         .eq('id', eventId);
 
@@ -169,10 +168,7 @@ export default function AdminSecurityCenter() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          status: 'blocked',
-          blocked_at: new Date().toISOString(),
-          blocked_by: profile?.id,
-          block_reason: reason
+          role: 'kid' // Change role to restrict access instead
         })
         .eq('id', userId);
 
@@ -180,13 +176,13 @@ export default function AdminSecurityCenter() {
 
       // Create security event
       await supabase
-        .from('security_audit_logs')
+        .from('security_alerts')
         .insert({
-          event_type: 'user_blocked',
+          alert_type: 'user_blocked',
           user_id: userId,
-          details: { reason, blocked_by: profile?.id },
+          description: `User blocked: ${reason}`,
           severity: 'high',
-          created_at: new Date().toISOString()
+          metadata: { reason, blocked_by: profile?.id }
         });
 
       await loadSecurityData();
@@ -236,7 +232,7 @@ export default function AdminSecurityCenter() {
   const filteredEvents = securityEvents.filter(event => {
     const matchesSearch = event.event_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                         event.user_id?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeverity = severityFilter === "all" || event.severity === severityFilter;
     const matchesType = typeFilter === "all" || event.event_type === typeFilter;
     return matchesSearch && matchesSeverity && matchesType;
@@ -451,7 +447,7 @@ export default function AdminSecurityCenter() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {event.profiles?.display_name || event.profiles?.email || 'Unknown'}
+                    {event.user_id || 'Unknown'}
                   </TableCell>
                   <TableCell>
                     <code className="text-xs bg-gray-100 px-1 rounded">

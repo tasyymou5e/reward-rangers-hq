@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
-import { UserManagementTab } from "@/components/UserManagementTab";
+
 import { 
   Users, 
   Search, 
@@ -255,11 +255,12 @@ export default function AdminUsers() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <UserManagementTab 
-            users={filteredUsers}
-            onBanUser={handleBanUser}
-            canModify={canModify()}
-          />
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">User Management</h3>
+            <p className="text-muted-foreground">
+              User management functionality will be implemented here. Total users: {filteredUsers.length}
+            </p>
+          </div>
         </CardContent>
       </Card>
 

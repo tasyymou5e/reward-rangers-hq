@@ -83,10 +83,11 @@ export default function AdminSystemMonitoring() {
   const handleResolveAlert = async (alertId: string) => {
     try {
       const { error } = await supabase
-        .from('system_alerts')
+        .from('security_alerts')
         .update({
-          resolved_at: new Date().toISOString(),
-          resolved_by: profile?.id
+          resolved: true,
+          resolved_by: profile?.id,
+          resolved_at: new Date().toISOString()
         })
         .eq('id', alertId);
 
@@ -360,7 +361,7 @@ export default function AdminSystemMonitoring() {
                 <div key={alert.id} className="flex items-center justify-between p-3 border rounded">
                   <div>
                     <p className="font-medium">{alert.alert_type}</p>
-                    <p className="text-sm text-gray-600">{alert.message}</p>
+                    <p className="text-sm text-gray-600">{alert.description}</p>
                   </div>
                   <Button
                     size="sm"
