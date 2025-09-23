@@ -15,9 +15,21 @@ serve(async (req) => {
 
   try {
     // Create service role client (has admin permissions)
+    const SUPABASE_URL = 'https://rdvkwnoeojjvjuknlsjd.supabase.co'
+    const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    if (!SERVICE_ROLE) {
+      console.error('Missing SUPABASE_SERVICE_ROLE_KEY secret')
+      return new Response(
+        JSON.stringify({ error: 'Server misconfiguration: missing service role key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Create service role client (has admin permissions)
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      SUPABASE_URL,
+      SERVICE_ROLE,
       {
         auth: {
           autoRefreshToken: false,
@@ -42,6 +54,17 @@ serve(async (req) => {
         status: 401, 
         headers: corsHeaders 
       })
+    }
+
+    // Create user client with JWT for RLS-protected queries
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkdmt3bm9lb2pqdmp1a25sc2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMTc5MjksImV4cCI6MjA3MTc5MzkyOX0.B1DSj5FgX8_XrJ05WADQaW0qbDFDa9ShXxT83VqGoHY'
+    const supabase = createClient(
+      SUPABASE_URL,
+      ANON_KEY,
+      {
+        global: { headers: { Authorization: authHeader } }
+      }
+    )
     }
 
     // Verify the requesting user has admin permissions
