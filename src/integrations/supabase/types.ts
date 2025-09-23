@@ -88,6 +88,53 @@ export type Database = {
         }
         Relationships: []
       }
+      age_profiles: {
+        Row: {
+          age_group: string
+          birth_date: string | null
+          created_at: string
+          enabled_features: Json
+          id: string
+          parent_restrictions: Json | null
+          point_limits: Json
+          ui_complexity: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_group: string
+          birth_date?: string | null
+          created_at?: string
+          enabled_features?: Json
+          id?: string
+          parent_restrictions?: Json | null
+          point_limits?: Json
+          ui_complexity?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_group?: string
+          birth_date?: string | null
+          created_at?: string
+          enabled_features?: Json
+          id?: string
+          parent_restrictions?: Json | null
+          point_limits?: Json
+          ui_complexity?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "age_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approved_affiliates: {
         Row: {
           api_key_name: string | null
@@ -181,6 +228,124 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_rewards: {
+        Row: {
+          achievement_date: string
+          bonus_type: string
+          created_at: string
+          family_id: string
+          id: string
+          metadata: Json | null
+          points_awarded: number
+          streak_count: number | null
+          user_id: string
+        }
+        Insert: {
+          achievement_date?: string
+          bonus_type: string
+          created_at?: string
+          family_id: string
+          id?: string
+          metadata?: Json | null
+          points_awarded: number
+          streak_count?: number | null
+          user_id: string
+        }
+        Update: {
+          achievement_date?: string
+          bonus_type?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          metadata?: Json | null
+          points_awarded?: number
+          streak_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_rewards_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonus_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_goal_proposals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          child_id: string
+          created_at: string
+          description: string | null
+          family_id: string
+          id: string
+          parent_feedback: string | null
+          proposed_points: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          child_id: string
+          created_at?: string
+          description?: string | null
+          family_id: string
+          id?: string
+          parent_feedback?: string | null
+          proposed_points: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          child_id?: string
+          created_at?: string
+          description?: string | null
+          family_id?: string
+          id?: string
+          parent_feedback?: string | null
+          proposed_points?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_goal_proposals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_goal_proposals_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_goal_proposals_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chore_analytics: {
         Row: {
           child_id: string
@@ -250,52 +415,137 @@ export type Database = {
         }
         Relationships: []
       }
+      chore_challenges: {
+        Row: {
+          challenge_type: string
+          chore_id: string
+          completion_time_seconds: number | null
+          created_at: string
+          end_time: string | null
+          family_id: string
+          id: string
+          participant_id: string
+          points_earned: number
+          rank_in_family: number | null
+          start_time: string
+        }
+        Insert: {
+          challenge_type?: string
+          chore_id: string
+          completion_time_seconds?: number | null
+          created_at?: string
+          end_time?: string | null
+          family_id: string
+          id?: string
+          participant_id: string
+          points_earned?: number
+          rank_in_family?: number | null
+          start_time?: string
+        }
+        Update: {
+          challenge_type?: string
+          chore_id?: string
+          completion_time_seconds?: number | null
+          created_at?: string
+          end_time?: string | null
+          family_id?: string
+          id?: string
+          participant_id?: string
+          points_earned?: number
+          rank_in_family?: number | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_challenges_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_challenges_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_challenges_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chores: {
         Row: {
           assigned_to: string | null
+          challenge_mode: boolean | null
           completed_at: string | null
+          completion_time_seconds: number | null
           created_at: string | null
           created_by: string | null
           description: string | null
           difficulty: string | null
           due_date: string | null
+          early_completion_bonus: number | null
           estimated_time_minutes: number | null
           family_id: string | null
+          fastest_completion_time: number | null
           id: string
           points_value: number
+          speed_bonus: number | null
           status: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus: number | null
+          team_bonus: number | null
           title: string
           updated_at: string | null
         }
         Insert: {
           assigned_to?: string | null
+          challenge_mode?: boolean | null
           completed_at?: string | null
+          completion_time_seconds?: number | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           difficulty?: string | null
           due_date?: string | null
+          early_completion_bonus?: number | null
           estimated_time_minutes?: number | null
           family_id?: string | null
+          fastest_completion_time?: number | null
           id?: string
           points_value?: number
+          speed_bonus?: number | null
           status?: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus?: number | null
+          team_bonus?: number | null
           title: string
           updated_at?: string | null
         }
         Update: {
           assigned_to?: string | null
+          challenge_mode?: boolean | null
           completed_at?: string | null
+          completion_time_seconds?: number | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           difficulty?: string | null
           due_date?: string | null
+          early_completion_bonus?: number | null
           estimated_time_minutes?: number | null
           family_id?: string | null
+          fastest_completion_time?: number | null
           id?: string
           points_value?: number
+          speed_bonus?: number | null
           status?: Database["public"]["Enums"]["chore_status"] | null
+          streak_bonus?: number | null
+          team_bonus?: number | null
           title?: string
           updated_at?: string | null
         }
@@ -387,6 +637,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      family_leaderboards: {
+        Row: {
+          age_group: string
+          created_at: string
+          family_id: string
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          rankings: Json
+          updated_at: string
+        }
+        Insert: {
+          age_group: string
+          created_at?: string
+          family_id: string
+          id?: string
+          period_end: string
+          period_start: string
+          period_type?: string
+          rankings?: Json
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          rankings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_leaderboards_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       family_members: {
         Row: {
@@ -604,6 +898,77 @@ export type Database = {
         }
         Relationships: []
       }
+      point_transactions: {
+        Row: {
+          bonus_type: string | null
+          chore_id: string | null
+          created_at: string
+          description: string
+          family_id: string
+          goal_id: string | null
+          id: string
+          metadata: Json | null
+          points_amount: number
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          bonus_type?: string | null
+          chore_id?: string | null
+          created_at?: string
+          description: string
+          family_id: string
+          goal_id?: string | null
+          id?: string
+          metadata?: Json | null
+          points_amount: number
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          bonus_type?: string | null
+          chore_id?: string | null
+          created_at?: string
+          description?: string
+          family_id?: string
+          goal_id?: string | null
+          id?: string
+          metadata?: Json | null
+          points_amount?: number
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_transactions_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "point_transactions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "point_transactions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "child_goal_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "point_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -784,6 +1149,57 @@ export type Database = {
           },
         ]
       }
+      scheduled_notifications: {
+        Row: {
+          chore_id: string | null
+          content: Json
+          created_at: string
+          id: string
+          notification_type: string
+          scheduled_for: string
+          sent: boolean
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chore_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          notification_type: string
+          scheduled_for: string
+          sent?: boolean
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chore_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          notification_type?: string
+          scheduled_for?: string
+          sent?: boolean
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notifications_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_alerts: {
         Row: {
           alert_type: string
@@ -820,6 +1236,45 @@ export type Database = {
           resolved_by?: string | null
           severity?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_test_results: {
+        Row: {
+          created_at: string | null
+          findings: Json | null
+          id: string
+          recommendations: string[] | null
+          status: string | null
+          summary: Json | null
+          test_id: string
+          test_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          findings?: Json | null
+          id?: string
+          recommendations?: string[] | null
+          status?: string | null
+          summary?: Json | null
+          test_id: string
+          test_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          findings?: Json | null
+          id?: string
+          recommendations?: string[] | null
+          status?: string | null
+          summary?: Json | null
+          test_id?: string
+          test_type?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1048,6 +1503,10 @@ export type Database = {
       }
       cleanup_old_mfa_data: {
         Args: { days_old?: number }
+        Returns: number
+      }
+      cleanup_old_security_test_results: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       create_system_notification_secure: {
