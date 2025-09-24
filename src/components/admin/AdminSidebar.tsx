@@ -120,7 +120,7 @@ export function AdminSidebar() {
     >
       <SidebarTrigger className="m-2 self-end" />
 
-      <SidebarContent className="bg-white border-r border-admin-primary/20">
+      <SidebarContent className="bg-admin-background border-r border-admin-primary/20">
         <SidebarGroup>
           <SidebarGroupLabel className="text-admin-primary font-semibold">
             Administration

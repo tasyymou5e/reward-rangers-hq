@@ -14,12 +14,12 @@ export default function AdminLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-admin-background">
+      <div className="min-h-screen flex w-full bg-admin-background text-white dark">
         <AdminSidebar />
         
         <main className="flex-1 flex flex-col">
           {/* Admin Header */}
-          <header className="h-16 border-b border-admin-primary/20 bg-white/50 backdrop-blur-sm flex items-center justify-between px-6">
+          <header className="h-16 border-b border-admin-primary/20 bg-admin-background/80 backdrop-blur-sm flex items-center justify-between px-6">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-bold text-admin-primary">🥷 Chore Ninja Admin</h1>
             </div>

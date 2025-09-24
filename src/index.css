@@ -25,12 +25,12 @@
     --parents-accent: 39 84% 56%;
     --parents-background: 150 25% 98%;
 
-    /* Admin theme - professional */
-    --admin-primary: 215 28% 17%;
-    --admin-primary-foreground: 0 0% 100%;
-    --admin-secondary: 210 40% 96%;
-    --admin-accent: 221 83% 53%;
-    --admin-background: 220 13% 97%;
+    /* Admin theme - dark professional */
+    --admin-primary: 217 91% 60%;
+    --admin-primary-foreground: 222 47% 11%;
+    --admin-secondary: 215 20% 65%;
+    --admin-accent: 217 91% 60%;
+    --admin-background: 222 47% 11%;
 
     /* Shared semantic colors */
     --card: 0 0% 100%;
