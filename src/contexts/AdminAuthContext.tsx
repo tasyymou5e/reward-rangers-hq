@@ -25,7 +25,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       setProfileLoading(true);
-      console.log('Fetching admin profile for user:', userId);
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Fetching admin profile for user');
+      });
       
       // Try direct profile access first (fallback approach)
       const { data, error } = await supabase
@@ -39,15 +41,21 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
-      console.log('Profile data retrieved:', data);
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Profile data retrieved');
+      });
       
       // Verify the user is actually an admin
       if (!data || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(data.role)) {
-        console.warn('User is not an admin, signing out. Role:', data?.role);
+        import('@/utils/secureLogging').then(({ secureLog }) => {
+          secureLog.warn('User is not an admin, signing out');
+        });
         throw new Error('Unauthorized: Admin access required');
       }
       
-      console.log('Admin profile loaded successfully');
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Admin profile loaded successfully');
+      });
       setProfile(data);
     } catch (error) {
       console.error('Error fetching admin profile:', error);

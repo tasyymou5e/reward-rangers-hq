@@ -92,7 +92,14 @@ export default function AdminFamilies() {
   };
 
   const handleDeleteFamily = async (familyId: string) => {
-    if (!confirm("Are you sure you want to delete this family? This action cannot be undone.")) {
+    const { confirm } = await import('@/components/ui/confirm-dialog').then(m => ({ confirm: m.useConfirmDialog().confirm }));
+    const confirmed = await confirm(
+      "Delete Family",
+      "Are you sure you want to delete this family? This action cannot be undone.",
+      { variant: "destructive", confirmText: "Delete Family" }
+    );
+    
+    if (!confirmed) {
       return;
     }
 

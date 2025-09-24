@@ -239,7 +239,9 @@ export function useAdmin() {
 
   const deleteUser = async (userId: string) => {
     try {
-      console.log('Starting user deletion for userId:', userId);
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Starting user deletion process');
+      });
       
       // Get the current session for authorization
       const { data: { session } } = await supabase.auth.getSession();
@@ -249,7 +251,9 @@ export function useAdmin() {
         throw new Error('No valid session found');
       }
 
-      console.log('Session found, calling edge function...');
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Session found, calling edge function...');
+      });
 
       // Use the secure edge function for user deletion
       const { data, error } = await supabase.functions.invoke('admin-delete-user', {
@@ -259,7 +263,9 @@ export function useAdmin() {
         },
       });
 
-      console.log('Edge function response:', { data, error });
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Edge function response received');
+      });
 
       if (error) {
         console.error('Edge function error:', error);
@@ -271,7 +277,9 @@ export function useAdmin() {
         throw new Error(data?.error || 'Failed to delete user');
       }
 
-      console.log('User deleted successfully:', data.message);
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('User deleted successfully');
+      });
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;

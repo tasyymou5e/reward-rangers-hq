@@ -176,7 +176,14 @@ export default function AdminContent() {
       return;
     }
 
-    if (!confirm("Are you sure you want to delete this content? This action cannot be undone.")) {
+    const { confirm } = await import('@/components/ui/confirm-dialog').then(m => ({ confirm: m.useConfirmDialog().confirm }));
+    const confirmed = await confirm(
+      "Delete Content",
+      "Are you sure you want to delete this content? This action cannot be undone.",
+      { variant: "destructive", confirmText: "Delete" }
+    );
+    
+    if (!confirmed) {
       return;
     }
 

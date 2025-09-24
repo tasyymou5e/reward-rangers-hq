@@ -99,7 +99,9 @@ export function useFamilyChat() {
 
   const markMessageAsRead = async (messageId: string) => {
     // TODO: Implement read status tracking
-    console.log('Mark message as read:', messageId);
+    import('@/utils/secureLogging').then(({ secureLog }) => {
+      secureLog.info('Mark message as read requested');
+    });
   };
 
   // Set up real-time subscription for new messages

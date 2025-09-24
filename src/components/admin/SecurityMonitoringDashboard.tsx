@@ -86,7 +86,9 @@ export function SecurityMonitoringDashboard() {
           table: 'security_alerts'
         },
         (payload) => {
-          console.log('New security alert:', payload);
+          import('@/utils/secureLogging').then(({ secureLog }) => {
+            secureLog.info('New security alert received');
+          });
           setSecurityEvents(prev => [payload.new as SecurityEvent, ...prev]);
           updateMetrics();
           

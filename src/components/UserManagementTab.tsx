@@ -156,13 +156,17 @@ export function UserManagementTab() {
 
   const handleDeleteUser = async (userId: string, displayName: string) => {
     try {
-      console.log(`Starting deletion process for user: ${displayName} (${userId})`);
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info(`Starting deletion process for user: ${displayName}`, { userId });
+      });
       setIsLoading(true);
       
       // Starting user deletion
       await deleteUser(userId);
       
-      console.log('User deletion completed, refreshing data...');
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('User deletion completed, refreshing data...');
+      });
       
       // User deletion completed, refreshing data
       // Force a fresh fetch of all data
@@ -171,7 +175,9 @@ export function UserManagementTab() {
         fetchAllFamilies()
       ]);
       
-      console.log('Fresh data fetched successfully');
+      import('@/utils/secureLogging').then(({ secureLog }) => {
+        secureLog.info('Fresh data fetched successfully');
+      });
       
       // Fetched fresh data successfully
       setUsers(usersData);
