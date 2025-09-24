@@ -7,9 +7,12 @@ interface AdminAuthContextType {
   session: Session | null;
   profile: any | null;
   loading: boolean;
+  error: string | null;
+  networkStatus: 'connected' | 'disconnected' | 'checking';
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  testConnection: () => Promise<boolean>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -19,51 +22,55 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [networkStatus, setNetworkStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const testConnection = async (): Promise<boolean> => {
+    try {
+      setNetworkStatus('checking');
+      const { error } = await supabase.from('profiles').select('count').limit(1);
+      const isConnected = !error;
+      setNetworkStatus(isConnected ? 'connected' : 'disconnected');
+      return isConnected;
+    } catch (err) {
+      setNetworkStatus('disconnected');
+      return false;
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
-      setProfileLoading(true);
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Fetching admin profile for user');
-      });
+      setError(null);
       
-      // Try direct profile access first (fallback approach)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      // Use RPC function instead of direct table access for better reliability
+      const { data, error } = await supabase.rpc('get_profile_by_id_secure', {
+        target_user_id: userId,
+        requesting_user_id: userId
+      });
       
       if (error) {
         console.error('Profile fetch error:', error);
-        throw error;
+        throw new Error(`Profile fetch failed: ${error.message}`);
       }
       
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Profile data retrieved');
-      });
-      
       // Verify the user is actually an admin
-      if (!data || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(data.role)) {
-        import('@/utils/secureLogging').then(({ secureLog }) => {
-          secureLog.warn('User is not an admin, signing out');
-        });
+      const profileData = Array.isArray(data) ? data[0] : data;
+      if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
         throw new Error('Unauthorized: Admin access required');
       }
       
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Admin profile loaded successfully');
-      });
-      setProfile(data);
-    } catch (error) {
+      setProfile(profileData);
+      setNetworkStatus('connected');
+    } catch (error: any) {
       console.error('Error fetching admin profile:', error);
-      // Don't throw error that could crash the component
-      // Just set profile to null and let the UI handle it
+      setError(error.message || 'Failed to load admin profile');
       setProfile(null);
-    } finally {
-      setProfileLoading(false);
+      
+      // Check if it's a network error
+      if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
+        setNetworkStatus('disconnected');
+      }
     }
   };
 
@@ -79,20 +86,27 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     
     const initializeAuth = async () => {
       try {
-        // Set up auth state listener FIRST
+        setError(null);
+        
+        // Test connection first
+        const isConnected = await testConnection();
+        if (!isConnected) {
+          setError('Unable to connect to server. Please check your internet connection.');
+          setLoading(false);
+          return;
+        }
+        
+        // Set up auth state listener
         const { data } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             if (!mounted || isSigningOut) return;
             
-            // Auth state change detected
-            
-            // Only update state if we're not in the middle of signing out
             if (event === 'SIGNED_OUT' || !session) {
-              // User signed out or session ended
               if (mounted && !isSigningOut) {
                 setSession(null);
                 setUser(null);
                 setProfile(null);
+                setError(null);
                 setLoading(false);
               }
               return;
@@ -101,46 +115,43 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             if (session?.user && mounted && !isSigningOut) {
               setSession(session);
               setUser(session.user);
-              
-              // Defer profile fetch to prevent blocking
-              setTimeout(async () => {
-                if (mounted && !isSigningOut) {
-                  await fetchProfile(session.user.id);
-                }
-              }, 100);
-            } else {
-              // Only set loading to false if there's no user
-              if (mounted) {
-                setLoading(false);
-              }
+              await fetchProfile(session.user.id);
+              setLoading(false);
             }
           }
         );
         
         subscription = data.subscription;
 
-        // THEN check for existing session
+        // Check for existing session
         const { data: sessionData, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
+          setError('Session validation failed. Please try logging in again.');
+          setLoading(false);
+          return;
         }
         
         if (!mounted) return;
         
         const session = sessionData.session;
-        setSession(session);
-        setUser(session?.user ?? null);
-        
         if (session?.user && !isSigningOut) {
+          setSession(session);
+          setUser(session.user);
           await fetchProfile(session.user.id);
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
         }
         
         setLoading(false);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth initialization error:', error);
         if (mounted) {
+          setError(error.message || 'Authentication system initialization failed');
           setLoading(false);
           setUser(null);
           setSession(null);
@@ -157,51 +168,44 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         subscription.unsubscribe();
       }
     };
-  }, [isSigningOut]); // Add isSigningOut as dependency
+  }, [isSigningOut]);
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Attempting admin sign in
+      setError(null);
+      
+      // Test connection first
+      const isConnected = await testConnection();
+      if (!isConnected) {
+        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Sign in error:', error);
-        throw error;
-      }
-
-      // Check if user is admin after successful login
-      if (data.user) {
-        console.log('Verifying admin status for user:', data.user.id);
-        
-        // Direct profile access for admin verification
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profile check error:', profileError);
-          await supabase.auth.signOut();
-          throw new Error('Profile verification failed');
-        }
-
-        console.log('User profile retrieved:', profileData);
-        if (!profileData || !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(profileData.role)) {
-          console.warn('User is not an admin. Role:', profileData?.role);
-          await supabase.auth.signOut();
-          throw new Error('Unauthorized: Admin access required');
+        // Provide user-friendly error messages
+        let friendlyMessage = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          friendlyMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          friendlyMessage = 'Please check your email and click the confirmation link to complete your account setup.';
+        } else if (error.message.includes('Too many requests')) {
+          friendlyMessage = 'Too many login attempts. Please wait a moment and try again.';
+        } else if (error.message.includes('Network')) {
+          friendlyMessage = 'Network error. Please check your internet connection and try again.';
         }
         
-        console.log('Admin access confirmed');
+        throw new Error(friendlyMessage);
       }
 
+      // Admin verification will happen automatically via the auth state listener
       return { data, error: null };
     } catch (error: any) {
       console.error('Sign in process failed:', error);
+      setError(error.message || 'Authentication failed');
       return { data: null, error };
     }
   };
@@ -279,10 +283,13 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     profile,
-    loading: loading || profileLoading, // Keep loading true while either auth or profile is loading
+    loading,
+    error,
+    networkStatus,
     signIn,
     signOut,
     refreshProfile,
+    testConnection,
   };
 
   return (

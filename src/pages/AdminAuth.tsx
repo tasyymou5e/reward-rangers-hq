@@ -11,18 +11,41 @@ import { useToast } from "@/hooks/use-toast";
 
 
 export default function AdminAuth() {
-  const { user, loading, signIn } = useAdminAuth();
+  const { user, loading, signIn, error: contextError, networkStatus, testConnection } = useAdminAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
 
   // Redirect if already authenticated as admin
   if (user) {
     return <Navigate to="/admin" replace />;
   }
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      const isConnected = await testConnection();
+      toast({
+        title: isConnected ? "Connection Successful" : "Connection Failed",
+        description: isConnected 
+          ? "Successfully connected to the server" 
+          : "Unable to reach the server. Please check your internet connection.",
+        variant: isConnected ? "default" : "destructive",
+      });
+    } catch (err) {
+      toast({
+        title: "Connection Test Failed",
+        description: "Unable to test connection",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +69,13 @@ export default function AdminAuth() {
         });
       }
     } catch (err: any) {
-      setError(err.message || "Authentication failed");
+      const errorMessage = err.message || "Authentication failed";
+      setError(errorMessage);
+      toast({
+        title: "Authentication Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setAuthLoading(false);
     }
@@ -91,6 +120,46 @@ export default function AdminAuth() {
         </CardHeader>
         
         <CardContent>
+          {/* Network Status Indicator */}
+          {networkStatus !== 'connected' && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center gap-2 text-orange-700">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {networkStatus === 'checking' ? 'Checking Connection...' : 'Connection Issue'}
+                </span>
+              </div>
+              <p className="text-xs text-orange-600 mt-1">
+                {networkStatus === 'checking' 
+                  ? 'Testing server connectivity...' 
+                  : 'Unable to connect to server. Check your internet connection.'}
+              </p>
+              {networkStatus === 'disconnected' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  disabled={isTestingConnection}
+                  className="mt-2 text-xs"
+                >
+                  {isTestingConnection ? 'Testing...' : 'Test Connection'}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Context Error Display */}
+          {contextError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">System Error</span>
+              </div>
+              <p className="text-xs text-red-600 mt-1">{contextError}</p>
+            </div>
+          )}
+
           <div className="mb-6 p-4 bg-admin-accent/10 border border-admin-accent/30 rounded-lg">
             <div className="flex items-center gap-2 text-admin-accent">
               <AlertTriangle className="w-4 h-4" />
@@ -158,7 +227,7 @@ export default function AdminAuth() {
             <Button
               type="submit"
               className="w-full bg-gradient-admin hover:opacity-90 text-white shadow-lg transition-all duration-300"
-              disabled={authLoading}
+              disabled={authLoading || networkStatus === 'disconnected'}
             >
               {authLoading ? (
                 <div className="flex items-center gap-2">
