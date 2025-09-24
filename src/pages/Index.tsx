@@ -93,10 +93,13 @@ const Index = () => {
           
           {!user && (
             <div className="flex gap-4 justify-center mt-6">
-              <Button onClick={() => navigate("/auth")} variant="default" size="lg">
-                <LogIn className="h-5 w-5 mr-2" />
-                Sign In
-              </Button>
+              {/* Show sign in button only if at least one portal is enabled */}
+              {(loginControls.kids_login_enabled || loginControls.parents_login_enabled) && (
+                <Button onClick={() => navigate("/auth")} variant="default" size="lg">
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Sign In
+                </Button>
+              )}
               <Button onClick={() => navigate("/auth")} variant="outline" size="lg">
                 <UserPlus className="h-5 w-5 mr-2" />
                 Sign Up
