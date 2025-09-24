@@ -283,8 +283,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             // Could not clear localStorage, proceeding anyway
           }
           
-          // Navigate using hash router
-          window.location.replace('#/admin/auth');
+          // Navigate to admin auth
+          window.location.replace('/admin/auth');
         }
       } catch (navError) {
         console.error('Navigation error:', navError);
