@@ -1834,6 +1834,10 @@ export type Database = {
         Args: { days_old?: number }
         Returns: number
       }
+      cleanup_old_rate_limit_data: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_old_security_test_results: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1869,6 +1873,10 @@ export type Database = {
       decrypt_mfa_secret_secure: {
         Args: { encrypted_data: string }
         Returns: string
+      }
+      detect_security_violations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       encrypt_mfa_secret: {
         Args: { secret_text: string }
@@ -2016,6 +2024,10 @@ export type Database = {
         Args: { key_name: string }
         Returns: Json
       }
+      get_system_setting_secure: {
+        Args: { key_name: string }
+        Returns: Json
+      }
       get_user_family_ids: {
         Args: { user_id_param?: string }
         Returns: string[]
@@ -2156,6 +2168,10 @@ export type Database = {
       validate_family_code_secure: {
         Args: { code: string }
         Returns: boolean
+      }
+      validate_password_security_enhanced: {
+        Args: { password_text: string }
+        Returns: Json
       }
     }
     Enums: {
