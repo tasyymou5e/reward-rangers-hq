@@ -15,6 +15,7 @@ import AdminFamilies from "./pages/admin/AdminFamilies";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSecurityCenter from "./pages/admin/AdminSecurityCenter";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
+import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
@@ -82,6 +83,7 @@ const App = () => {
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="content" element={<AdminContent />} />
                   <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
+                  <Route path="system-settings" element={<AdminSystemSettings />} />
                   <Route path="security-center" element={<AdminSecurityCenter />} />
                 </Route>
                 

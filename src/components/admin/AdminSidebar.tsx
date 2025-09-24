@@ -69,6 +69,12 @@ const navigationItems = [
     roles: ['admin', 'full_admin']
   },
   {
+    title: "System Settings",
+    url: "/admin/system-settings",
+    icon: Settings,
+    roles: ['admin', 'full_admin']
+  },
+  {
     title: "Legacy Admin",
     url: "/admin",
     icon: Settings,

@@ -1570,6 +1570,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_encrypted: boolean
+          last_modified_by: string | null
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_encrypted?: boolean
+          last_modified_by?: string | null
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_encrypted?: boolean
+          last_modified_by?: string | null
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           badge_id: string | null
@@ -1979,6 +2012,10 @@ export type Database = {
           username: string
         }[]
       }
+      get_system_setting: {
+        Args: { key_name: string }
+        Returns: Json
+      }
       get_user_family_ids: {
         Args: { user_id_param?: string }
         Returns: string[]
@@ -2091,6 +2128,14 @@ export type Database = {
       update_profile_email_secure: {
         Args: { new_email: string }
         Returns: undefined
+      }
+      update_system_setting: {
+        Args: {
+          key_name: string
+          new_value: Json
+          setting_description?: string
+        }
+        Returns: boolean
       }
       validate_child_data_access_secure: {
         Args: {

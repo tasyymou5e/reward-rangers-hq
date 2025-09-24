@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { LogIn, UserPlus, Moon, Sun } from "lucide-react";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { LogIn, UserPlus, Moon, Sun, AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { loginControls, systemMaintenance, loading: settingsLoading } = useSystemSettings();
 
   // Auto-redirect authenticated users to their appropriate portal
   useEffect(() => {
@@ -102,22 +105,67 @@ const Index = () => {
           )}
         </div>
 
+        {/* System Maintenance Alert */}
+        {systemMaintenance.enabled && (
+          <Alert className="mb-6 max-w-4xl mx-auto">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{systemMaintenance.message}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Custom Maintenance Message */}
+        {loginControls.maintenance_message && (!loginControls.parents_login_enabled || !loginControls.kids_login_enabled) && (
+          <Alert className="mb-6 max-w-4xl mx-auto">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{loginControls.maintenance_message}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <PortalCard
-            title="Kids Portal"
-            description="Complete chores, earn points, and unlock amazing rewards!"
-            icon="🎮"
-            variant="kids"
-            onClick={() => handlePortalNavigation("kids")}
-          />
+          {loginControls.kids_login_enabled && !systemMaintenance.enabled && (
+            <PortalCard
+              title="Kids Portal"
+              description="Complete chores, earn points, and unlock amazing rewards!"
+              icon="🎮"
+              variant="kids"
+              onClick={() => handlePortalNavigation("kids")}
+            />
+          )}
           
-          <PortalCard
-            title="Parents Portal"
-            description="Manage chores, track progress, and set up rewards for your children."
-            icon="👨‍👩‍👧‍👦"
-            variant="parents"
-            onClick={() => handlePortalNavigation("parents")}
-          />
+          {loginControls.parents_login_enabled && !systemMaintenance.enabled && (
+            <PortalCard
+              title="Parents Portal"
+              description="Manage chores, track progress, and set up rewards for your children."
+              icon="👨‍👩‍👧‍👦"
+              variant="parents"
+              onClick={() => handlePortalNavigation("parents")}
+            />
+          )}
+          
+          {/* Show disabled portal cards with messages */}
+          {!loginControls.kids_login_enabled && !systemMaintenance.enabled && (
+            <div className="opacity-50 pointer-events-none">
+              <PortalCard
+                title="Kids Portal"
+                description="Currently unavailable for maintenance"
+                icon="🔒"
+                variant="kids"
+                onClick={() => {}}
+              />
+            </div>
+          )}
+          
+          {!loginControls.parents_login_enabled && !systemMaintenance.enabled && (
+            <div className="opacity-50 pointer-events-none">
+              <PortalCard
+                title="Parents Portal"
+                description="Currently unavailable for maintenance"
+                icon="🔒"
+                variant="parents"
+                onClick={() => {}}
+              />
+            </div>
+          )}
         </div>
 
         <div className="text-center mt-16 space-y-4">
