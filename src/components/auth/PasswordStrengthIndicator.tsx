@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Check, X, AlertTriangle, Shield } from 'lucide-react';
+import { Check, X, AlertTriangle, Shield, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { validatePasswordStrength } from '@/utils/securePasswordGenerator';
+import { validatePasswordSecurity } from '@/utils/leakedPasswordChecker';
 
 interface PasswordStrengthIndicatorProps {
   password: string;
@@ -23,24 +23,49 @@ export function PasswordStrengthIndicator({
     score: 0,
     isValid: false,
     feedback: [] as string[],
-    checks: {} as any
+    checks: {} as any,
+    isBreached: false
   });
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     if (!password) {
-      setValidation({ score: 0, isValid: false, feedback: [], checks: {} });
+      setValidation({ score: 0, isValid: false, feedback: [], checks: {}, isBreached: false });
       onValidationChange(false);
       return;
     }
 
-    const result = validatePasswordStrength(password);
-    setValidation({
-      score: result.score,
-      isValid: result.isValid,
-      feedback: result.recommendations,
-      checks: result.checks
-    });
-    onValidationChange(result.isValid);
+    const checkPassword = async () => {
+      setIsChecking(true);
+      try {
+        const result = await validatePasswordSecurity(password);
+        setValidation({
+          score: result.score,
+          isValid: result.isValid,
+          feedback: result.recommendations,
+          checks: result.checks,
+          isBreached: result.isBreached
+        });
+        onValidationChange(result.isValid);
+      } catch (error) {
+        console.warn('Password security check failed, using basic validation:', error);
+        // Fallback to basic validation if security check fails
+        const { validatePasswordStrength } = await import('@/utils/securePasswordGenerator');
+        const result = validatePasswordStrength(password);
+        setValidation({
+          score: result.score,
+          isValid: result.isValid,
+          feedback: result.recommendations,
+          checks: result.checks,
+          isBreached: false
+        });
+        onValidationChange(result.isValid);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkPassword();
   }, [password, onValidationChange]);
 
   const getStrengthColor = (score: number) => {
@@ -99,6 +124,11 @@ export function PasswordStrengthIndicator({
       met: validation.checks.noCommonWords,
       critical: false 
     },
+    { 
+      text: 'Not found in data breaches', 
+      met: validation.checks.notBreached,
+      critical: true 
+    },
   ];
 
   return (
@@ -111,6 +141,9 @@ export function PasswordStrengthIndicator({
             <span className="text-sm font-medium text-muted-foreground">
               Password Strength
             </span>
+            {isChecking && (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            )}
           </div>
           <span 
             className="text-sm font-semibold"
@@ -165,12 +198,23 @@ export function PasswordStrengthIndicator({
             </Alert>
           )}
 
+          {/* Breach Warning */}
+          {validation.isBreached && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                <strong>Security Warning:</strong> This password has been found in data breaches. 
+                Please choose a different password for your safety.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Security Notice */}
-          {validation.isValid && (
+          {validation.isValid && !validation.isBreached && (
             <Alert>
               <Shield className="h-4 w-4" />
               <AlertDescription className="text-xs text-green-700">
-                Password meets security requirements. 
+                Password meets security requirements and is not found in known breaches.
                 {password.length >= 12 && " Excellent length for enhanced security!"}
               </AlertDescription>
             </Alert>

@@ -114,6 +114,7 @@ export async function generateTemporaryPassword(expirationMinutes: number = 60) 
 /**
  * Enhanced password validation following security framework guidelines
  * Implements comprehensive security checks and breach detection
+ * Note: Use validatePasswordSecurity from leakedPasswordChecker.ts for full breach checking
  */
 export function validatePasswordStrength(password: string) {
   const checks = {
