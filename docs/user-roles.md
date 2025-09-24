@@ -2,7 +2,7 @@
 
 ## 🎭 Overview
 
-ChoreQuest provides three distinct portal experiences, each tailored to specific user roles and their unique needs within the family chore management ecosystem.
+ChoreQuest provides distinct portal experiences, each tailored to specific user roles and their unique needs within the family chore management ecosystem. The system now includes dynamic portal access control managed by administrators.
 
 ---
 
@@ -38,6 +38,11 @@ Children and teenagers who complete household chores and participate in the fami
 - **Playful Animations**: Bounce effects and smooth transitions
 - **Emoji Integration**: Extensive use for visual communication
 - **Kid-Friendly Typography**: Large, readable fonts with fun elements
+
+### Access Control ✨ NEW
+- **Admin Controlled**: Can be enabled/disabled via System Settings
+- **Dynamic Messaging**: Custom messages when portal is disabled
+- **Real-time Changes**: Settings apply immediately without restart
 
 ### User Flow Example
 1. **Login** → Personal dashboard with assigned chores
@@ -94,6 +99,11 @@ Parent or guardian who manages family chores, assigns tasks, and oversees childr
 - **Data-Driven**: Charts, graphs, and statistical displays
 - **Trustworthy**: Secure and reliable visual elements
 
+### Access Control ✨ NEW
+- **Admin Controlled**: Can be enabled/disabled via System Settings
+- **Dynamic Messaging**: Custom messages when portal is disabled
+- **Real-time Changes**: Settings apply immediately without restart
+
 ### User Flow Example
 1. **Dashboard** → Review family progress and statistics
 2. **Create Chore** → Assign task to specific children
@@ -113,8 +123,14 @@ System administrators who manage the ChoreQuest platform across all families.
 #### User Management
 - **Family Oversight**: View and manage all families in the system
 - **User Administration**: Create, modify, and deactivate accounts
-- **Role Management**: Assign and modify user permissions
+- **Role Management**: Assign and modify user permissions (multi-role support)
 - **Bulk Operations**: Efficient management of multiple records
+
+#### System Configuration ✨ NEW
+- **Portal Access Control**: Enable/disable parent and kids portals independently
+- **Maintenance Mode**: System-wide maintenance with custom messaging
+- **Dynamic Settings**: Real-time configuration changes via System Settings
+- **Setting Categories**: Login controls, maintenance mode, and more
 
 #### System Analytics
 - **Platform-Wide Metrics**: Usage statistics and engagement data
@@ -140,17 +156,28 @@ System administrators who manage the ChoreQuest platform across all families.
 - **Support Tools**: User assistance and troubleshooting
 - **Data Management**: Backup, recovery, and maintenance
 
+### Admin Role Types ✨ ENHANCED
+- **admin**: Full system access (legacy compatibility)
+- **full_admin**: Complete administrative privileges
+- **read_only_admin**: View-only access to most sections
+- **report_admin**: Limited to reports and analytics
+
 ### Design Theme
 - **Dark Professional**: Dark blue and gray color scheme
 - **Data-Dense**: Efficient information display
 - **Control-Focused**: Emphasis on management tools
 - **Enterprise-Grade**: Robust and reliable interface
 
+### Access Control
+- **Always Available**: Admin portal access is always enabled
+- **Role-Based Navigation**: Menu items filtered by admin role type
+- **Secure Authentication**: Enhanced security with rate limiting
+
 ### User Flow Example
 1. **Dashboard** → System overview and key metrics
-2. **Monitor** → Review security alerts and system health
-3. **Manage** → Administer users and families
-4. **Configure** → Adjust A/B tests and feature flags
+2. **Configure** → Manage portal access and system settings
+3. **Monitor** → Review security alerts and system health
+4. **Manage** → Administer users and families
 5. **Report** → Generate system-wide analytics
 
 ---
@@ -165,22 +192,60 @@ System administrators who manage the ChoreQuest platform across all families.
 
 ### Permission Matrix
 
-| Feature | Kids | Parents | Admin |
-|---------|------|---------|-------|
+| Feature | Kids | Parents | Admin Types |
+|---------|------|---------|-------------|
 | View Own Profile | ✅ | ✅ | ✅ |
 | View Family Profiles | ✅ | ✅ | ✅ |
 | Create Chores | ❌ | ✅ | ✅ |
 | Complete Chores | ✅ | ❌ | ✅ |
 | Manage Family | ❌ | ✅ | ✅ |
-| System Administration | ❌ | ❌ | ✅ |
+| System Administration | ❌ | ❌ | Role-based |
 | Security Monitoring | ❌ | Limited | ✅ |
-| A/B Testing | ❌ | ❌ | ✅ |
+| A/B Testing | ❌ | ❌ | admin, full_admin |
+| System Settings | ❌ | ❌ | admin, full_admin |
+| Portal Control | ❌ | ❌ | admin, full_admin |
 
 ### Security Features
 - **Multi-Factor Authentication**: Required for parents
 - **Session Management**: Automatic timeout and refresh
 - **Rate Limiting**: Protection against brute force attacks
 - **Audit Logging**: Comprehensive activity tracking
+
+---
+
+## 🎛️ Portal Access Management ✨ NEW
+
+### Dynamic Portal Control
+Administrators can now control portal access in real-time through the System Settings interface:
+
+#### Login Controls
+```json
+{
+  "parents_login_enabled": true,
+  "kids_login_enabled": true,
+  "maintenance_message": "Custom message for disabled portals"
+}
+```
+
+#### System Maintenance
+```json
+{
+  "enabled": false,
+  "message": "System is currently under maintenance. Please try again later."
+}
+```
+
+### Implementation Details
+- **Real-time Updates**: Changes apply immediately across the system
+- **Custom Messaging**: Administrators can provide specific messages for disabled portals
+- **Audit Trail**: All setting changes are logged with admin user tracking
+- **Fallback Protection**: System maintains default values if settings are unavailable
+
+### Use Cases
+- **Scheduled Maintenance**: Temporarily disable user access during updates
+- **Emergency Situations**: Quickly restrict access during security incidents
+- **Phased Rollouts**: Gradually enable features for different user types
+- **Load Management**: Reduce system load by limiting portal access
 
 ---
 
@@ -209,8 +274,23 @@ Each portal uses role-specific themes defined in the design system:
 ### Navigation Patterns
 - **Kids**: Large buttons with icons and animations
 - **Parents**: Traditional navigation with breadcrumbs
-- **Admin**: Sidebar navigation with grouped sections
+- **Admin**: Collapsible sidebar navigation with role-based filtering
 
 ---
 
-*Each portal is designed to optimize the user experience for its specific audience while maintaining consistent data and security standards across the platform.*
+## 🔄 Portal Routing
+
+### URL Structure (HashRouter)
+- **Kids Portal**: `/#/kids`
+- **Parents Portal**: `/#/parents`
+- **Admin Portal**: `/#/admin/*`
+- **Admin Login**: `/#/admin/auth`
+
+### Route Protection
+- **Portal Access Control**: Routes check system settings before allowing access
+- **Role-based Navigation**: Automatic redirection based on user role and permissions
+- **Maintenance Mode**: Global maintenance page when system-wide maintenance is enabled
+
+---
+
+*Each portal is designed to optimize the user experience for its specific audience while maintaining consistent data and security standards across the platform. The new portal access control system provides administrators with flexible management capabilities for different operational scenarios.*

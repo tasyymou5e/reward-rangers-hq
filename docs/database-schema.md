@@ -9,6 +9,7 @@ ChoreQuest uses a PostgreSQL database with comprehensive Row Level Security (RLS
 - **RLS Policies**: 100+ security policies implemented
 - **Security Functions**: 30+ functions preventing RLS recursion
 - **Security Grade**: A- with comprehensive protection
+- **Dynamic Configuration**: System settings table for real-time control
 
 ---
 
@@ -22,7 +23,7 @@ profiles (
   user_id UUID REFERENCES auth.users,
   first_name TEXT,
   last_name TEXT,
-  role TEXT CHECK (role IN ('parent', 'kid', 'admin')),
+  role TEXT CHECK (role IN ('parent', 'kid', 'admin', 'full_admin', 'read_only_admin', 'report_admin')),
   points INTEGER DEFAULT 0,
   level INTEGER DEFAULT 1,
   streak_days INTEGER DEFAULT 0,
@@ -383,6 +384,84 @@ system_alerts (
 
 ---
 
+## ⚙️ System Configuration
+
+### Dynamic System Settings
+```sql
+-- System-wide configuration storage
+system_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key_name TEXT UNIQUE NOT NULL,
+  value JSONB NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  updated_by UUID REFERENCES profiles(id)
+);
+
+-- Example settings structures:
+-- Login Controls
+{
+  "parents_login_enabled": true,
+  "kids_login_enabled": true, 
+  "maintenance_message": "Custom message here"
+}
+
+-- System Maintenance
+{
+  "enabled": false,
+  "message": "System is currently under maintenance. Please try again later."
+}
+```
+
+### System Configuration Functions
+```sql
+-- Get system setting by key
+CREATE OR REPLACE FUNCTION public.get_system_setting(
+  key_name TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+DECLARE
+  setting_value JSONB;
+BEGIN
+  SELECT value INTO setting_value
+  FROM system_settings
+  WHERE system_settings.key_name = get_system_setting.key_name;
+  
+  RETURN setting_value;
+END;
+$$;
+
+-- Update system setting
+CREATE OR REPLACE FUNCTION public.update_system_setting(
+  key_name TEXT,
+  new_value JSONB,
+  setting_description TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+BEGIN
+  INSERT INTO system_settings (key_name, value, description, updated_by)
+  VALUES (key_name, new_value, setting_description, auth.uid())
+  ON CONFLICT (key_name)
+  DO UPDATE SET
+    value = new_value,
+    description = COALESCE(setting_description, system_settings.description),
+    updated_at = now(),
+    updated_by = auth.uid();
+END;
+$$;
+```
+
+---
+
 ## 🔐 Row Level Security (RLS) Policies
 
 ### User Data Protection
@@ -396,6 +475,17 @@ CREATE POLICY "Users can update their own profile"
 ON profiles FOR UPDATE 
 USING (auth.uid()::text = user_id::text);
 
+-- Admin access to all profiles
+CREATE POLICY "Admins can manage all profiles"
+ON profiles FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles p 
+    WHERE p.user_id::text = auth.uid()::text 
+    AND p.role IN ('admin', 'full_admin')
+  )
+);
+
 -- Family data access
 CREATE POLICY "Family members can view family data" 
 ON families FOR SELECT 
@@ -405,6 +495,17 @@ USING (
     JOIN profiles p ON fm.profile_id = p.id 
     WHERE fm.family_id = families.id 
     AND p.user_id::text = auth.uid()::text
+  )
+);
+
+-- System settings protection
+CREATE POLICY "Only full admins can manage system settings"
+ON system_settings FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles p
+    WHERE p.user_id::text = auth.uid()::text
+    AND p.role IN ('admin', 'full_admin')
   )
 );
 ```
@@ -426,6 +527,24 @@ BEGIN
     SELECT 1 FROM profiles 
     WHERE user_id = _user_id 
     AND role = _role
+  );
+END;
+$$;
+
+-- Multi-role admin check
+CREATE OR REPLACE FUNCTION public.has_admin_role(
+  _user_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE user_id = _user_id 
+    AND role IN ('admin', 'full_admin', 'read_only_admin', 'report_admin')
   );
 END;
 $$;
@@ -488,6 +607,7 @@ $$;
 -- User lookup optimization
 CREATE INDEX idx_profiles_user_id ON profiles(user_id);
 CREATE INDEX idx_profiles_role ON profiles(role);
+CREATE INDEX idx_profiles_role_multi ON profiles(role) WHERE role IN ('admin', 'full_admin', 'read_only_admin', 'report_admin');
 
 -- Family relationship optimization
 CREATE INDEX idx_family_members_family_id ON family_members(family_id);
@@ -498,58 +618,62 @@ CREATE INDEX idx_chores_family_id ON chores(family_id);
 CREATE INDEX idx_chore_assignments_assigned_to ON chore_assignments(assigned_to);
 CREATE INDEX idx_chore_assignments_status ON chore_assignments(status);
 
--- Activity log optimization
+-- Activity and security optimization
 CREATE INDEX idx_user_activity_logs_user_id ON user_activity_logs(user_id);
 CREATE INDEX idx_user_activity_logs_created_at ON user_activity_logs(created_at);
-
--- Security monitoring optimization
 CREATE INDEX idx_security_audit_logs_user_id ON security_audit_logs(user_id);
+CREATE INDEX idx_security_audit_logs_event_type ON security_audit_logs(event_type);
 CREATE INDEX idx_security_audit_logs_severity ON security_audit_logs(severity);
-CREATE INDEX idx_security_audit_logs_created_at ON security_audit_logs(created_at);
+
+-- System settings optimization
+CREATE INDEX idx_system_settings_key_name ON system_settings(key_name);
+CREATE INDEX idx_system_settings_updated_at ON system_settings(updated_at);
 ```
 
-### Automated Triggers
+### Query Optimization
 ```sql
--- Update timestamps automatically
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- Materialized view for dashboard analytics
+CREATE MATERIALIZED VIEW daily_analytics_summary AS
+SELECT 
+  DATE(created_at) as date,
+  COUNT(*) as total_activities,
+  COUNT(DISTINCT user_id) as active_users,
+  COUNT(*) FILTER (WHERE activity_type = 'chore_completed') as chores_completed
+FROM user_activity_logs
+WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY DATE(created_at)
+ORDER BY date DESC;
+
+-- Refresh materialized view daily
+CREATE OR REPLACE FUNCTION refresh_daily_analytics()
+RETURNS VOID AS $$
 BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
+  REFRESH MATERIALIZED VIEW daily_analytics_summary;
 END;
-$$ language 'plpgsql';
-
--- Apply to relevant tables
-CREATE TRIGGER update_profiles_updated_at 
-  BEFORE UPDATE ON profiles 
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_chores_updated_at 
-  BEFORE UPDATE ON chores 
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+$$ LANGUAGE plpgsql;
 ```
 
 ---
 
-## 🔒 Data Protection & Privacy
+## 🔧 Data Management
 
-### Child Data Protection (COPPA Compliance)
-- **Minimal Data Collection**: Only essential information stored
-- **Parental Consent**: Required for all child account creation
-- **Data Encryption**: Sensitive behavioral data encrypted at rest
-- **Access Logging**: All child data access logged for audit
-- **Retention Policies**: Automated data cleanup after specified periods
+### Backup Strategy
+- **Automated Backups**: Daily Supabase automated backups
+- **Point-in-Time Recovery**: Available for critical data restoration
+- **Cross-Region Replication**: Geographic redundancy for disaster recovery
 
-### GDPR/CCPA Compliance
-- **Right to Access**: User data export functionality
-- **Right to Deletion**: Complete user data removal
-- **Data Portability**: Structured data export formats
-- **Consent Management**: Granular privacy preference controls
-- **Audit Trail**: Complete activity logging for compliance
+### Data Retention
+- **Activity Logs**: 2 years retention with automatic archival
+- **Security Logs**: 7 years retention for compliance
+- **User Data**: Retained until account deletion request
+- **System Settings**: Full audit trail maintained indefinitely
+
+### Compliance Features
+- **GDPR Compliance**: Right to access, portability, and deletion
+- **COPPA Compliance**: Enhanced protection for child accounts
+- **Audit Trail**: Complete activity logging for all operations
+- **Data Encryption**: At-rest and in-transit encryption
 
 ---
 
-*Database Schema Version: 2.1*
-*Last Updated: 2025-01-09*
-*Security Grade: A- (Excellent)*
-*Compliance: GDPR, CCPA, COPPA Ready*
+*This database schema supports ChoreQuest's comprehensive feature set with 59+ tables, A- security grade, and dynamic system configuration capabilities. All tables include proper RLS policies and optimization indexes.*

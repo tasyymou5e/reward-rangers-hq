@@ -5,7 +5,7 @@
 ### Frontend Framework
 - **React 18.3.1** with TypeScript for type safety
 - **Vite** as build tool and development server
-- **React Router DOM** for client-side routing
+- **React Router DOM 6.30.1** for client-side routing with HashRouter
 - **Single Page Application** with role-based route protection
 
 ### Backend Services
@@ -20,7 +20,7 @@
 - **Tailwind CSS** for utility-first styling with semantic tokens
 - **Shadcn/ui** component library with Radix UI primitives
 - **Custom design system** with semantic tokens in index.css
-- **Role-based theming** for different user types
+- **Role-based theming** for different user types (admin, parent, kids)
 - **CSP Headers** for enhanced security
 
 ---
@@ -30,7 +30,7 @@
 ### State Management & Data Fetching
 ```json
 {
-  "zustand": "^4.5.0",                     // Client state management
+  "zustand": "^4.5.0",                     // Client state management (6 stores)
   "@tanstack/react-query": "^5.83.0",     // Server state management
   "@supabase/supabase-js": "^2.56.0",     // Backend integration
   "react-hook-form": "^7.61.1",           // Form management
@@ -61,14 +61,13 @@
 
 ## 🔧 State Management Strategy
 
-### Client State (Zustand)
+### Client State (Zustand - 6 Active Stores)
 - **authStore**: Authentication, session, and user role management
 - **uiStore**: Loading states, errors, modals, notifications
 - **adminStore**: System metrics, user management, family oversight
 - **choreStore**: Task management, assignments, completions
 - **gamificationStore**: Points, levels, achievements, leaderboards
 - **analyticsStore**: System analytics, engagement metrics, reporting
-- **6 Stores Total**: Centralized state with DevTools integration
 
 ### Server State (React Query)
 - **Automatic Caching**: Reduces unnecessary API calls
@@ -93,6 +92,7 @@
 - **Custom Functions** for complex business logic (30+ functions)
 - **Triggers** for automatic data management
 - **Real-time subscriptions** for live updates
+- **System Settings Table**: For dynamic application configuration
 
 ### Security Functions
 ```sql
@@ -110,6 +110,10 @@ check_auth_rate_limit(ip_addr, email, max_attempts, block_duration)
 
 -- Role verification (prevents RLS recursion)
 has_role(user_id, role_name)
+
+-- System settings management
+get_system_setting(key_name)
+update_system_setting(key_name, new_value, setting_description)
 ```
 
 ### Key Relationships
@@ -117,6 +121,7 @@ has_role(user_id, role_name)
 - **Families → Chores**: One-to-many with assignment tracking
 - **Users → Progress**: Activity logging and analytics
 - **Users → Wishlist**: Goal setting with approval workflow
+- **System Settings**: Dynamic application configuration
 
 ---
 
@@ -134,6 +139,7 @@ has_role(user_id, role_name)
 - **Role-based access control** (parent, kid, admin)
 - **Family-scoped permissions** for data isolation
 - **Security functions** to prevent recursive issues
+- **Admin role types**: admin, full_admin, read_only_admin, report_admin
 
 ### Security Utilities
 - **Secure Logging**: Production-safe logging with sensitive data filtering
@@ -253,4 +259,40 @@ supabase/functions/generate-security-report/
 
 ---
 
-*This architecture supports ChoreQuest's current needs while providing scalability for future growth. Security Grade: A- with comprehensive protection layers.*
+## 🎛️ System Configuration
+
+### Portal Access Controls
+- **Dynamic Login Control**: Admin-controlled portal access
+- **Granular Permissions**: Separate controls for parents and kids
+- **Maintenance Mode**: System-wide maintenance messaging
+- **Custom Messages**: Configurable user-facing messages
+
+### Admin System Settings
+- **System Settings Table**: Dynamic configuration storage
+- **Real-time Updates**: Changes apply immediately
+- **Audit Trail**: All setting changes logged
+- **Role-based Access**: Only full admins can modify settings
+
+---
+
+## 🏗️ Routing Architecture
+
+### Public Routes
+- `/` - Landing page with portal selection
+- `/auth` - Universal authentication (HashRouter: `/#/auth`)
+
+### Protected Routes
+- **Admin Portal**: `/#/admin/*` with nested routes
+  - Dashboard, Users, Families, Reports, Content
+  - System Monitoring, Security Center, System Settings
+- **Parent Portal**: `/#/parents` 
+- **Kids Portal**: `/#/kids`
+
+### Route Protection
+- **AdminProtectedRoute**: Multi-role admin protection
+- **Role-based Navigation**: Automatic redirection based on user role
+- **Session Validation**: Continuous authentication checking
+
+---
+
+*This architecture supports ChoreQuest's current needs while providing scalability for future growth. Security Grade: A- with comprehensive protection layers and 59+ database tables.*

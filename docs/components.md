@@ -2,13 +2,13 @@
 
 ## 🧩 Component Overview
 
-ChoreQuest features a comprehensive component architecture built with React, TypeScript, and accessibility-first design principles. The platform contains 110+ components organized into clear categories for maximum reusability and maintainability.
+ChoreQuest features a comprehensive component architecture built with React, TypeScript, and accessibility-first design principles. The platform contains 100+ components organized into clear categories for maximum reusability and maintainability.
 
 ### Component Statistics
-- **Total Components**: 118
-- **Page Components**: 15 (route-based components)
-- **Feature Components**: 35 (business logic components)
-- **UI Components**: 45 (reusable interface elements)
+- **Total Components**: 100+
+- **Page Components**: 15+ (route-based components)
+- **Feature Components**: 35+ (business logic components)  
+- **UI Components**: 45+ (reusable interface elements)
 - **Custom Hooks**: 25+ (logic abstraction)
 - **Zustand Stores**: 6 (centralized state management)
 
@@ -68,6 +68,62 @@ Components:
 - FamilyEditDialog: Family information editing
 ```
 
+#### AdminSystemSettings.tsx ✨ NEW
+```typescript
+// System configuration and portal control interface
+interface SystemSettingsState {
+  loginControls: {
+    parents_login_enabled: boolean;
+    kids_login_enabled: boolean;
+    maintenance_message: string;
+  };
+  systemMaintenance: {
+    enabled: boolean;
+    message: string;
+  };
+}
+
+Features:
+- Portal access control (parents/kids login toggle)
+- System-wide maintenance mode management
+- Custom messaging for disabled portals
+- Real-time configuration updates
+- Admin audit trail for all changes
+
+Route: /admin/system-settings
+Security: Full admin role required
+Integration: system_settings database table, useSystemSettings hook
+```
+
+#### AdminLayout.tsx
+```typescript
+// Admin portal layout with role-based navigation
+Features:
+- AdminSidebar with role-based menu filtering
+- Header with user profile and logout
+- Breadcrumb navigation
+- Responsive design with sidebar collapsing
+
+Admin Roles Supported:
+- admin, full_admin: Full access to all sections
+- read_only_admin: Limited to viewing functions
+- report_admin: Access to reports and analytics only
+```
+
+#### AdminAuth.tsx
+```typescript
+// Secure admin authentication interface
+Features:
+- Enhanced security with password visibility toggle
+- Rate limiting protection display
+- Professional admin-themed design
+- Redirect to dashboard on successful auth
+- Error handling with user-friendly messages
+
+Route: /#/admin/auth
+Security: Rate limiting, input validation, activity logging
+```
+
 ### General Application Pages (`src/pages/`)
 
 #### Index.tsx
@@ -94,25 +150,35 @@ Features:
 
 ## 🏗️ Feature Components
 
-### Authentication Components (`src/components/auth/`)
+### Admin Components (`src/components/admin/`)
 
-#### PasswordStrengthIndicator.tsx
+#### AdminSidebar.tsx ✨ UPDATED
 ```typescript
-interface PasswordStrengthProps {
-  password: string;
-  showRequirements?: boolean;
-  className?: string;
+// Role-based admin navigation with dynamic menu filtering
+interface NavigationItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  roles: string[]; // Allowed admin roles for this item
 }
 
 Features:
-- Real-time password validation with scoring
-- Visual strength indicators with color coding
-- Detailed requirements checklist with icons
-- Leaked password detection via HaveIBeenPwned API
-- Accessibility-focused feedback for users with autism
-```
+- Role-based menu item filtering
+- Active route highlighting with legacy route compatibility
+- Collapsible sidebar with icon-only mode
+- Quick actions section with "Back to Home" link
+- Professional admin theming
 
-### Admin Components (`src/components/admin/`)
+Navigation Items:
+- Dashboard: All admin roles
+- Users: admin, full_admin only  
+- Families: admin, full_admin, read_only_admin
+- Reports: admin, full_admin, report_admin
+- Content: admin, full_admin only
+- System Monitoring: admin, full_admin only
+- Security Center: admin, full_admin only
+- System Settings: admin, full_admin only ✨ NEW
+```
 
 #### SecurityMonitoringDashboard.tsx
 ```typescript
@@ -138,6 +204,40 @@ Features:
 - User and family analytics with trend visualization
 - Performance metrics dashboard
 - Security status overview with alerts
+```
+
+#### AdminProtectedRoute.tsx ✨ UPDATED
+```typescript
+// Enhanced route protection with multi-role support
+interface AdminProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+Features:
+- Multi-role admin support (admin, full_admin, read_only_admin, report_admin)
+- Loading states with admin-themed spinner
+- Automatic redirect to /admin/auth for unauthorized access
+- Clean error boundaries and fallback UI
+
+Security: Accepts all admin role types for comprehensive access control
+```
+
+### Authentication Components (`src/components/auth/`)
+
+#### PasswordStrengthIndicator.tsx
+```typescript
+interface PasswordStrengthProps {
+  password: string;
+  showRequirements?: boolean;
+  className?: string;
+}
+
+Features:
+- Real-time password validation with scoring
+- Visual strength indicators with color coding
+- Detailed requirements checklist with icons
+- Leaked password detection via HaveIBeenPwned API
+- Accessibility-focused feedback for users with autism
 ```
 
 ### User Management Components
@@ -169,7 +269,7 @@ Features:
 
 ### Core UI Components
 
-#### confirm-dialog.tsx ✨ NEW
+#### confirm-dialog.tsx ✨ SECURITY ENHANCEMENT
 ```typescript
 interface ConfirmDialogProps {
   open: boolean;
@@ -215,6 +315,18 @@ Features:
 - Form state persistence across navigation
 ```
 
+#### sidebar.tsx ✨ ENHANCED
+```typescript
+// Collapsible sidebar navigation system
+Components: Sidebar, SidebarContent, SidebarGroup, SidebarMenu, SidebarMenuItem
+Features:
+- Collapsible navigation with icon-only mode
+- Role-based menu item filtering
+- Responsive design with mobile optimization
+- Accessibility compliance with keyboard navigation
+- Theme integration with semantic tokens
+```
+
 ### Data Display Components
 
 #### table.tsx
@@ -243,6 +355,29 @@ Features:
 ---
 
 ## 🎣 Custom Hooks
+
+### System Management Hooks
+
+#### useSystemSettings.ts ✨ NEW
+```typescript
+// System configuration management hook
+interface SystemSettingsReturn {
+  loginControls: LoginControls;
+  systemMaintenance: SystemMaintenance;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+Features:
+- Real-time system settings loading
+- Error handling with fallback defaults
+- Automatic retry on failure
+- Type-safe configuration interfaces
+- Integration with system_settings database table
+
+Usage: AdminSystemSettings component, portal access control
+```
 
 ### Authentication & Security Hooks
 
@@ -373,6 +508,36 @@ Features:
 - WebSocket updates for live data
 ```
 
+#### choreStore.ts
+```typescript
+// Task management and assignment tracking
+Features:
+- Chore lifecycle management
+- Assignment tracking with real-time updates
+- Gamification integration
+- Recurring chore automation
+```
+
+#### gamificationStore.ts
+```typescript
+// Points, achievements, and progress tracking
+Features:
+- Points and XP management
+- Achievement unlock system
+- Leaderboard management
+- Streak tracking
+```
+
+#### analyticsStore.ts
+```typescript
+// System analytics and reporting
+Features:
+- Engagement metrics tracking
+- Performance analytics
+- User behavior analysis
+- Report generation support
+```
+
 ---
 
 ## 🎯 Design System Integration
@@ -385,6 +550,11 @@ Features:
 --success: 142 69% 58%;        /* Green for success states */
 --warning: 25 95% 65%;         /* Orange for warnings */
 --destructive: 0 84.2% 60.2%;  /* Red for errors */
+
+/* Admin-specific tokens */
+--admin-primary: 215 28% 17%;  /* Dark blue */
+--admin-secondary: 210 40% 96%; /* Light gray */
+--admin-background: 0 0% 98%;   /* Very light background */
 ```
 
 ### Component Variants
@@ -421,7 +591,7 @@ const buttonVariants = cva(
 ```typescript
 // Security-aware component template
 interface SecureComponentProps {
-  requiredRole?: 'admin' | 'parent' | 'kid';
+  requiredRole?: 'admin' | 'parent' | 'kid' | 'full_admin' | 'read_only_admin' | 'report_admin';
   resourceId?: string;
   fallbackComponent?: React.ComponentType;
 }
@@ -498,42 +668,36 @@ const SecureInput = forwardRef<HTMLInputElement, InputProps>(
 
 ## 📊 Component Performance Metrics
 
-### Performance Statistics
-- **Bundle Size**: <2MB total with tree shaking
-- **Load Time**: <3 seconds initial load
-- **Re-render Optimization**: 40-60% reduction with Zustand
-- **Memory Usage**: 20% reduction with state optimization
-- **Accessibility Score**: 98% WCAG 2.1 AA compliance
+### Performance Optimizations
+- **Component Memoization**: Strategic use of React.memo for expensive components
+- **Selective Subscriptions**: Zustand store subscriptions only to needed state slices
+- **Code Splitting**: Lazy loading for admin portal and heavy components
+- **Virtual Scrolling**: For large data tables and lists
 
-### Component Testing Coverage
-- **Unit Tests**: 85% component coverage
-- **Integration Tests**: Core user flows covered
-- **Accessibility Tests**: Automated and manual testing
-- **Security Tests**: Input validation and XSS protection
+### Bundle Optimization
+- **Tree Shaking**: Eliminates unused component code
+- **Dynamic Imports**: Route-based code splitting
+- **Component Composition**: Small, focused components over monolithic structures
 
 ---
 
-## 🚀 Development Guidelines
+## 🚀 Recent Component Updates
 
-### Component Creation Checklist
-- ✅ **TypeScript**: Full type safety with proper interfaces
-- ✅ **Accessibility**: ARIA attributes and keyboard navigation
-- ✅ **Security**: Input validation and XSS protection
-- ✅ **Performance**: Memoization and efficient re-renders
-- ✅ **Design System**: Semantic tokens and variants
-- ✅ **Documentation**: JSDoc comments and usage examples
+### System Settings Implementation
+- **AdminSystemSettings**: Complete portal control interface
+- **useSystemSettings**: Real-time configuration management
+- **AdminSidebar**: Enhanced with role-based filtering and new System Settings navigation
 
-### Best Practices
-1. **Keep Components Small**: Single responsibility principle
-2. **Use Semantic Tokens**: No direct colors in components
-3. **Implement Error Boundaries**: Graceful error handling
-4. **Optimize Performance**: React.memo and useMemo strategically
-5. **Follow Accessibility**: WCAG 2.1 AA compliance
-6. **Security First**: Validate all inputs and sanitize outputs
+### Security Enhancements
+- **ConfirmDialog**: Secure replacement for native browser dialogs
+- **AdminProtectedRoute**: Multi-role admin support
+- **Enhanced Error Boundaries**: Better error handling across admin components
+
+### UI Improvements
+- **Responsive Design**: All components optimized for mobile and desktop
+- **Accessibility**: WCAG 2.1 AA compliance across all components
+- **Design System**: Consistent use of semantic tokens and variants
 
 ---
 
-*Component Architecture Version: 2.0*
-*Last Updated: 2025-01-09*
-*Total Components: 118*
-*Security Grade: A- (Excellent)*
+*This component architecture supports ChoreQuest's comprehensive feature set with 100+ components, A- security grade, and modern React patterns. All components follow security-first principles and accessibility best practices.*
