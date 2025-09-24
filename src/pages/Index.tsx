@@ -100,7 +100,16 @@ const Index = () => {
                   Sign In
                 </Button>
               )}
-              <Button onClick={() => navigate("/auth")} variant="outline" size="lg">
+              <Button 
+                onClick={() => {
+                  if (loginControls.kids_login_enabled || loginControls.parents_login_enabled) {
+                    navigate("/auth");
+                  }
+                }} 
+                variant="outline" 
+                size="lg"
+                disabled={!loginControls.kids_login_enabled && !loginControls.parents_login_enabled}
+              >
                 <UserPlus className="h-5 w-5 mr-2" />
                 Sign Up
               </Button>
