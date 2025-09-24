@@ -2129,6 +2129,10 @@ export type Database = {
         Args: { chore_id_param: string }
         Returns: undefined
       }
+      run_security_monitoring: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       update_mfa_settings_secure: {
         Args: {
           p_backup_codes?: string[]
@@ -2166,7 +2170,7 @@ export type Database = {
         Returns: boolean
       }
       validate_family_code_secure: {
-        Args: { code: string }
+        Args: { code_input: string }
         Returns: boolean
       }
       validate_password_security_enhanced: {

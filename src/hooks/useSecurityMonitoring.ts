@@ -19,6 +19,7 @@ export function useSecurityMonitoring() {
   const { user } = useAdminAuth();
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monitoringResult, setMonitoringResult] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -195,15 +196,50 @@ export function useSecurityMonitoring() {
     return alerts.filter(alert => alert.severity === severity);
   };
 
+  const runComprehensiveMonitoring = async () => {
+    if (!user) return null;
+
+    try {
+      setLoading(true);
+      
+      // Call the enhanced security monitoring edge function
+      const { data, error } = await supabase.functions.invoke('security-monitor-comprehensive', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Security monitoring failed:', error);
+        throw error;
+      }
+
+      setMonitoringResult(data);
+      return data;
+    } catch (error) {
+      console.error('Error running security monitoring:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCriticalAlertsCount = (): number => {
+    return alerts.filter(alert => alert.severity === 'critical' && !alert.resolved).length;
+  };
+
   return {
     alerts,
     loading,
+    monitoringResult,
     logSecurityEvent,
     createSecurityAlert,
     resolveAlert,
     getUnresolvedAlertsCount,
     getAlertsByType,
     getAlertsBySeverity,
+    getCriticalAlertsCount,
+    runComprehensiveMonitoring,
     refreshAlerts: loadSecurityAlerts,
   };
 }
