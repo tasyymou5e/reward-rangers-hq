@@ -144,27 +144,25 @@ const Index = () => {
           
           {/* Show disabled portal cards with messages */}
           {!loginControls.kids_login_enabled && !systemMaintenance.enabled && (
-            <div className="opacity-50 pointer-events-none">
-              <PortalCard
-                title="Kids Portal"
-                description="Currently unavailable for maintenance"
-                icon="🔒"
-                variant="kids"
-                onClick={() => {}}
-              />
-            </div>
+            <PortalCard
+              title="Kids Portal"
+              description="Currently unavailable for maintenance"
+              icon="🔒"
+              variant="kids"
+              onClick={() => {}}
+              disabled={true}
+            />
           )}
           
           {!loginControls.parents_login_enabled && !systemMaintenance.enabled && (
-            <div className="opacity-50 pointer-events-none">
-              <PortalCard
-                title="Parents Portal"
-                description="Currently unavailable for maintenance"
-                icon="🔒"
-                variant="parents"
-                onClick={() => {}}
-              />
-            </div>
+            <PortalCard
+              title="Parents Portal"
+              description="Currently unavailable for maintenance"
+              icon="🔒"
+              variant="parents"
+              onClick={() => {}}
+              disabled={true}
+            />
           )}
         </div>
 
