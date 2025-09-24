@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { connectionChecker, ConnectionStatus } from '@/utils/connectionUtils';
 
 interface AdminAuthContextType {
   user: User | null;
@@ -29,12 +30,17 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const testConnection = async (): Promise<boolean> => {
     try {
       setNetworkStatus('checking');
-      const { error } = await supabase.from('profiles').select('count').limit(1);
-      const isConnected = !error;
-      setNetworkStatus(isConnected ? 'connected' : 'disconnected');
-      return isConnected;
-    } catch (err) {
+      const status: ConnectionStatus = await connectionChecker.checkConnection();
+      setNetworkStatus(status.isConnected ? 'connected' : 'disconnected');
+      
+      if (!status.isConnected && status.error) {
+        setError(status.error);
+      }
+      
+      return status.isConnected;
+    } catch (err: any) {
       setNetworkStatus('disconnected');
+      setError(`Connection test failed: ${err.message}`);
       return false;
     }
   };
@@ -88,9 +94,18 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setError(null);
         
-        // Test connection first
+        // Test connection first with timeout
+        const connectionTimeout = setTimeout(() => {
+          if (mounted) {
+            setError('Connection timeout. Please check your internet connection.');
+            setLoading(false);
+          }
+        }, 15000);
+
         const isConnected = await testConnection();
-        if (!isConnected) {
+        clearTimeout(connectionTimeout);
+        
+        if (!isConnected && mounted) {
           setError('Unable to connect to server. Please check your internet connection.');
           setLoading(false);
           return;
@@ -174,35 +189,44 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
       
-      // Test connection first
-      const isConnected = await testConnection();
+      // Test connection first with retry
+      const isConnected = await connectionChecker.retryOperation(
+        () => testConnection(),
+        2,
+        1000
+      );
+      
       if (!isConnected) {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Perform sign in with retry mechanism
+      const result = await connectionChecker.retryOperation(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        // Provide user-friendly error messages
-        let friendlyMessage = error.message;
-        if (error.message.includes('Invalid login credentials')) {
-          friendlyMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('Email not confirmed')) {
-          friendlyMessage = 'Please check your email and click the confirmation link to complete your account setup.';
-        } else if (error.message.includes('Too many requests')) {
-          friendlyMessage = 'Too many login attempts. Please wait a moment and try again.';
-        } else if (error.message.includes('Network')) {
-          friendlyMessage = 'Network error. Please check your internet connection and try again.';
+        if (error) {
+          // Provide user-friendly error messages
+          let friendlyMessage = error.message;
+          if (error.message.includes('Invalid login credentials')) {
+            friendlyMessage = 'Invalid email or password. Please check your credentials and try again.';
+          } else if (error.message.includes('Email not confirmed')) {
+            friendlyMessage = 'Please check your email and click the confirmation link to complete your account setup.';
+          } else if (error.message.includes('Too many requests')) {
+            friendlyMessage = 'Too many login attempts. Please wait a moment and try again.';
+          } else if (error.message.includes('Network')) {
+            friendlyMessage = 'Network error. Please check your internet connection and try again.';
+          }
+          
+          throw new Error(friendlyMessage);
         }
-        
-        throw new Error(friendlyMessage);
-      }
 
-      // Admin verification will happen automatically via the auth state listener
-      return { data, error: null };
+        return { data, error: null };
+      }, 3, 1000);
+
+      return result;
     } catch (error: any) {
       console.error('Sign in process failed:', error);
       setError(error.message || 'Authentication failed');

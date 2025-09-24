@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, Eye, EyeOff, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Shield, Eye, EyeOff, AlertTriangle, ArrowLeft, Wifi, WifiOff } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { connectionChecker, ConnectionStatus } from "@/utils/connectionUtils";
 
 
 export default function AdminAuth() {
@@ -19,6 +20,22 @@ export default function AdminAuth() {
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState("");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [connectionDetails, setConnectionDetails] = useState<ConnectionStatus | null>(null);
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Redirect if already authenticated as admin
   if (user) {
@@ -28,18 +45,20 @@ export default function AdminAuth() {
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
     try {
-      const isConnected = await testConnection();
+      const status = await connectionChecker.checkConnection();
+      setConnectionDetails(status);
+      
       toast({
-        title: isConnected ? "Connection Successful" : "Connection Failed",
-        description: isConnected 
-          ? "Successfully connected to the server" 
-          : "Unable to reach the server. Please check your internet connection.",
-        variant: isConnected ? "default" : "destructive",
+        title: status.isConnected ? "Connection Successful" : "Connection Failed",
+        description: status.isConnected 
+          ? `Server connected (${status.latency}ms)` 
+          : status.error || "Unable to reach the server",
+        variant: status.isConnected ? "default" : "destructive",
       });
-    } catch (err) {
+    } catch (err: any) {
       toast({
         title: "Connection Test Failed",
-        description: "Unable to test connection",
+        description: `Unable to test connection: ${err.message}`,
         variant: "destructive",
       });
     } finally {
@@ -120,32 +139,65 @@ export default function AdminAuth() {
         </CardHeader>
         
         <CardContent>
+          {/* Offline Status Indicator */}
+          {!isOnline && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-700">
+                <WifiOff className="w-4 h-4" />
+                <span className="text-sm font-medium">No Internet Connection</span>
+              </div>
+              <p className="text-xs text-red-600 mt-1">
+                Your device is offline. Please check your internet connection.
+              </p>
+            </div>
+          )}
+
           {/* Network Status Indicator */}
-          {networkStatus !== 'connected' && (
+          {isOnline && networkStatus !== 'connected' && (
             <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
               <div className="flex items-center gap-2 text-orange-700">
                 <AlertTriangle className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {networkStatus === 'checking' ? 'Checking Connection...' : 'Connection Issue'}
+                  {networkStatus === 'checking' ? 'Checking Connection...' : 'Server Connection Issue'}
                 </span>
               </div>
               <p className="text-xs text-orange-600 mt-1">
                 {networkStatus === 'checking' 
                   ? 'Testing server connectivity...' 
-                  : 'Unable to connect to server. Check your internet connection.'}
+                  : 'Unable to connect to Chatterbox servers. This may be temporary.'}
               </p>
               {networkStatus === 'disconnected' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestConnection}
-                  disabled={isTestingConnection}
-                  className="mt-2 text-xs"
-                >
-                  {isTestingConnection ? 'Testing...' : 'Test Connection'}
-                </Button>
+                <div className="mt-2 space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestConnection}
+                    disabled={isTestingConnection}
+                    className="text-xs"
+                  >
+                    {isTestingConnection ? 'Testing...' : 'Test Connection'}
+                  </Button>
+                  {connectionDetails && !connectionDetails.isConnected && (
+                    <p className="text-xs text-orange-500">
+                      Details: {connectionDetails.error}
+                    </p>
+                  )}
+                </div>
               )}
+            </div>
+          )}
+
+          {/* Connected Status */}
+          {isOnline && networkStatus === 'connected' && connectionDetails && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700">
+                <Wifi className="w-4 h-4" />
+                <span className="text-sm font-medium">Connected</span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                Server connection active ({connectionDetails.latency}ms)
+              </p>
             </div>
           )}
 
@@ -227,7 +279,7 @@ export default function AdminAuth() {
             <Button
               type="submit"
               className="w-full bg-gradient-admin hover:opacity-90 text-white shadow-lg transition-all duration-300"
-              disabled={authLoading || networkStatus === 'disconnected'}
+              disabled={authLoading || !isOnline || networkStatus === 'disconnected'}
             >
               {authLoading ? (
                 <div className="flex items-center gap-2">
