@@ -88,6 +88,53 @@ export type Database = {
         }
         Relationships: []
       }
+      achievement_chains: {
+        Row: {
+          category: string
+          chain_order: number
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          parent_achievement_id: string | null
+          reward_multiplier: number | null
+          unlock_condition: Json
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          chain_order: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          parent_achievement_id?: string | null
+          reward_multiplier?: number | null
+          unlock_condition?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          chain_order?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          parent_achievement_id?: string | null
+          reward_multiplier?: number | null
+          unlock_condition?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievement_chains_parent_achievement_id_fkey"
+            columns: ["parent_achievement_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_role_permissions: {
         Row: {
           expires_at: string | null
@@ -270,6 +317,42 @@ export type Database = {
           id?: string
           name?: string
           points_required?: number | null
+        }
+        Relationships: []
+      }
+      behavioral_patterns: {
+        Row: {
+          confidence_score: number | null
+          detected_at: string | null
+          family_id: string
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          pattern_data: Json
+          pattern_type: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          detected_at?: string | null
+          family_id: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          pattern_data: Json
+          pattern_type: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          detected_at?: string | null
+          family_id?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          pattern_data?: Json
+          pattern_type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -949,6 +1032,65 @@ export type Database = {
         }
         Relationships: []
       }
+      family_competitions: {
+        Row: {
+          competition_type: string
+          created_at: string | null
+          created_by: string
+          description: string | null
+          end_date: string
+          family_id: string
+          id: string
+          leaderboard: Json
+          name: string
+          rewards: Json
+          rules: Json
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          competition_type?: string
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          end_date: string
+          family_id: string
+          id?: string
+          leaderboard?: Json
+          name: string
+          rewards?: Json
+          rules?: Json
+          start_date: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          competition_type?: string
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          end_date?: string
+          family_id?: string
+          id?: string
+          leaderboard?: Json
+          name?: string
+          rewards?: Json
+          rules?: Json
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_competitions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_invitations: {
         Row: {
           created_at: string | null
@@ -1542,6 +1684,42 @@ export type Database = {
           },
         ]
       }
+      offline_sync_queue: {
+        Row: {
+          action_data: Json
+          action_type: string
+          created_at: string | null
+          id: string
+          last_retry: string | null
+          retry_count: number | null
+          sync_status: string
+          synced_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action_data: Json
+          action_type: string
+          created_at?: string | null
+          id?: string
+          last_retry?: string | null
+          retry_count?: number | null
+          sync_status?: string
+          synced_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          last_retry?: string | null
+          retry_count?: number | null
+          sync_status?: string
+          synced_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       point_transactions: {
         Row: {
           bonus_type: string | null
@@ -1612,6 +1790,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      predictive_insights: {
+        Row: {
+          acted_upon: boolean | null
+          confidence_level: number
+          expires_at: string
+          family_id: string
+          generated_at: string | null
+          id: string
+          insight_data: Json
+          insight_type: string
+          target_user_id: string
+        }
+        Insert: {
+          acted_upon?: boolean | null
+          confidence_level: number
+          expires_at: string
+          family_id: string
+          generated_at?: string | null
+          id?: string
+          insight_data: Json
+          insight_type: string
+          target_user_id: string
+        }
+        Update: {
+          acted_upon?: boolean | null
+          confidence_level?: number
+          expires_at?: string
+          family_id?: string
+          generated_at?: string | null
+          id?: string
+          insight_data?: Json
+          insight_type?: string
+          target_user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1769,6 +1983,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          is_active: boolean | null
+          last_used: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          is_active?: boolean | null
+          last_used?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          is_active?: boolean | null
+          last_used?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       rewards: {
         Row: {
@@ -2368,6 +2618,10 @@ export type Database = {
       encrypt_mfa_secret_secure: {
         Args: { secret_text: string }
         Returns: string
+      }
+      generate_achievement_chain_progress: {
+        Args: { chain_id_param: string; user_id_param: string }
+        Returns: Json
       }
       get_accessible_profiles_for_user: {
         Args: { requesting_user_id?: string }
