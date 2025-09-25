@@ -738,29 +738,127 @@ export type Database = {
           },
         ]
       }
+      email_aliases: {
+        Row: {
+          alias_email: string
+          created_at: string | null
+          family_id: string
+          id: string
+          is_active: boolean | null
+          primary_email: string
+          role: Database["public"]["Enums"]["family_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alias_email: string
+          created_at?: string | null
+          family_id: string
+          id?: string
+          is_active?: boolean | null
+          primary_email: string
+          role?: Database["public"]["Enums"]["family_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alias_email?: string
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          is_active?: boolean | null
+          primary_email?: string
+          role?: Database["public"]["Enums"]["family_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_aliases_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_conflicts: {
+        Row: {
+          conflicting_request_data: Json
+          created_at: string | null
+          email: string
+          existing_user_id: string | null
+          id: string
+          resolution_strategy: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          conflicting_request_data: Json
+          created_at?: string | null
+          email: string
+          existing_user_id?: string | null
+          id?: string
+          resolution_strategy?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          conflicting_request_data?: Json
+          created_at?: string | null
+          email?: string
+          existing_user_id?: string | null
+          id?: string
+          resolution_strategy?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: []
+      }
       families: {
         Row: {
+          archived_at: string | null
+          avatar_url: string | null
           created_at: string | null
+          created_by_primary_email: boolean | null
+          description: string | null
+          email_domain: string | null
           family_code: string
           id: string
           name: string
           parent_id: string | null
+          primary_email_designator: string | null
+          settings: Json | null
           updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
+          avatar_url?: string | null
           created_at?: string | null
+          created_by_primary_email?: boolean | null
+          description?: string | null
+          email_domain?: string | null
           family_code?: string
           id?: string
           name: string
           parent_id?: string | null
+          primary_email_designator?: string | null
+          settings?: Json | null
           updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
+          avatar_url?: string | null
           created_at?: string | null
+          created_by_primary_email?: boolean | null
+          description?: string | null
+          email_domain?: string | null
           family_code?: string
           id?: string
           name?: string
           parent_id?: string | null
+          primary_email_designator?: string | null
+          settings?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -772,6 +870,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      families_backup: {
+        Row: {
+          archived_at: string | null
+          avatar_url: string | null
+          created_at: string | null
+          created_by_primary_email: boolean | null
+          description: string | null
+          email_domain: string | null
+          family_code: string | null
+          id: string | null
+          name: string | null
+          parent_id: string | null
+          primary_email_designator: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          created_by_primary_email?: boolean | null
+          description?: string | null
+          email_domain?: string | null
+          family_code?: string | null
+          id?: string | null
+          name?: string | null
+          parent_id?: string | null
+          primary_email_designator?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          created_by_primary_email?: boolean | null
+          description?: string | null
+          email_domain?: string | null
+          family_code?: string | null
+          id?: string | null
+          name?: string | null
+          parent_id?: string | null
+          primary_email_designator?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       family_ai_settings: {
         Row: {
@@ -802,6 +948,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      family_invitations: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          family_id: string
+          id: string
+          invitation_code: string | null
+          invited_by: string
+          invitee_email: string
+          invitee_name: string | null
+          metadata: Json | null
+          permissions: Json | null
+          role: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string
+          family_id: string
+          id?: string
+          invitation_code?: string | null
+          invited_by: string
+          invitee_email: string
+          invitee_name?: string | null
+          metadata?: Json | null
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          family_id?: string
+          id?: string
+          invitation_code?: string | null
+          invited_by?: string
+          invitee_email?: string
+          invitee_name?: string | null
+          metadata?: Json | null
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invitations_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       family_join_requests: {
         Row: {
@@ -983,6 +1185,30 @@ export type Database = {
         }
         Relationships: []
       }
+      family_permissions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       family_reports: {
         Row: {
           created_at: string
@@ -1012,6 +1238,53 @@ export type Database = {
           report_url?: string | null
         }
         Relationships: []
+      }
+      family_roles: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          family_id: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          permissions: Json | null
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          family_id: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          permissions?: Json | null
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          permissions?: Json | null
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_roles_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mfa_audit_log: {
         Row: {
@@ -1197,10 +1470,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          alternative_emails: Json | null
           avatar_url: string | null
           created_at: string | null
           display_name: string
           email: string
+          email_verified: boolean | null
           id: string
           last_activity: string | null
           level: number | null
@@ -1211,10 +1486,12 @@ export type Database = {
           username: string
         }
         Insert: {
+          alternative_emails?: Json | null
           avatar_url?: string | null
           created_at?: string | null
           display_name: string
           email: string
+          email_verified?: boolean | null
           id: string
           last_activity?: string | null
           level?: number | null
@@ -1225,10 +1502,12 @@ export type Database = {
           username: string
         }
         Update: {
+          alternative_emails?: Json | null
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string
           email?: string
+          email_verified?: boolean | null
           id?: string
           last_activity?: string | null
           level?: number | null
@@ -1237,6 +1516,57 @@ export type Database = {
           streak_days?: number | null
           updated_at?: string | null
           username?: string
+        }
+        Relationships: []
+      }
+      profiles_backup: {
+        Row: {
+          alternative_emails: Json | null
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          email_verified: boolean | null
+          id: string | null
+          last_activity: string | null
+          level: number | null
+          points: number | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          streak_days: number | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          alternative_emails?: Json | null
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          email_verified?: boolean | null
+          id?: string | null
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          streak_days?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          alternative_emails?: Json | null
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          email_verified?: boolean | null
+          id?: string | null
+          last_activity?: string | null
+          level?: number | null
+          points?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          streak_days?: number | null
+          updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -1784,6 +2114,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_family_invitation_secure: {
+        Args: { invitation_code_param: string }
+        Returns: Json
+      }
       audit_security_definer_usage: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1908,6 +2242,10 @@ export type Database = {
       }
       get_client_ip_safe: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_family_by_email: {
+        Args: { input_email: string }
         Returns: string
       }
       get_family_data_secure: {
@@ -2051,9 +2389,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_family_permission: {
+        Args: {
+          family_id_param: string
+          permission_name: string
+          user_id_param: string
+        }
+        Returns: boolean
+      }
       has_parental_authority: {
         Args: { child_user_id: string; requesting_user_id?: string }
         Returns: boolean
+      }
+      invite_family_member_secure: {
+        Args: {
+          family_id_param: string
+          invitee_email_param: string
+          invitee_name_param?: string
+          permissions_param?: Json
+          role_param?: string
+        }
+        Returns: Json
       }
       is_admin: {
         Args: Record<PropertyKey, never>
@@ -2145,6 +2501,10 @@ export type Database = {
         Args: { chore_id_param: string }
         Returns: undefined
       }
+      resolve_to_primary_email: {
+        Args: { input_email: string }
+        Returns: string
+      }
       run_security_monitoring: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2208,6 +2568,7 @@ export type Database = {
         | "completed"
         | "overdue"
         | "pending_approval"
+      family_role: "primary_parent" | "co_parent" | "child" | "guardian"
       reward_status: "available" | "redeemed" | "pending_approval"
       user_role:
         | "kid"
@@ -2359,6 +2720,7 @@ export const Constants = {
         "overdue",
         "pending_approval",
       ],
+      family_role: ["primary_parent", "co_parent", "child", "guardian"],
       reward_status: ["available", "redeemed", "pending_approval"],
       user_role: [
         "kid",
