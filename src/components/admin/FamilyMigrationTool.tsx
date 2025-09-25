@@ -104,10 +104,10 @@ export const FamilyMigrationTool: React.FC = () => {
         migration.status = 'completed';
         
         // Log migration success
-        await supabase.rpc('log_security_event', {
+        await supabase.rpc('log_security_event_with_rate_limit', {
           event_type: 'family_migrated_to_primary_email',
-          user_id: null,
-          metadata: {
+          user_id_param: null,
+          metadata_param: {
             family_id: migration.familyId,
             family_name: migration.familyName,
             primary_email: migration.primaryEmail,
@@ -120,10 +120,10 @@ export const FamilyMigrationTool: React.FC = () => {
         migration.error = error instanceof Error ? error.message : 'Unknown error';
         
         // Log migration failure
-        await supabase.rpc('log_security_event', {
+        await supabase.rpc('log_security_event_with_rate_limit', {
           event_type: 'family_migration_failed',
-          user_id: null,
-          metadata: {
+          user_id_param: null,
+          metadata_param: {
             family_id: migration.familyId,
             error: migration.error,
             timestamp: new Date().toISOString()

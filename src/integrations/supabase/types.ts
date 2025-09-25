@@ -2473,11 +2473,15 @@ export type Database = {
         Returns: undefined
       }
       log_security_event_with_rate_limit: {
-        Args: {
-          event_type: string
-          metadata_param?: Json
-          user_id_param: string
-        }
+        Args:
+          | {
+              event_type: string
+              max_events_per_window?: number
+              metadata_param?: Json
+              rate_limit_window_seconds?: number
+              user_id_param?: string
+            }
+          | { event_type: string; metadata_param?: Json; user_id_param: string }
         Returns: undefined
       }
       log_security_violation: {
@@ -2488,6 +2492,10 @@ export type Database = {
           violation_type: string
         }
         Returns: undefined
+      }
+      monitor_email_routing_security: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       monitor_security_table_integrity: {
         Args: Record<PropertyKey, never>

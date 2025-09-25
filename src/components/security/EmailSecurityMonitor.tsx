@@ -19,7 +19,7 @@ import {
 interface SecurityEvent {
   id: string;
   alert_type: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: string; // Accept any string from database
   description: string;
   metadata: any;
   created_at: string;
@@ -118,8 +118,8 @@ export const EmailSecurityMonitor: React.FC = () => {
 
       toast({
         title: "Security Scan Complete",
-        description: `System status: ${data.security_status}`,
-        variant: data.security_status === 'secure' ? 'default' : 'destructive',
+        description: `System status: ${(data as any)?.security_status || 'unknown'}`,
+        variant: (data as any)?.security_status === 'secure' ? 'default' : 'destructive',
       });
 
       // Refresh metrics

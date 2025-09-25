@@ -73,10 +73,10 @@ export const useEnhancedAuth = () => {
 
       if (result.error) {
         // Log the authentication attempt with family context
-        await supabase.rpc('log_security_event', {
+        await supabase.rpc('log_security_event_with_rate_limit', {
           event_type: 'enhanced_auth_signin_failed',
-          user_id: null,
-          metadata: {
+          user_id_param: null,
+          metadata_param: {
             original_email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
             resolved_email: resolvedEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
             email_was_resolved: resolvedEmail !== email,
@@ -94,10 +94,10 @@ export const useEnhancedAuth = () => {
       }
 
       // Log successful authentication with context
-      await supabase.rpc('log_security_event', {
+      await supabase.rpc('log_security_event_with_rate_limit', {
         event_type: 'enhanced_auth_signin_success',
-        user_id: result.data?.user?.id,
-        metadata: {
+        user_id_param: result.data?.user?.id,
+        metadata_param: {
           original_email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
           resolved_email: resolvedEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
           email_was_resolved: resolvedEmail !== email,
@@ -115,10 +115,10 @@ export const useEnhancedAuth = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
       
-      await supabase.rpc('log_security_event', {
+      await supabase.rpc('log_security_event_with_rate_limit', {
         event_type: 'enhanced_auth_error',
-        user_id: null,
-        metadata: {
+        user_id_param: null,
+        metadata_param: {
           original_email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
           error: errorMessage,
           timestamp: new Date().toISOString()
@@ -183,10 +183,10 @@ export const useEnhancedAuth = () => {
           if (familyError) {
             console.error('Failed to create family:', familyError);
             // Don't fail the signup, just log the issue
-            await supabase.rpc('log_security_event', {
+            await supabase.rpc('log_security_event_with_rate_limit', {
               event_type: 'family_creation_failed_after_signup',
-              user_id: result.data.user.id,
-              metadata: {
+              user_id_param: result.data.user.id,
+              metadata_param: {
                 email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
                 family_name: familyName,
                 error: familyError.message,
@@ -195,10 +195,10 @@ export const useEnhancedAuth = () => {
             });
           } else {
             // Log successful family creation with primary email
-            await supabase.rpc('log_security_event', {
+            await supabase.rpc('log_security_event_with_rate_limit', {
               event_type: 'family_created_with_primary_email',
-              user_id: result.data.user.id,
-              metadata: {
+              user_id_param: result.data.user.id,
+              metadata_param: {
                 email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
                 family_name: familyName,
                 timestamp: new Date().toISOString()
@@ -218,10 +218,10 @@ export const useEnhancedAuth = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       
-      await supabase.rpc('log_security_event', {
+      await supabase.rpc('log_security_event_with_rate_limit', {
         event_type: 'enhanced_auth_signup_error',
-        user_id: null,
-        metadata: {
+        user_id_param: null,
+        metadata_param: {
           email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
           error: errorMessage,
           timestamp: new Date().toISOString()
