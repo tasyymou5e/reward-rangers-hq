@@ -1830,6 +1830,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_invalid_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_mfa_data: {
         Args: { days_old?: number }
         Returns: number

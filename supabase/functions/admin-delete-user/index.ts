@@ -161,6 +161,42 @@ serve(async (req) => {
       })
     }
 
+    console.log('Starting user deletion process for userId:', userId)
+
+    // First, clean up any potential data integrity issues
+    try {
+      // Ensure profile exists and has valid role before deletion
+      const { data: profileCheck, error: profileCheckError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, role, display_name')
+        .eq('id', userId)
+        .single()
+
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+        console.error('Error checking profile before deletion:', profileCheckError)
+        throw new Error(`Profile check failed: ${profileCheckError.message}`)
+      }
+
+      if (profileCheck) {
+        console.log('Profile found before deletion:', profileCheck)
+        
+        // Validate the role is a proper enum value
+        const validRoles = ['kid', 'parent', 'admin', 'full_admin', 'read_only_admin', 'report_admin']
+        if (!validRoles.includes(profileCheck.role)) {
+          console.warn('Invalid role detected, fixing:', profileCheck.role)
+          
+          // Fix invalid role before deletion
+          await supabaseAdmin
+            .from('profiles')
+            .update({ role: 'parent' })
+            .eq('id', userId)
+        }
+      }
+    } catch (profileError) {
+      console.error('Error in profile pre-deletion check:', profileError)
+      // Continue with deletion attempt anyway
+    }
+
     // Delete user from auth (this will cascade to related data due to foreign keys)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
@@ -185,19 +221,31 @@ serve(async (req) => {
           }
         });
       
-      // If auth deletion fails, try to delete from profiles as fallback
-      const { error: profileDeleteError } = await supabaseAdmin
-        .from('profiles')
-        .delete()
-        .eq('id', userId)
+      // If auth deletion fails, try manual cleanup as fallback
+      console.log('Attempting manual cleanup after auth deletion failure')
+      
+      try {
+        // Delete from profiles table directly
+        const { error: profileDeleteError } = await supabaseAdmin
+          .from('profiles')
+          .delete()
+          .eq('id', userId)
 
-      if (profileDeleteError) {
-        console.error('Error deleting profile:', profileDeleteError)
-        return new Response('Failed to delete user', { 
+        if (profileDeleteError) {
+          console.error('Error deleting profile:', profileDeleteError)
+          throw new Error(`Profile deletion failed: ${profileDeleteError.message}`)
+        }
+
+        console.log('Manual profile cleanup successful')
+      } catch (cleanupError) {
+        console.error('Manual cleanup failed:', cleanupError)
+        return new Response('Failed to delete user completely', { 
           status: 500, 
           headers: corsHeaders 
         })
       }
+    } else {
+      console.log('User deleted from auth successfully')
     }
 
     // Log the deletion for security audit
