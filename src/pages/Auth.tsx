@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
-import { useSecureAuth } from "@/hooks/useSecureAuth";
+import { useEnhancedAuth } from "@/hooks/useEnhancedAuth";
 import { secureLog } from "@/utils/secureLogging";
 
-import { LogIn, UserPlus, Users, Crown, Shield } from "lucide-react";
+import { LogIn, UserPlus, Users, Crown, Shield, Mail, ArrowRight } from "lucide-react";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -20,24 +21,51 @@ export default function Auth() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("parent");
-  const [authLoading, setAuthLoading] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
+  const [showEmailResolution, setShowEmailResolution] = useState(false);
+  const [resolvedEmail, setResolvedEmail] = useState("");
   
   const { signIn, signUp } = useAuth();
-  const { secureSignIn, secureSignUp, isBlocked, authAttempts, maxAttempts, getRemainingBlockTime } = useSecureAuth();
+  const { 
+    enhancedSignIn, 
+    enhancedSignUp, 
+    checkEmailResolution,
+    loading,
+    isBlocked, 
+    authAttempts, 
+    maxAttempts 
+  } = useEnhancedAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+
+  const handleEmailCheck = async () => {
+    if (!email) return;
+    
+    try {
+      const resolution = await checkEmailResolution(email);
+      if (resolution.canResolve) {
+        setResolvedEmail(resolution.resolvedEmail);
+        setShowEmailResolution(true);
+        toast({
+          title: "Email Resolution Available",
+          description: "This email can be resolved to your family's primary email",
+        });
+      }
+    } catch (error) {
+      // Silently handle resolution errors
+      console.warn('Email resolution check failed:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Security: Check if user is temporarily blocked
     if (isBlocked) {
-      const remainingTime = getRemainingBlockTime();
       toast({
         title: "Account Temporarily Blocked",
-        description: `Too many failed attempts. Please wait ${Math.ceil(remainingTime / 60000)} minutes before trying again.`,
+        description: `Too many failed attempts. Please wait before trying again.`,
         variant: "destructive",
       });
       secureLog.warn("Blocked authentication attempt", { email, authAttempts });
@@ -53,50 +81,50 @@ export default function Auth() {
       });
       return;
     }
-    
-    setAuthLoading(true);
 
     try {
       let result;
       if (isSignUp) {
-        // Use secure signup with enhanced validation
-        result = await secureSignUp(email, password, {
+        // Use enhanced signup with family creation option
+        result = await enhancedSignUp(email, password, {
           display_name: displayName,
           username: username,
           role: role
-        });
+        }, role === 'parent', displayName ? `${displayName}'s Family` : undefined);
       } else {
-        // Use secure signin with rate limiting and monitoring
-        result = await secureSignIn(email, password);
+        // Use enhanced signin with email resolution
+        result = await enhancedSignIn(email, password);
       }
 
-      if (result.error) {
-        // Enhanced error handling with security consideration
-        const sanitizedError = result.error.message.includes('rate limit') 
-          ? "Authentication rate limit exceeded. Please wait before trying again."
-          : result.error.message;
-          
+      if (!result.success) {
         toast({
           title: "Authentication Error",
-          description: sanitizedError,
+          description: result.error || "Authentication failed",
           variant: "destructive",
         });
         
-        secureLog.warn("Authentication failed", { 
+        if (result.requiresEmailResolution) {
+          setShowEmailResolution(true);
+        }
+        
+        secureLog.warn("Enhanced authentication failed", { 
           email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          error: result.error.code 
+          error: result.error
         });
       } else {
         toast({
           title: isSignUp ? "Account Created!" : "Welcome Back!",
           description: isSignUp 
             ? "Please check your email to verify your account." 
-            : "You've been successfully signed in.",
+            : result.resolvedEmail 
+              ? "Signed in using your family's primary email"
+              : "You've been successfully signed in.",
         });
         
-        secureLog.info("Authentication successful", { 
+        secureLog.info("Enhanced authentication successful", { 
           email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          type: isSignUp ? 'signup' : 'signin' 
+          type: isSignUp ? 'signup' : 'signin',
+          emailResolved: !!result.resolvedEmail
         });
         
         // Redirect based on role
@@ -106,7 +134,7 @@ export default function Auth() {
       }
     } catch (error: any) {
       // Enhanced error handling with security logging
-      secureLog.error("Authentication error", { 
+      secureLog.error("Enhanced authentication error", { 
         email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
         error: error.message 
       });
@@ -116,8 +144,6 @@ export default function Auth() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setAuthLoading(false);
     }
   };
 
@@ -210,14 +236,39 @@ export default function Auth() {
             
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={handleEmailCheck}
+                  required
+                />
+                {!isSignUp && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-6 px-2"
+                    onClick={handleEmailCheck}
+                  >
+                    <Mail className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Email Resolution Alert */}
+              {showEmailResolution && resolvedEmail && (
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>
+                    This email resolves to your family's primary email: 
+                    <strong className="ml-1">{resolvedEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3')}</strong>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -243,13 +294,13 @@ export default function Auth() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={authLoading || isBlocked}
+              disabled={loading || isBlocked}
               variant={isSignUp ? "default" : "default"}
             >
-              {authLoading ? (
+              {loading ? (
                 "Processing..."
               ) : isBlocked ? (
-                `Blocked (${Math.ceil(getRemainingBlockTime() / 60000)}m)`
+                `Blocked - Try again later`
               ) : (
                 <>
                   {isSignUp ? <UserPlus className="h-4 w-4 mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
@@ -266,17 +317,38 @@ export default function Auth() {
             )}
           </form>
           
-          <div className="mt-6 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm"
-            >
-              {isSignUp 
-                ? "Already have an account? Sign in" 
-                : "Don't have an account? Sign up"
-              }
-            </Button>
+          <div className="mt-6 space-y-4">
+            {/* Primary Email Auth Option */}
+            <div className="text-center">
+              <Link 
+                to="/primary-email-auth"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <Mail className="h-4 w-4" />
+                Use Primary Email System
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+              <p className="text-xs text-muted-foreground mt-1">
+                For families using the new email management system
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setShowEmailResolution(false);
+                  setResolvedEmail("");
+                }}
+                className="text-sm"
+              >
+                {isSignUp 
+                  ? "Already have an account? Sign in" 
+                  : "Don't have an account? Sign up"
+                }
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
