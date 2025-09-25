@@ -7,9 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Mail, Plus, Edit, Trash2, Users, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Mail, Plus, Edit, Trash2, Users, Shield, Bell, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { NotificationConsolidationManager } from './NotificationConsolidationManager';
+import { InternalIdentifierManager } from './InternalIdentifierManager';
 
 interface EmailAlias {
   id: string;
@@ -28,12 +31,14 @@ interface EmailAlias {
 
 interface EmailAliasManagerProps {
   familyId: string;
+  familyName: string;
   primaryEmail: string;
   canManage?: boolean;
 }
 
 export const EmailAliasManager: React.FC<EmailAliasManagerProps> = ({
   familyId,
+  familyName,
   primaryEmail,
   canManage = false,
 }) => {
@@ -215,16 +220,35 @@ export const EmailAliasManager: React.FC<EmailAliasManagerProps> = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Aliases
-            </CardTitle>
-            <CardDescription>
-              Manage email aliases for family members under primary email: {primaryEmail}
-            </CardDescription>
-          </div>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          Email Management System
+        </CardTitle>
+        <CardDescription>
+          Comprehensive email management with consolidation, delegation, and internal identifiers
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="aliases" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="aliases">Email Aliases</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="identifiers">Internal IDs</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="aliases" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="h-5 w-5" />
+                      Email Aliases
+                    </CardTitle>
+                    <CardDescription>
+                      Manage email aliases for family members under primary email: {primaryEmail}
+                    </CardDescription>
+                  </div>
           {canManage && (
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
@@ -294,64 +318,86 @@ export const EmailAliasManager: React.FC<EmailAliasManagerProps> = ({
               </DialogContent>
             </Dialog>
           )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {aliases.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No email aliases found</p>
-            {canManage && (
-              <p className="text-sm">Create aliases to manage family member emails</p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {aliases.map((alias) => (
-              <div key={alias.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{alias.alias_email}</span>
-                    <Badge className={getRoleColor(alias.role)}>
-                      <span className="flex items-center gap-1">
-                        {getRoleIcon(alias.role)}
-                        {alias.role.replace('_', ' ')}
-                      </span>
-                    </Badge>
-                    {!alias.is_active && (
-                      <Badge variant="secondary">Inactive</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {aliases.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No email aliases found</p>
+                    {canManage && (
+                      <p className="text-sm">Create aliases to manage family member emails</p>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    User ID: {alias.user_id}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Created: {new Date(alias.created_at).toLocaleDateString()}
-                  </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {aliases.map((alias) => (
+                      <div key={alias.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{alias.alias_email}</span>
+                            <Badge className={getRoleColor(alias.role)}>
+                              <span className="flex items-center gap-1">
+                                {getRoleIcon(alias.role)}
+                                {alias.role.replace('_', ' ')}
+                              </span>
+                            </Badge>
+                            {!alias.is_active && (
+                              <Badge variant="secondary">Inactive</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            User ID: {alias.user_id}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Created: {new Date(alias.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
 
-                {canManage && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={alias.is_active}
-                        onCheckedChange={() => toggleAliasStatus(alias.id, alias.is_active)}
-                      />
-                      <Label className="text-xs">Active</Label>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteEmailAlias(alias.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                        {canManage && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={alias.is_active}
+                                onCheckedChange={() => toggleAliasStatus(alias.id, alias.is_active)}
+                              />
+                              <Label className="text-xs">Active</Label>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteEmailAlias(alias.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
-        )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="mt-6">
+            <NotificationConsolidationManager
+              familyId={familyId}
+              primaryEmail={primaryEmail}
+              familyMembers={familyMembers}
+              canManage={canManage}
+            />
+          </TabsContent>
+          
+          <TabsContent value="identifiers" className="mt-6">
+            <InternalIdentifierManager
+              familyId={familyId}
+              familyName={familyName}
+              familyMembers={familyMembers}
+              canManage={canManage}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -33,6 +33,7 @@ export const PrimaryEmailAuth: React.FC = () => {
             <TabsContent value="aliases" className="mt-6">
               <EmailAliasManager 
                 familyId="current-family-id" // TODO: Get from context
+                familyName="Sample Family" // TODO: Get from context
                 primaryEmail="family@example.com" // TODO: Get from context
                 canManage={true}
               />

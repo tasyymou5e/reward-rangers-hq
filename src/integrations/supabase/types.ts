@@ -1286,6 +1286,57 @@ export type Database = {
           },
         ]
       }
+      internal_identifiers: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          family_id: string
+          id: string
+          identifier_type: string
+          internal_username: string
+          is_active: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          family_id: string
+          id?: string
+          identifier_type?: string
+          internal_username: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          family_id?: string
+          id?: string
+          identifier_type?: string
+          internal_username?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_identifiers_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internal_identifiers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mfa_audit_log: {
         Row: {
           action: string
@@ -1361,41 +1412,135 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          consolidate_to_primary: boolean | null
+          created_at: string | null
+          delegation_rules: Json | null
+          family_id: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          consolidate_to_primary?: boolean | null
+          created_at?: string | null
+          delegation_rules?: Json | null
+          family_id: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          consolidate_to_primary?: boolean | null
+          created_at?: string | null
+          delegation_rules?: Json | null
+          family_id?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_routing: {
+        Row: {
+          created_at: string | null
+          family_id: string
+          id: string
+          notification_type: string
+          recipient_type: string
+          recipient_user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_id: string
+          id?: string
+          notification_type: string
+          recipient_type?: string
+          recipient_user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          notification_type?: string
+          recipient_type?: string
+          recipient_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_routing_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_routing_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
+          consolidated: boolean | null
           created_at: string
           data: Json | null
+          family_id: string | null
           id: string
           message: string
           read: boolean
+          routing_info: Json | null
           title: string
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          consolidated?: boolean | null
           created_at?: string
           data?: Json | null
+          family_id?: string | null
           id?: string
           message: string
           read?: boolean
+          routing_info?: Json | null
           title: string
           type?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          consolidated?: boolean | null
           created_at?: string
           data?: Json | null
+          family_id?: string | null
           id?: string
           message?: string
           read?: boolean
+          routing_info?: Json | null
           title?: string
           type?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       point_transactions: {
         Row: {
