@@ -2024,6 +2024,14 @@ export type Database = {
           username: string
         }[]
       }
+      get_security_recommendations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_required: string
+          priority: string
+          recommendation: string
+        }[]
+      }
       get_system_setting: {
         Args: { key_name: string }
         Returns: Json
