@@ -19,6 +19,7 @@ import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
+import { PrimaryEmailAuth } from "./pages/PrimaryEmailAuth";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
@@ -41,6 +42,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/primary-email" element={<PrimaryEmailAuth />} />
                 <Route path="/kids" element={
                   <ProtectedRoute requiredRole="kid">
                     <KidsPortal />
