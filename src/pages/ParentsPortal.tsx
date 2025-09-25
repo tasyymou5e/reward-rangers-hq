@@ -290,7 +290,7 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue={pendingApprovalChores.length > 0 ? "approvals" : "chores"} className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-8">
             {pendingApprovalChores.length > 0 && (
               <TabsTrigger value="approvals" className="flex items-center gap-2 relative">
                 <CheckCircle className="h-4 w-4" />
