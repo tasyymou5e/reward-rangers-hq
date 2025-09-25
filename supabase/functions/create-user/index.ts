@@ -204,9 +204,10 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to create user' 
+        error: errorMessage 
       }),
       { 
         status: 400,

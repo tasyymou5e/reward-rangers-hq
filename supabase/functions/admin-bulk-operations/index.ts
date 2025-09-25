@@ -134,7 +134,8 @@ serve(async (req) => {
         }
       } catch (chunkError) {
         console.error(`Error processing chunk ${i}-${i + chunkSize}:`, chunkError);
-        results.errors.push(`Chunk ${i}-${i + chunkSize}: ${chunkError.message}`);
+        const errorMessage = chunkError instanceof Error ? chunkError.message : String(chunkError);
+        results.errors.push(`Chunk ${i}-${i + chunkSize}: ${errorMessage}`);
         results.failed_items += chunk.length;
       }
 
@@ -186,8 +187,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Bulk operation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(JSON.stringify({
-      error: error.message || 'Internal server error'
+      error: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -217,7 +219,8 @@ async function processFamilyCreation(
       if (error) throw error;
       results.created_items.push(family);
     } catch (error) {
-      results.errors.push(`Family creation failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      results.errors.push(`Family creation failed: ${errorMessage}`);
       results.failed_items++;
     }
   }
@@ -244,7 +247,8 @@ async function processUserCreation(
       if (error) throw error;
       results.created_items.push(user);
     } catch (error) {
-      results.errors.push(`User creation failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      results.errors.push(`User creation failed: ${errorMessage}`);
       results.failed_items++;
     }
   }
@@ -270,7 +274,8 @@ async function processPermissionUpdates(
       if (error) throw error;
       results.created_items.push(permData);
     } catch (error) {
-      results.errors.push(`Permission update failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      results.errors.push(`Permission update failed: ${errorMessage}`);
       results.failed_items++;
     }
   }
@@ -296,7 +301,8 @@ async function processDataExport(
         data: data
       });
     } catch (error) {
-      results.errors.push(`Data export failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      results.errors.push(`Data export failed: ${errorMessage}`);
       results.failed_items++;
     }
   }

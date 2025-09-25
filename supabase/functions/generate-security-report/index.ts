@@ -184,7 +184,7 @@ serve(async (req) => {
     // Generate report based on format
     if (requestBody.format === 'pdf') {
       const pdfContent = await generatePDFReport(report);
-      return new Response(pdfContent, {
+      return new Response(pdfContent as BodyInit, {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/pdf',
@@ -209,7 +209,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Security report generation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

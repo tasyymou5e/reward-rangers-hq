@@ -231,9 +231,10 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating test family:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create test family';
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to create test family' 
+        error: errorMessage 
       }),
       { 
         status: 400,

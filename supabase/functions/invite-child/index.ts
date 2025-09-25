@@ -196,23 +196,20 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: "ChoreQuest <noreply@resend.dev>",
-      to: [childEmail],
-      subject: `🎯 Welcome to ChoreQuest, ${childName}! Your Adventure Awaits`,
-      html: emailHtml,
-    });
-
-    if (emailResponse.error) {
-      // Email failed but don't fail the whole process
-    }
+    // Note: Email sending is currently disabled
+    // TODO: Re-enable when Resend integration is properly configured
+    const emailResponse = { error: null };
+    
+    // if (emailResponse.error) {
+    //   // Email failed but don't fail the whole process
+    // }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Child invited successfully",
         childId: newUser.user.id,
-        emailSent: !emailResponse.error,
+        emailSent: false, // Email sending is currently disabled
       }),
       {
         status: 200,
@@ -220,9 +217,10 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

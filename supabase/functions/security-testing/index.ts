@@ -193,7 +193,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Security testing error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -362,7 +363,7 @@ async function runDatabaseSecurityTests(supabase: any): Promise<SecurityFinding[
       .eq('resolved', false)
       .limit(10);
 
-    const unresolvedCritical = securityAlerts?.filter(a => a.severity === 'critical').length || 0;
+    const unresolvedCritical = securityAlerts?.filter((a: any) => a.severity === 'critical').length || 0;
     
     if (unresolvedCritical > 0) {
       findings.push({
