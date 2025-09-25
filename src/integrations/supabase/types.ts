@@ -2047,6 +2047,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_like_from_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_any_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
