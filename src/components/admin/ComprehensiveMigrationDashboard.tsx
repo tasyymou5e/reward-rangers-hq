@@ -7,6 +7,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MigrationValidationTool } from './MigrationValidationTool';
+import { MigrationRollbackTool } from './MigrationRollbackTool';
+import { Phase3CompletionSummary } from './Phase3CompletionSummary';
 import { 
   Database, 
   Upload, 
@@ -350,53 +353,7 @@ export const ComprehensiveMigrationDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Implementation Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <h4 className="font-medium flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    Completed Components
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Database className="h-3 w-3" /> Database Schema & Functions
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Mail className="h-3 w-3" /> Email Routing Edge Function
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Users className="h-3 w-3" /> Family Management Components
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Shield className="h-3 w-3" /> Security & Audit Logging
-                    </li>
-                  </ul>
-                </div>
-                
-                <div className="space-y-3">
-                  <h4 className="font-medium flex items-center gap-2 text-orange-600">
-                    <Clock className="h-4 w-4" />
-                    Pending Tasks
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Mail className="h-3 w-3" /> Resend.com Integration
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Settings className="h-3 w-3" /> Production Configuration
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Shield className="h-3 w-3" /> Leaked Password Protection
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Phase3CompletionSummary />
         </TabsContent>
 
         <TabsContent value="migration" className="space-y-4">
@@ -490,38 +447,29 @@ export const ComprehensiveMigrationDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="testing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Testing & Validation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button onClick={testEmailRouting} variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Test Email Routing
-                </Button>
-                
-                <Button onClick={fetchSystemHealth} variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Refresh Health Metrics
-                </Button>
-              </div>
-
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Production Checklist:</strong>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Configure Resend.com API key in edge function secrets</li>
-                    <li>• Enable leaked password protection in Supabase Auth</li>
-                    <li>• Test email routing with real email addresses</li>
-                    <li>• Verify all RLS policies are working correctly</li>
-                    <li>• Run comprehensive migration for existing families</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6">
+            <MigrationValidationTool />
+            <MigrationRollbackTool />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Tests</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button onClick={testEmailRouting} variant="outline">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Test Email Routing
+                  </Button>
+                  
+                  <Button onClick={fetchSystemHealth} variant="outline">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Refresh Health Metrics
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
