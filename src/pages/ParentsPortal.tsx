@@ -520,11 +520,19 @@ export default function ParentsPortal() {
 
           <TabsContent value="achievements" className="space-y-4">
             <div className="space-y-6">
-              <AdvancedAchievementSystem 
-                userId={children[0]?.id} 
-                familyId={family?.id} 
-              />
-              <FamilyCompetitions familyId={family?.id} />
+              {children.length > 0 && (
+                <AdvancedAchievementSystem 
+                  userId={children[0]?.id} 
+                  familyId={family?.id} 
+                />
+              )}
+              {family?.id && (
+                <FamilyCompetitions 
+                  familyId={family.id} 
+                  userId={children[0]?.id || ""} 
+                  isParent={true} 
+                />
+              )}
             </div>
           </TabsContent>
 
