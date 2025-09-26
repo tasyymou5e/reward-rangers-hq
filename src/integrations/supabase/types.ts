@@ -727,6 +727,51 @@ export type Database = {
           },
         ]
       }
+      chore_templates: {
+        Row: {
+          autism_friendly: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty: string
+          estimated_time_minutes: number | null
+          id: string
+          is_active: boolean
+          points_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          autism_friendly?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          points_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          autism_friendly?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          points_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chores: {
         Row: {
           assigned_to: string | null

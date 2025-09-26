@@ -17,6 +17,7 @@ import AdminSecurityCenter from "./pages/admin/AdminSecurityCenter";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
 import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminChoreTemplates from "./pages/admin/AdminChoreTemplates";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
@@ -83,6 +84,7 @@ const App = () => {
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="families" element={<AdminFamilies />} />
+                  <Route path="chore-templates" element={<AdminChoreTemplates />} />
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="content" element={<AdminContent />} />
                   <Route path="system-monitoring" element={<AdminSystemMonitoring />} />

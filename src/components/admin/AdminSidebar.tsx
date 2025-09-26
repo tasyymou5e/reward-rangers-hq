@@ -22,7 +22,8 @@ import {
   Activity,
   UserCog,
   FileText,
-  Home
+  Home,
+  CheckSquare
 } from "lucide-react";
 
 const navigationItems = [
@@ -43,6 +44,12 @@ const navigationItems = [
     url: "/admin/families",
     icon: UserCog,
     roles: ['admin', 'full_admin', 'read_only_admin']
+  },
+  {
+    title: "Chore Templates",
+    url: "/admin/chore-templates",
+    icon: CheckSquare,
+    roles: ['admin', 'full_admin']
   },
   {
     title: "Reports",
