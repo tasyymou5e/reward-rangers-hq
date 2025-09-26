@@ -56,26 +56,101 @@ export function UserManagementTab() {
       console.log('🔄 UserManagementTab: Starting data load...');
       
       // Test authentication first
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 Auth check in loadData:', user?.id, user?.email);
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('👤 Auth check in loadData:', { 
+        userId: user?.id, 
+        email: user?.email,
+        metadata: user?.user_metadata,
+        authError 
+      });
       
       if (!user) {
         throw new Error('Authentication required - please refresh the page');
       }
 
-      // Use the secure admin functions to get all profiles and families
-      console.log('📊 Loading users data via secure admin function...');
-      const { data: usersData } = await supabase.rpc('get_all_profiles_for_admin');
-      console.log('✅ Users loaded via admin function:', usersData?.length || 0);
+      // Try the secure admin functions first, with detailed error logging
+      console.log('📊 Attempting to load users via secure admin function...');
+      const usersResponse = await supabase.rpc('get_all_profiles_for_admin');
       
-      console.log('🏠 Loading families data via secure admin function...');
-      const { data: familiesData } = await supabase.rpc('get_all_families_for_admin');
-      console.log('✅ Families loaded via admin function:', familiesData?.length || 0);
+      console.log('Users RPC response:', {
+        data: usersResponse.data?.length || 0,
+        error: usersResponse.error?.message,
+        details: usersResponse.error
+      });
+      
+      console.log('🏠 Attempting to load families via secure admin function...');
+      const familiesResponse = await supabase.rpc('get_all_families_for_admin');
+      
+      console.log('Families RPC response:', {
+        data: familiesResponse.data?.length || 0,
+        error: familiesResponse.error?.message,
+        details: familiesResponse.error
+      });
+
+      // If RPC functions fail, fall back to direct table queries
+      let usersData = usersResponse.data;
+      let familiesData = familiesResponse.data;
+      
+      if (usersResponse.error || !usersData) {
+        console.log('🔄 RPC failed for users, trying direct table query...');
+        const directUsersResponse = await supabase
+          .from('profiles')
+          .select(`
+            id, username, display_name, email, avatar_url, role, 
+            points, level, streak_days, last_activity, 
+            created_at, updated_at, email_verified, alternative_emails,
+            email_alias, is_primary_designator, parent_email_designator
+          `);
+        
+        console.log('Direct users query result:', {
+          data: directUsersResponse.data?.length || 0,
+          error: directUsersResponse.error?.message
+        });
+        
+        if (directUsersResponse.error) {
+          throw new Error(`Users query failed: ${directUsersResponse.error.message}`);
+        }
+        
+        usersData = directUsersResponse.data;
+      }
+
+      if (familiesResponse.error || !familiesData) {
+        console.log('🔄 RPC failed for families, trying direct table query...');
+        const directFamiliesResponse = await supabase
+          .from('families')
+          .select(`
+            id, parent_id, name, family_code, description, avatar_url,
+            created_at, updated_at, settings, archived_at, created_by_primary_email,
+            email_domain, family_email_domain, primary_email_designator,
+            primary_email_designator_id,
+            profiles!parent_id(display_name, email)
+          `);
+        
+        console.log('Direct families query result:', {
+          data: directFamiliesResponse.data?.length || 0,
+          error: directFamiliesResponse.error?.message
+        });
+        
+        if (directFamiliesResponse.error) {
+          throw new Error(`Families query failed: ${directFamiliesResponse.error.message}`);
+        }
+        
+        // Transform the data to match expected structure
+        familiesData = directFamiliesResponse.data?.map(family => ({
+          ...family,
+          parent_display_name: family.profiles?.display_name || '',
+          parent_email: family.profiles?.email || '',
+          member_count: 0 // Will be calculated separately if needed
+        }));
+      }
       
       setUsers(usersData || []);
       setFamilies(familiesData || []);
       
-      console.log('🎉 All data loaded successfully');
+      console.log('🎉 Data loaded successfully:', {
+        users: usersData?.length || 0,
+        families: familiesData?.length || 0
+      });
       
       // Show success message if we have data
       if ((usersData?.length > 0) || (familiesData?.length > 0)) {
