@@ -32,10 +32,16 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Check admin role using RPC to avoid RLS recursion
-    const { data: isAdmin, error: adminError } = await supabaseClient.rpc('is_admin_enhanced');
+    // Check if user is admin using direct auth.users check  
+    const { data: authUser, error: authCheckError } = await supabaseClient
+      .from('auth.users')
+      .select('raw_user_meta_data')
+      .eq('id', user.id)
+      .single();
     
-    if (adminError || !isAdmin) {
+    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
+    
+    if (authCheckError || !isAdmin) {
       throw new Error('Insufficient permissions');
     }
 

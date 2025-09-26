@@ -79,18 +79,24 @@ serve(async (req) => {
       })
     }
 
-    // Check if user is admin using RPC to avoid RLS recursion
-    const { data: isAdmin, error: adminError } = await supabaseAdmin.rpc('is_admin_enhanced');
+    // Check if user is admin using direct auth.users check
+    const { data: authUser, error: authCheckError } = await supabaseAdmin
+      .from('auth.users')
+      .select('raw_user_meta_data')
+      .eq('id', user.id)
+      .single();
+    
+    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
 
     console.log('Admin check:', { 
       userId: user.id, 
       isAdmin, 
-      hasError: !!adminError,
-      errorMessage: adminError?.message 
+      hasError: !!authCheckError,
+      errorMessage: authCheckError?.message 
     });
 
-    if (adminError || !isAdmin) {
-      console.error('Admin role verification failed:', { isAdmin, adminError });
+    if (authCheckError || !isAdmin) {
+      console.error('Admin role verification failed:', { isAdmin, adminError: authCheckError });
       return new Response('Forbidden: Admin role required', { 
         status: 403, 
         headers: corsHeaders 
