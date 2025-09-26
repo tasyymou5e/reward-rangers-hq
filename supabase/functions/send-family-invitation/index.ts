@@ -37,15 +37,10 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Check admin role
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const adminRoles = ['admin', 'full_admin'];
-    if (!profile || !adminRoles.includes(profile.role)) {
+    // Check admin role using RPC to avoid RLS recursion
+    const { data: isAdmin, error: adminError } = await supabaseClient.rpc('is_admin_enhanced');
+    
+    if (adminError || !isAdmin) {
       throw new Error('Insufficient permissions');
     }
 

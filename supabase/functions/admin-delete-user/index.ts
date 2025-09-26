@@ -79,26 +79,22 @@ serve(async (req) => {
       })
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    // Check if user is admin using RPC to avoid RLS recursion
+    const { data: isAdmin, error: adminError } = await supabaseAdmin.rpc('is_admin_enhanced');
 
-    console.log('Profile check:', { 
+    console.log('Admin check:', { 
       userId: user.id, 
-      role: profile?.role, 
-      hasError: !!profileError,
-      errorMessage: profileError?.message 
-    })
+      isAdmin, 
+      hasError: !!adminError,
+      errorMessage: adminError?.message 
+    });
 
-    if (profileError || !profile || !['admin', 'full_admin'].includes(profile.role)) {
-      console.error('Admin role verification failed:', { profile, profileError })
+    if (adminError || !isAdmin) {
+      console.error('Admin role verification failed:', { isAdmin, adminError });
       return new Response('Forbidden: Admin role required', { 
         status: 403, 
         headers: corsHeaders 
-      })
+      });
     }
 
     // Parse request body

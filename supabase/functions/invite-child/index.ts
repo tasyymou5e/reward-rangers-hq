@@ -1,232 +1,192 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-// Note: Resend is not needed for this function currently, removing to fix build error
-// import { Resend } from "npm:resend@4.0.0";
-
-// const resend = new Resend(Deno.env.get("RESEND_API_KEY")); // Removed for now
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface InviteChildRequest {
   childName: string;
-  childPassword: string;
+  password: string;
   familyId: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    // Create Supabase clients
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get the authorization header
-    const authHeader = req.headers.get("authorization");
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Get auth header
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authorization header required" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      throw new Error('No authorization header');
     }
 
-    // Verify the user making the request
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // Verify user authentication
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      throw new Error('Invalid authentication');
     }
 
-    const { childName, childPassword, familyId }: InviteChildRequest = await req.json();
-
-    // Get parent's profile to generate child email
-    const { data: parentProfile, error: parentError } = await supabaseClient
-      .from("profiles")
-      .select("email")
-      .eq("id", user.id)
+    // Check if user is admin or parent using RPC
+    const { data: isAdmin, error: adminError } = await supabaseAdmin.rpc('is_admin_enhanced');
+    const { data: isParent, error: parentError } = await supabaseAdmin
+      .from('families')
+      .select('id')
+      .eq('parent_id', user.id)
       .single();
 
-    if (parentError || !parentProfile) {
-      return new Response(
-        JSON.stringify({ error: "Parent profile not found" }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if ((adminError || !isAdmin) && (parentError || !isParent)) {
+      throw new Error('Insufficient permissions');
     }
 
-    // Generate unique child email from parent email
-    const parentEmailBase = parentProfile.email.split('@')[0];
-    const domain = parentProfile.email.split('@')[1];
-    const timestamp = Date.now();
-    const childEmail = `${parentEmailBase}+child_${childName.toLowerCase().replace(/\s+/g, '')}_${timestamp}@${domain}`;
+    const { childName, password, familyId }: InviteChildRequest = await req.json();
 
-    // Verify the parent owns this family
-    const { data: family, error: familyError } = await supabaseClient
-      .from("families")
-      .select("*")
-      .eq("id", familyId)
-      .eq("parent_id", user.id)
+    if (!childName || !password || !familyId) {
+      throw new Error('Missing required parameters');
+    }
+
+    // Get parent profile for email generation
+    const { data: parentProfile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('email, display_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !parentProfile) {
+      throw new Error('Parent profile not found');
+    }
+
+    // Verify family ownership
+    const { data: family, error: familyError } = await supabaseAdmin
+      .from('families')
+      .select('id, name, parent_id')
+      .eq('id', familyId)
       .single();
 
     if (familyError || !family) {
-      return new Response(
-        JSON.stringify({ error: "Family not found or access denied" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      throw new Error('Family not found');
     }
 
-    // Create the child user account with parent-provided password
-    const { data: newUser, error: userError } = await supabaseClient.auth.admin.createUser({
+    if (family.parent_id !== user.id && !isAdmin) {
+      throw new Error('You can only invite children to your own family');
+    }
+
+    // Generate unique email for child
+    const timestamp = Date.now();
+    const childEmail = `${childName.toLowerCase().replace(/\s+/g, '')}.${timestamp}@${parentProfile.email.split('@')[1]}`;
+
+    // Create child user
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: childEmail,
-      password: childPassword,
+      password: password,
       email_confirm: true,
       user_metadata: {
-        display_name: childName,
-        role: "kid",
+        role: 'kid',
         invited_by: user.id,
-        family_id: familyId,
-      },
+        family_id: familyId
+      }
     });
 
-    if (userError) {
-      return new Response(
-        JSON.stringify({ error: `Failed to create user account: ${userError.message}` }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    if (createError) {
+      throw new Error(`Failed to create child user: ${createError.message}`);
     }
 
-    // Add the child to the family
-    const { error: memberError } = await supabaseClient
-      .from("family_members")
-      .insert({
-        family_id: familyId,
-        user_id: newUser.user.id,
+    if (!newUser.user) {
+      throw new Error('Failed to create child user');
+    }
+
+    try {
+      // Create profile for child (handle race condition with trigger)
+      const { error: profileInsertError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: newUser.user.id,
+          email: childEmail,
+          display_name: childName,
+          username: childName.toLowerCase().replace(/\s+/g, ''),
+          role: 'kid'
+        }, {
+          onConflict: 'id'
+        });
+
+      if (profileInsertError) {
+        console.error('Profile creation error:', profileInsertError);
+        // Don't throw here as the trigger might have already created it
+      }
+
+      // Add child to family
+      const { error: memberError } = await supabaseAdmin
+        .from('family_members')
+        .insert({
+          family_id: familyId,
+          user_id: newUser.user.id
+        });
+
+      if (memberError) {
+        // If family member insertion fails, clean up the user
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        throw new Error(`Failed to add child to family: ${memberError.message}`);
+      }
+
+      // Log the invitation using RPC
+      await supabaseAdmin.rpc('log_security_audit', {
+        p_action_type: 'child_invited',
+        p_resource_type: 'user',
+        p_resource_id: newUser.user.id,
+        p_risk_level: 'low',
+        p_metadata: {
+          child_id: newUser.user.id,
+          child_name: childName,
+          family_id: familyId,
+          invited_by: user.id,
+          timestamp: new Date().toISOString()
+        }
       });
 
-    if (memberError) {
-      // Clean up the created user if family member insertion fails
-      await supabaseClient.auth.admin.deleteUser(newUser.user.id);
-      return new Response(
-        JSON.stringify({ error: "Failed to add child to family" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      console.log(`Successfully invited child: ${childName} (${childEmail}) to family ${family.name}`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        childId: newUser.user.id,
+        message: `Child ${childName} invited successfully`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (error) {
+      // Clean up user if anything fails after creation
+      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      throw error;
     }
 
-    // Send invitation email
-    const appUrl = Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app") || "https://your-app.lovable.app";
-    
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Welcome to ChoreQuest!</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .logo { font-size: 2.5em; margin-bottom: 10px; }
-            .card { background: #f8f9fa; border-radius: 12px; padding: 24px; margin: 20px 0; }
-            .credentials { background: #e3f2fd; border-radius: 8px; padding: 16px; margin: 16px 0; }
-            .button { display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 10px 0; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 0.9em; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">🎯 ChoreQuest</div>
-              <h1>Welcome to the Family, ${childName}!</h1>
-            </div>
-            
-            <div class="card">
-              <h2>🎉 You've been invited to join ChoreQuest!</h2>
-              <p>Your parent has invited you to join the family on ChoreQuest, where chores become exciting adventures!</p>
-              
-              <p><strong>What is ChoreQuest?</strong></p>
-              <ul>
-                <li>🏆 Earn points (XP) by completing chores</li>
-                <li>🎮 Play mini-games for bonus points</li>
-                <li>🏅 Collect badges and achievements</li>
-                <li>🎁 Redeem points for real rewards</li>
-                <li>📈 Level up and track your progress</li>
-              </ul>
-            </div>
-
-            <div class="card">
-              <h3>🔐 Your Login Information</h3>
-              <div class="credentials">
-                <p><strong>Email:</strong> ${childEmail}</p>
-                <p><strong>Password:</strong> Your parent has set up your password</p>
-              </div>
-              <p><strong>Important:</strong> Ask your parent for your password to log in!</p>
-              
-              <div style="text-align: center; margin: 20px 0;">
-                <a href="${appUrl}/#/auth" class="button">🚀 Start Your Adventure</a>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>📱 Getting Started</h3>
-              <ol>
-                <li>Click the "Start Your Adventure" button above</li>
-                <li>Ask your parent for your password and sign in</li>
-                <li>Complete your first chore and earn XP!</li>
-                <li>Have fun turning chores into adventures! 🎮</li>
-              </ol>
-            </div>
-
-            <div class="footer">
-              <p>🌟 Welcome to the ChoreQuest family! 🌟</p>
-              <p>If you need help, ask your parent or contact support.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // Note: Email sending is currently disabled
-    // NOTE: Re-enable when Resend integration is properly configured
-    const emailResponse = { error: null };
-    
-    // if (emailResponse.error) {
-    //   // Email failed but don't fail the whole process
-    // }
-
+  } catch (error) {
+    console.error('Invite child error:', error);
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Child invited successfully",
-        childId: newUser.user.id,
-        emailSent: false, // Email sending is currently disabled
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Internal server error' 
       }),
       {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
-};
-
-serve(handler);
+});
