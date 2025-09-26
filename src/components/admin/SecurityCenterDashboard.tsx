@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SecurityDashboard } from '@/components/SecurityDashboard';
+import { SecurityConfigurationPanel } from './SecurityConfigurationPanel';
 import { useSecurityMonitoring } from '@/hooks/useSecurityMonitoring';
 import { 
   Shield, 
@@ -168,6 +169,7 @@ export function SecurityCenterDashboard() {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="alerts">Security Alerts</TabsTrigger>
           <TabsTrigger value="monitoring">Real-time Monitoring</TabsTrigger>
           <TabsTrigger value="reports">Security Reports</TabsTrigger>
@@ -175,6 +177,10 @@ export function SecurityCenterDashboard() {
 
         <TabsContent value="overview" className="space-y-4">
           <SecurityDashboard />
+        </TabsContent>
+
+        <TabsContent value="configuration" className="space-y-4">
+          <SecurityConfigurationPanel />
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
