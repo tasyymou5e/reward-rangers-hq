@@ -21,6 +21,7 @@ import {
   Filter,
   X
 } from "lucide-react";
+import { FamilyDetailDialog } from "@/components/admin/FamilyDetailDialog";
 
 export default function AdminFamilies() {
   const { profile } = useAdminAuth();
@@ -42,6 +43,7 @@ export default function AdminFamilies() {
   const [selectedFamily, setSelectedFamily] = useState<any>(null);
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
   
   // Enhanced search and filter state
   const [sortBy, setSortBy] = useState("name-asc");
@@ -127,6 +129,11 @@ export default function AdminFamilies() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleFamilyClick = (family: any) => {
+    setSelectedFamily(family);
+    setShowDetailDialog(true);
   };
 
   const addChild = () => {
@@ -529,95 +536,78 @@ export default function AdminFamilies() {
                 </TableRow>
               </TableHeader>
             <TableBody>
-              {filteredFamilies.map((family) => (
-                <TableRow key={family.id}>
-                  <TableCell className="font-medium">{family.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{family.code}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {family.family_members?.length || 0} members
-                  </TableCell>
-                  <TableCell>
-                    {new Date(family.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedFamily(family);
-                          setShowFamilyDialog(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {canModify() && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteFamily(family.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+               {filteredFamilies.map((family) => (
+                 <TableRow 
+                   key={family.id} 
+                   className="cursor-pointer hover:bg-muted/50"
+                   onClick={() => handleFamilyClick(family)}
+                 >
+                   <TableCell className="font-medium">{family.name}</TableCell>
+                   <TableCell>
+                     <Badge variant="outline">{family.family_code}</Badge>
+                   </TableCell>
+                   <TableCell>
+                     <div className="flex flex-col">
+                       <span className="font-medium">
+                         {(family.family_members?.length || 0) + 1} members
+                       </span>
+                       <div className="text-xs text-muted-foreground">
+                         {family.profiles?.display_name || 'Parent'} (Parent)
+                         {family.family_members?.slice(0, 2).map((member: any) => (
+                           <div key={member.user_id}>
+                             {member.profiles?.display_name || 'Unknown'} (Child)
+                           </div>
+                         ))}
+                         {(family.family_members?.length || 0) > 2 && (
+                           <div>+{(family.family_members?.length || 0) - 2} more</div>
+                         )}
+                       </div>
+                     </div>
+                   </TableCell>
+                   <TableCell>
+                     {new Date(family.created_at).toLocaleDateString()}
+                   </TableCell>
+                   <TableCell>
+                     <div className="flex items-center space-x-2">
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleFamilyClick(family);
+                         }}
+                       >
+                         <Eye className="h-4 w-4" />
+                       </Button>
+                       {canModify() && (
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleDeleteFamily(family.id);
+                           }}
+                         >
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       )}
+                     </div>
+                   </TableCell>
+                 </TableRow>
+               ))}
             </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
 
-      {/* Family Details Dialog */}
-      <Dialog open={showFamilyDialog} onOpenChange={setShowFamilyDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Family Details</DialogTitle>
-          </DialogHeader>
-          {selectedFamily && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Family Name</Label>
-                  <p className="font-medium">{selectedFamily.name}</p>
-                </div>
-                <div>
-                  <Label>Family Code</Label>
-                  <Badge variant="outline">{selectedFamily.code}</Badge>
-                </div>
-                <div>
-                  <Label>Created</Label>
-                  <p className="font-medium">
-                    {new Date(selectedFamily.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <Label>Members</Label>
-                  <p className="font-medium">{selectedFamily.family_members?.length || 0}</p>
-                </div>
-              </div>
-              
-              {selectedFamily.family_members && selectedFamily.family_members.length > 0 && (
-                <div>
-                  <Label>Family Members</Label>
-                  <div className="mt-2 space-y-2">
-                    {selectedFamily.family_members.map((member: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-2 border rounded">
-                        <span>{member.profiles?.display_name || 'Unknown'}</span>
-                        <Badge variant="secondary">{member.profiles?.role || 'Unknown'}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Family Detail Dialog */}
+      <FamilyDetailDialog
+        family={selectedFamily}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        onUpdate={loadFamilies}
+      />
     </div>
   );
 }

@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.email-routing-enhanced]
 verify_jwt = false
+
+[functions.admin-update-user]
+verify_jwt = true
+
+[functions.admin-create-family-member]
+verify_jwt = true
