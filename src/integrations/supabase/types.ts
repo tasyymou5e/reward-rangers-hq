@@ -2674,6 +2674,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      can_manage_system_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_read_system_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_auth_rate_limit: {
         Args: {
           block_duration_minutes?: number
@@ -3099,6 +3107,14 @@ export type Database = {
         Returns: undefined
       }
       update_system_setting: {
+        Args: {
+          key_name: string
+          new_value: Json
+          setting_description?: string
+        }
+        Returns: boolean
+      }
+      update_system_setting_secure: {
         Args: {
           key_name: string
           new_value: Json
