@@ -97,6 +97,10 @@ export default {
 				'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)'
 			},
+			transitionProperty: {
+				'bounce': 'var(--transition-bounce)',
+				'smooth': 'var(--transition-smooth)'
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
