@@ -79,12 +79,40 @@ export const Phase3StatusCard: React.FC = () => {
           <Progress value={phaseProgress.overall} className="h-3" />
         </div>
 
+        {/* Phase Status Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="text-xs font-medium text-green-700">Phase 1</div>
+            <div className="text-sm text-green-600">Core Platform</div>
+            <div className="text-xs text-green-500">✅ COMPLETED</div>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-xs font-medium text-blue-700">Phase 2</div>
+            <div className="text-sm text-blue-600">Email System</div>
+            <div className="text-xs text-blue-500">✅ 95% Complete</div>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="text-xs font-medium text-green-700">Phase 3</div>
+            <div className="text-sm text-green-600">Migration Strategy</div>
+            <div className="text-xs text-green-500">✅ COMPLETED</div>
+          </div>
+        </div>
+
         {/* Completion Status */}
         <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg">
           <div className="text-center">
             <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-            <div className="font-semibold text-green-700">Migration System Ready</div>
-            <div className="text-sm text-green-600">All core components operational</div>
+            <div className="font-semibold text-green-700">Staging Ready</div>
+            <div className="text-sm text-green-600">Phase 1-3 completed • Production deployment ready</div>
+          </div>
+        </div>
+
+        {/* Production Requirements */}
+        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="text-sm font-medium text-amber-800 mb-2">Production Requirements (2 items)</div>
+          <div className="space-y-1 text-xs text-amber-700">
+            <div>• Email service setup (Resend.com configuration)</div>
+            <div>• Security settings (Enable leaked password protection)</div>
           </div>
         </div>
 
@@ -119,7 +147,7 @@ export const Phase3StatusCard: React.FC = () => {
           </Button>
           
           <div className="text-xs text-center text-muted-foreground">
-            Ready for staging deployment • Production requires email service setup
+            ✅ Staging Ready • 🔧 2 production configs needed
           </div>
         </div>
       </CardContent>
