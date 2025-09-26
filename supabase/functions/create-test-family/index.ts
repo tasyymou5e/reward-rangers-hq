@@ -59,15 +59,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabaseUser
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile || profile.role !== 'admin') {
-      console.log('Unauthorized test family creation attempt:', { userId: user.id, role: profile?.role });
+    // Check if user is admin using enhanced admin check
+    const { data: isAdminResult, error: adminCheckError } = await supabaseAdmin.rpc('is_admin_enhanced');
+    
+    if (adminCheckError || !isAdminResult) {
+      console.log('Unauthorized test family creation attempt:', { 
+        userId: user.id, 
+        adminCheckError: adminCheckError?.message,
+        isAdminResult 
+      });
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { 
