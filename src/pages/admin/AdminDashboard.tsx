@@ -228,16 +228,16 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 cursor-pointer hover:scale-105 transition-transform">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-green-800 flex items-center">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
+              Advanced Analytics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-green-600">
-              {canViewAnalytics() ? "View detailed reports and insights" : "Limited access"}
+              {canViewAnalytics() ? "Behavioral insights and predictive analytics" : "Limited access"}
             </p>
           </CardContent>
         </Card>

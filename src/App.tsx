@@ -17,6 +17,7 @@ import AdminSecurityCenter from "./pages/admin/AdminSecurityCenter";
 import AdminSystemMonitoring from "./pages/admin/AdminSystemMonitoring";
 import AdminSystemSettings from "./pages/admin/AdminSystemSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import { PrimaryEmailAuth } from "./pages/PrimaryEmailAuth";
@@ -87,6 +88,7 @@ const App = () => {
                   <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
                   <Route path="system-settings" element={<AdminSystemSettings />} />
                   <Route path="security-center" element={<AdminSecurityCenter />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
                 </Route>
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
