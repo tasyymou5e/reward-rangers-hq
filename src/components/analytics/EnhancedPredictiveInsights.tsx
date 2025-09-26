@@ -105,6 +105,31 @@ export const EnhancedPredictiveInsights: React.FC<{ familyId: string; userId?: s
           impact_score: Math.abs(improvement) / 10
         });
       }
+
+      // Challenge Prediction
+      if (completions.length > 10 && recentAvgTime > 0) {
+        const recentFailures = completions.filter(c => 
+          c.completion_time_seconds > (recentAvgTime * 1.5) || !c.completed_at
+        );
+        
+        if (recentFailures.length > completions.length * 0.3) {
+          insights.push({
+            id: 'challenge-prediction-1',
+            type: 'challenge_prediction',
+            title: 'Increased Challenge Risk',
+            description: 'Recent patterns suggest potential difficulty with upcoming tasks',
+            confidence: 0.68,
+            timeframe: 'Next 3-5 days',
+            actionable_items: [
+              'Reduce task complexity temporarily',
+              'Increase check-in frequency',
+              'Prepare additional support materials'
+            ],
+            priority: 'high',
+            impact_score: 0.8
+          });
+        }
+      }
     }
 
     // Motivation Forecast
@@ -125,32 +150,6 @@ export const EnhancedPredictiveInsights: React.FC<{ familyId: string; userId?: s
         priority: 'medium',
         impact_score: 0.6
       });
-    }
-
-    // Challenge Prediction
-    if (completions.length > 10 && recentAvgTime > 0) {
-      const avgCompletionTime = recentAvgTime;
-      const recentFailures = completions.filter(c => 
-        c.completion_time_seconds > (avgCompletionTime * 1.5) || !c.completed_at
-      );
-      
-      if (recentFailures.length > completions.length * 0.3) {
-        insights.push({
-          id: 'challenge-prediction-1',
-          type: 'challenge_prediction',
-          title: 'Increased Challenge Risk',
-          description: 'Recent patterns suggest potential difficulty with upcoming tasks',
-          confidence: 0.68,
-          timeframe: 'Next 3-5 days',
-          actionable_items: [
-            'Reduce task complexity temporarily',
-            'Increase check-in frequency',
-            'Prepare additional support materials'
-          ],
-          priority: 'high',
-          impact_score: 0.8
-        });
-      }
     }
 
     // Opportunity Window

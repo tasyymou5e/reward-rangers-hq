@@ -123,6 +123,7 @@ interface GamificationState {
   triggerLevelUp: (userId: string, newLevel: number) => void;
   triggerAchievementUnlock: (achievement: UserAchievement) => void;
   dismissNotification: () => void;
+  triggerCelebration: (celebration: any) => void;
   
   // Utility Actions
   fetchUserData: (userId: string) => Promise<void>;
@@ -542,6 +543,10 @@ export const useGamificationStore = create<GamificationState>()(
           ];
 
           await Promise.allSettled(promises);
+        },
+        
+        triggerCelebration: (celebration: any) => {
+          console.log('🎉 Celebration triggered:', celebration);
         },
       }),
       {

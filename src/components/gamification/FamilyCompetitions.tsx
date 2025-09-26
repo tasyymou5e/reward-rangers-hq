@@ -77,8 +77,8 @@ export const FamilyCompetitions: React.FC<{ familyId: string; userId: string; is
       
       const competitions = (data || []).map(c => ({
         ...c,
-        leaderboard: Array.isArray(c.leaderboard) ? c.leaderboard : []
-      }));
+        leaderboard: Array.isArray(c.leaderboard) ? c.leaderboard as unknown as CompetitionParticipant[] : []
+      })) as Competition[];
       setCompetitions(competitions);
       
       // Find active competition
@@ -133,9 +133,9 @@ export const FamilyCompetitions: React.FC<{ familyId: string; userId: string; is
 
       if (error) throw error;
 
-      const newCompetition = { ...data, leaderboard: [] };
-      setCompetitions([newCompetition, ...competitions]);
-      setActiveCompetition(newCompetition);
+      const newComp: Competition = { ...data, leaderboard: [] };
+      setCompetitions([newComp, ...competitions]);
+      setActiveCompetition(newComp);
       setShowCreateForm(false);
       setNewCompetition({
         name: '',
