@@ -98,11 +98,13 @@ The application supports four primary user roles:
 - **Family Analytics**: Progress tracking and engagement metrics
 
 ### Chore System
+- **Chore Templates**: Admin-managed default chore templates with categories and difficulty levels
 - **Chore Assignment**: Flexible assignment to individual children or all family members
 - **Status Tracking**: Pending → In Progress → Completed workflow
 - **Point System**: Configurable point values for different tasks
 - **Timer Integration**: Built-in timers for time-sensitive tasks
 - **Progress Logging**: Detailed activity tracking and analytics
+- **Template Management**: Comprehensive admin interface for creating and managing chore templates
 
 ### Gamification Features
 - **Point System**: Points earned for completing chores
@@ -138,6 +140,7 @@ The application supports four primary user roles:
 - `families` - Family groups and metadata
 - `family_members` - Many-to-many relationship between users and families
 - `chores` - Task definitions and assignments
+- `chore_templates` - Default chore templates for admin management
 - `progress_logs` - Activity tracking and point history
 - `wishlist_items` - User-created wishlist entries
 - `rewards` - Available rewards and redemption tracking

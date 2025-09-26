@@ -203,45 +203,30 @@ export const useChoreStore = create<ChoreState>()(
           }
         },
 
-        // Fetch chore templates
+        // Fetch chore templates from database
         fetchTemplates: async () => {
           try {
             set({ loadingTemplates: true });
 
-            // For now, use a static template list
-            // In production, this would come from a templates table
-            const templates: ChoreTemplate[] = [
-              {
-                id: '1',
-                title: 'Make Bed',
-                description: 'Straighten sheets, arrange pillows, and tidy bedroom',
-                points_value: 10,
-                estimated_time_minutes: 5,
-                difficulty: 'easy',
-                category: 'bedroom',
-                autism_friendly: true,
-              },
-              {
-                id: '2',
-                title: 'Load Dishwasher',
-                description: 'Load dirty dishes and start wash cycle',
-                points_value: 15,
-                estimated_time_minutes: 10,
-                difficulty: 'medium',
-                category: 'kitchen',
-                autism_friendly: true,
-              },
-              {
-                id: '3',
-                title: 'Vacuum Living Room',
-                description: 'Vacuum carpet and clean under furniture',
-                points_value: 25,
-                estimated_time_minutes: 20,
-                difficulty: 'hard',
-                category: 'living-room',
-                autism_friendly: false,
-              },
-            ];
+            const { data, error } = await supabase
+              .from('chore_templates')
+              .select('*')
+              .eq('is_active', true)
+              .order('category', { ascending: true })
+              .order('title', { ascending: true });
+
+            if (error) throw error;
+
+            const templates: ChoreTemplate[] = (data || []).map(template => ({
+              id: template.id,
+              title: template.title,
+              description: template.description || '',
+              points_value: template.points_value,
+              estimated_time_minutes: template.estimated_time_minutes || 0,
+              difficulty: template.difficulty as 'easy' | 'medium' | 'hard',
+              category: template.category,
+              autism_friendly: template.autism_friendly,
+            }));
 
             set({ templates, loadingTemplates: false });
           } catch (error) {
