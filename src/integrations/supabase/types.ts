@@ -2842,6 +2842,51 @@ export type Database = {
           username: string
         }[]
       }
+      get_all_families_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          archived_at: string
+          avatar_url: string
+          created_at: string
+          created_by_primary_email: boolean
+          description: string
+          email_domain: string
+          family_code: string
+          family_email_domain: string
+          id: string
+          member_count: number
+          name: string
+          parent_display_name: string
+          parent_email: string
+          parent_id: string
+          primary_email_designator: string
+          primary_email_designator_id: string
+          settings: Json
+          updated_at: string
+        }[]
+      }
+      get_all_profiles_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          alternative_emails: Json
+          avatar_url: string
+          created_at: string
+          display_name: string
+          email: string
+          email_alias: string
+          email_verified: boolean
+          id: string
+          is_primary_designator: boolean
+          last_activity: string
+          level: number
+          parent_email_designator: string
+          points: number
+          role: string
+          streak_days: number
+          updated_at: string
+          username: string
+        }[]
+      }
       get_client_ip_safe: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3018,6 +3063,10 @@ export type Database = {
         Returns: Json
       }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_enhanced: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

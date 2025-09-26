@@ -16,32 +16,12 @@ export function useAdmin() {
         throw new Error('No authenticated user found');
       }
 
-      // Try using the secure profile function first
-      try {
-        console.log('🔒 Trying secure profile fetch...');
-        const { data: secureData, error: secureError } = await supabase.rpc('get_profile_by_id_secure', {
-          target_user_id: user.id,
-          requesting_user_id: user.id
-        });
-        
-        if (secureError) {
-          console.error('❌ Secure profile fetch failed:', secureError);
-        } else {
-          console.log('✅ Secure profile fetch successful:', secureData);
-        }
-      } catch (secureErr) {
-        console.error('❌ Secure profile function error:', secureErr);
-      }
-
-      // Now try to fetch all profiles using direct table access
-      console.log('📊 Attempting direct profiles table access...');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the new admin-specific function that bypasses RLS
+      console.log('🔒 Using admin-specific function to fetch profiles...');
+      const { data, error } = await supabase.rpc('get_all_profiles_for_admin');
       
       if (error) {
-        console.error('❌ Profiles fetch error:', error);
+        console.error('❌ Admin profiles fetch error:', error);
         console.error('Error details:', {
           message: error.message,
           code: error.code,
@@ -75,17 +55,9 @@ export function useAdmin() {
         throw new Error('No authenticated user found for families fetch');
       }
 
-      const { data, error } = await supabase
-        .from('families')
-        .select(`
-          *,
-          profiles!parent_id (display_name, email),
-          family_members (
-            user_id,
-            profiles (display_name, role)
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // Use the new admin-specific function that bypasses RLS
+      console.log('🔒 Using admin-specific function to fetch families...');
+      const { data, error } = await supabase.rpc('get_all_families_for_admin');
       
       if (error) {
         console.error('❌ Families fetch error:', error);
