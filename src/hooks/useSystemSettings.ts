@@ -32,30 +32,78 @@ export const useSystemSettings = () => {
       setLoading(true);
       setError(null);
       
-      // Load login controls using secure function
+      // Load login controls using secure function with enhanced error handling
       const { data: loginData, error: loginError } = await supabase
         .rpc('get_system_setting_secure', { key_name: 'login_controls' });
       
-      // Load maintenance settings using secure function
+      // Load maintenance settings using secure function with enhanced error handling
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .rpc('get_system_setting_secure', { key_name: 'system_maintenance' });
 
       if (loginError) {
         console.error('Error loading login controls:', loginError);
-        // Continue with defaults
+        setError(`Failed to load login settings: ${loginError.message}`);
+        // Use safe defaults
+        setLoginControls({
+          parents_login_enabled: true,
+          kids_login_enabled: true,
+          maintenance_message: ""
+        });
       } else if (loginData) {
-        setLoginControls(loginData as unknown as LoginControls);
+        try {
+          setLoginControls(loginData as unknown as LoginControls);
+        } catch (parseError) {
+          console.error('Error parsing login controls:', parseError);
+          setError('Invalid login settings format');
+          setLoginControls({
+            parents_login_enabled: true,
+            kids_login_enabled: true,
+            maintenance_message: ""
+          });
+        }
       }
       
       if (maintenanceError) {
         console.error('Error loading maintenance settings:', maintenanceError);
-        // Continue with defaults
+        setError(prevError => prevError ? 
+          `${prevError}; Failed to load maintenance settings: ${maintenanceError.message}` : 
+          `Failed to load maintenance settings: ${maintenanceError.message}`
+        );
+        // Use safe defaults
+        setSystemMaintenance({
+          enabled: false,
+          message: "System is currently under maintenance. Please try again later."
+        });
       } else if (maintenanceData) {
-        setSystemMaintenance(maintenanceData as unknown as SystemMaintenance);
+        try {
+          setSystemMaintenance(maintenanceData as unknown as SystemMaintenance);
+        } catch (parseError) {
+          console.error('Error parsing maintenance settings:', parseError);
+          setError(prevError => prevError ? 
+            `${prevError}; Invalid maintenance settings format` : 
+            'Invalid maintenance settings format'
+          );
+          setSystemMaintenance({
+            enabled: false,
+            message: "System is currently under maintenance. Please try again later."
+          });
+        }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Error loading system settings:', error);
-      setError('Failed to load system settings');
+      setError(`Critical error loading system settings: ${errorMessage}`);
+      
+      // Set safe defaults for all settings on critical error
+      setLoginControls({
+        parents_login_enabled: true,
+        kids_login_enabled: true,
+        maintenance_message: ""
+      });
+      setSystemMaintenance({
+        enabled: false,
+        message: "System is currently under maintenance. Please try again later."
+      });
     } finally {
       setLoading(false);
     }

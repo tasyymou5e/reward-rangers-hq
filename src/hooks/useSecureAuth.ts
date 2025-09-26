@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecurityMonitoring } from './useSecurityMonitoring';
-import { secureLog } from '@/utils/secureLogging';
 
 /**
  * Enhanced authentication hook with security monitoring, rate limiting, and IP tracking
@@ -35,193 +34,166 @@ export function useSecureAuth() {
           // Reset attempts when block expires
           setAuthAttempts(0);
           setBlockUntil(null);
-          secureLog.info('Authentication block expired, attempts reset');
+          localStorage.removeItem('auth_attempts');
         }
       }
     };
 
+    // Load stored attempt data
+    const storedData = localStorage.getItem('auth_attempts');
+    if (storedData) {
+      try {
+        const data: AuthAttemptData = JSON.parse(storedData);
+        setAuthAttempts(data.attempts);
+        setBlockUntil(data.blockUntil);
+      } catch (error) {
+        // Clear corrupted data
+        localStorage.removeItem('auth_attempts');
+      }
+    }
+
     checkBlockStatus();
-    const interval = setInterval(checkBlockStatus, 10000); // Check every 10 seconds
+    
+    // Check block status every minute
+    const interval = setInterval(checkBlockStatus, 60000);
     return () => clearInterval(interval);
   }, [blockUntil]);
 
-  /**
-   * Secure sign-in with rate limiting and comprehensive logging
-   */
-  const secureSignIn = useCallback(async (email: string, password: string) => {
-    try {
-      // Check rate limiting before attempt
-      if (authAttempts >= MAX_AUTH_ATTEMPTS) {
-        const newBlockUntil = Date.now() + BLOCK_DURATION_MS;
-        setBlockUntil(newBlockUntil);
-        setIsBlocked(true);
-        
-        await createSecurityAlert(
-          'rate_limit_exceeded',
-          'high',
-          `User exceeded maximum authentication attempts (${MAX_AUTH_ATTEMPTS})`,
-          { 
-            email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-            attempts: authAttempts,
-            blockedUntil: new Date(newBlockUntil).toISOString()
-          }
-        );
-        
-        return { 
-          data: null, 
-          error: { message: 'Too many attempts. Account temporarily blocked.' } 
-        };
-      }
+  // Store attempt data to localStorage
+  const updateAttemptData = useCallback((attempts: number, blockUntil: number | null) => {
+    const data: AuthAttemptData = {
+      attempts,
+      blockUntil,
+      lastAttempt: Date.now()
+    };
+    localStorage.setItem('auth_attempts', JSON.stringify(data));
+    setAuthAttempts(attempts);
+    setBlockUntil(blockUntil);
+  }, []);
 
-      // Get client IP for enhanced logging
-      const clientIP = await getClientIP();
+  // Record failed authentication attempt
+  const recordFailedAttempt = useCallback(async (email: string, error: string) => {
+    const newAttempts = authAttempts + 1;
+    let newBlockUntil = blockUntil;
+
+    if (newAttempts >= MAX_AUTH_ATTEMPTS) {
+      newBlockUntil = Date.now() + BLOCK_DURATION_MS;
+      setIsBlocked(true);
       
-      // Log authentication attempt
-      await logSecurityEvent('auth_signin_attempt', {
-        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        attempt_number: authAttempts + 1,
-        client_ip: clientIP,
-        timestamp: new Date().toISOString()
-      });
+      // Create high-severity security alert
+      await createSecurityAlert(
+        'multiple_failed_auth_attempts',
+        'high',
+        `${MAX_AUTH_ATTEMPTS} failed authentication attempts detected`,
+        {
+          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+          attempts: newAttempts,
+          blocked_until: new Date(newBlockUntil).toISOString(),
+          error_type: error
+        }
+      );
+    }
 
-      // Perform authentication
+    updateAttemptData(newAttempts, newBlockUntil);
+
+    // Log security event
+    await logSecurityEvent('auth_failed_attempt', {
+      email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+      attempt_number: newAttempts,
+      error_type: error,
+      is_blocked: newAttempts >= MAX_AUTH_ATTEMPTS,
+      block_expires: newBlockUntil ? new Date(newBlockUntil).toISOString() : null
+    });
+  }, [authAttempts, blockUntil, updateAttemptData, logSecurityEvent, createSecurityAlert]);
+
+  // Record successful authentication
+  const recordSuccessfulAttempt = useCallback(async (email: string, userId: string) => {
+    // Reset attempts on successful login
+    updateAttemptData(0, null);
+    setIsBlocked(false);
+
+    await logSecurityEvent('auth_success', {
+      email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+      user_id: userId,
+      previous_attempts: authAttempts
+    });
+  }, [authAttempts, updateAttemptData, logSecurityEvent]);
+
+  // Secure sign in with monitoring
+  const secureSignIn = useCallback(async (email: string, password: string) => {
+    if (isBlocked) {
+      const timeRemaining = blockUntil ? Math.ceil((blockUntil - Date.now()) / 60000) : 0;
+      return {
+        data: null,
+        error: new Error(`Account temporarily blocked. Try again in ${timeRemaining} minutes.`)
+      };
+    }
+
+    try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       });
 
       if (error) {
-        // Increment attempt counter on failure
-        const newAttempts = authAttempts + 1;
-        setAuthAttempts(newAttempts);
-        
-        // Log failed attempt
-        await logSecurityEvent('auth_signin_failed', {
-          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          error_type: error.message,
-          attempt_number: newAttempts,
-          client_ip: clientIP,
-          timestamp: new Date().toISOString()
-        });
-        
-        secureLog.warn('Authentication failed', { 
-          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          attempts: newAttempts
-        });
-        
+        await recordFailedAttempt(email, error.message);
         return { data: null, error };
       }
 
-      // Reset attempts on successful login
-      setAuthAttempts(0);
-      setBlockUntil(null);
-      
-      // Log successful authentication
-      await logSecurityEvent('auth_signin_success', {
-        user_id: data.user?.id,
-        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        client_ip: clientIP,
-        timestamp: new Date().toISOString()
-      });
-      
-      secureLog.info('Authentication successful', { 
-        user_id: data.user?.id 
-      });
-      
-      return { data, error: null };
-      
-    } catch (error) {
-      secureLog.error('Authentication error', { error });
-      await logSecurityEvent('auth_signin_error', {
-        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      
-      return { 
-        data: null, 
-        error: { message: 'Authentication service unavailable' } 
-      };
-    }
-  }, [authAttempts, logSecurityEvent, createSecurityAlert]);
+      if (data.user) {
+        await recordSuccessfulAttempt(email, data.user.id);
+      }
 
-  /**
-   * Secure sign-up with enhanced validation and logging
-   */
+      return { data, error: null };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+      await recordFailedAttempt(email, errorMessage);
+      return { data: null, error: new Error(errorMessage) };
+    }
+  }, [isBlocked, blockUntil, recordFailedAttempt, recordSuccessfulAttempt]);
+
+  // Secure sign up with monitoring
   const secureSignUp = useCallback(async (email: string, password: string, userData: any) => {
     try {
-      const clientIP = await getClientIP();
-      
-      // Log signup attempt
-      await logSecurityEvent('auth_signup_attempt', {
-        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        role: userData.role,
-        client_ip: clientIP,
-        timestamp: new Date().toISOString()
-      });
-
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: userData,
+          emailRedirectTo: `${window.location.origin}/`,
+          data: userData
         }
       });
 
       if (error) {
         await logSecurityEvent('auth_signup_failed', {
           email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          error_type: error.message,
-          client_ip: clientIP
+          error_type: error.message
         });
         return { data: null, error };
       }
 
-      // Log successful signup
-      await logSecurityEvent('auth_signup_success', {
-        user_id: data.user?.id,
-        email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        role: userData.role,
-        client_ip: clientIP
-      });
-      
+      if (data.user) {
+        await logSecurityEvent('auth_signup_success', {
+          email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+          user_id: data.user.id,
+          needs_confirmation: !data.user.email_confirmed_at
+        });
+      }
+
       return { data, error: null };
-      
+
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      
       await logSecurityEvent('auth_signup_error', {
         email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage
       });
-      
-      return { 
-        data: null, 
-        error: { message: 'Registration service unavailable' } 
-      };
+
+      return { data: null, error: new Error(errorMessage) };
     }
   }, [logSecurityEvent]);
-
-  /**
-   * Get client IP address for security logging
-   */
-  const getClientIP = async (): Promise<string> => {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch {
-      return 'unknown';
-    }
-  };
-
-  /**
-   * Get remaining block time in milliseconds
-   */
-  const getRemainingBlockTime = useCallback((): number => {
-    if (!blockUntil) return 0;
-    return Math.max(0, blockUntil - Date.now());
-  }, [blockUntil]);
 
   return {
     secureSignIn,
@@ -229,7 +201,8 @@ export function useSecureAuth() {
     isBlocked,
     authAttempts,
     maxAttempts: MAX_AUTH_ATTEMPTS,
-    getRemainingBlockTime,
-    blockUntil
+    blockUntil,
+    recordFailedAttempt,
+    recordSuccessfulAttempt
   };
 }
