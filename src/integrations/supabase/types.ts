@@ -907,10 +907,12 @@ export type Database = {
           description: string | null
           email_domain: string | null
           family_code: string
+          family_email_domain: string | null
           id: string
           name: string
           parent_id: string | null
           primary_email_designator: string | null
+          primary_email_designator_id: string | null
           settings: Json | null
           updated_at: string | null
         }
@@ -922,10 +924,12 @@ export type Database = {
           description?: string | null
           email_domain?: string | null
           family_code?: string
+          family_email_domain?: string | null
           id?: string
           name: string
           parent_id?: string | null
           primary_email_designator?: string | null
+          primary_email_designator_id?: string | null
           settings?: Json | null
           updated_at?: string | null
         }
@@ -937,10 +941,12 @@ export type Database = {
           description?: string | null
           email_domain?: string | null
           family_code?: string
+          family_email_domain?: string | null
           id?: string
           name?: string
           parent_id?: string | null
           primary_email_designator?: string | null
+          primary_email_designator_id?: string | null
           settings?: Json | null
           updated_at?: string | null
         }
@@ -950,6 +956,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "families_primary_email_designator_id_fkey"
+            columns: ["primary_email_designator_id"]
+            isOneToOne: false
+            referencedRelation: "family_email_designators"
             referencedColumns: ["id"]
           },
         ]
@@ -1084,6 +1097,76 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "family_competitions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_email_designators: {
+        Row: {
+          created_at: string | null
+          family_id: string | null
+          id: string
+          primary_email: string
+          primary_user_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          primary_email: string
+          primary_user_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          primary_email?: string
+          primary_user_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_email_designators_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_email_routing: {
+        Row: {
+          created_at: string | null
+          family_id: string | null
+          id: string
+          incoming_email: string
+          route_type: Database["public"]["Enums"]["email_route_type"] | null
+          target_user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          incoming_email: string
+          route_type?: Database["public"]["Enums"]["email_route_type"] | null
+          target_user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          incoming_email?: string
+          route_type?: Database["public"]["Enums"]["email_route_type"] | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_email_routing_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -1245,6 +1328,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "family_leaderboards_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_member_aliases: {
+        Row: {
+          alias_email: string
+          created_at: string | null
+          display_name: string
+          family_id: string | null
+          id: string
+          is_active: boolean | null
+          member_type: Database["public"]["Enums"]["family_member_type"] | null
+          user_id: string | null
+        }
+        Insert: {
+          alias_email: string
+          created_at?: string | null
+          display_name: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_type?: Database["public"]["Enums"]["family_member_type"] | null
+          user_id?: string | null
+        }
+        Update: {
+          alias_email?: string
+          created_at?: string | null
+          display_name?: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_type?: Database["public"]["Enums"]["family_member_type"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_member_aliases_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
@@ -1834,10 +1958,13 @@ export type Database = {
           created_at: string | null
           display_name: string
           email: string
+          email_alias: string | null
           email_verified: boolean | null
           id: string
+          is_primary_designator: boolean | null
           last_activity: string | null
           level: number | null
+          parent_email_designator: string | null
           points: number | null
           role: Database["public"]["Enums"]["user_role"]
           streak_days: number | null
@@ -1850,10 +1977,13 @@ export type Database = {
           created_at?: string | null
           display_name: string
           email: string
+          email_alias?: string | null
           email_verified?: boolean | null
           id: string
+          is_primary_designator?: boolean | null
           last_activity?: string | null
           level?: number | null
+          parent_email_designator?: string | null
           points?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           streak_days?: number | null
@@ -1866,17 +1996,28 @@ export type Database = {
           created_at?: string | null
           display_name?: string
           email?: string
+          email_alias?: string | null
           email_verified?: boolean | null
           id?: string
+          is_primary_designator?: boolean | null
           last_activity?: string | null
           level?: number | null
+          parent_email_designator?: string | null
           points?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           streak_days?: number | null
           updated_at?: string | null
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_parent_email_designator_fkey"
+            columns: ["parent_email_designator"]
+            isOneToOne: false
+            referencedRelation: "family_email_designators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles_backup: {
         Row: {
@@ -2975,6 +3116,8 @@ export type Database = {
         | "completed"
         | "overdue"
         | "pending_approval"
+      email_route_type: "primary" | "family_member" | "shared"
+      family_member_type: "parent" | "co_parent" | "child" | "guardian"
       family_role: "primary_parent" | "co_parent" | "child" | "guardian"
       reward_status: "available" | "redeemed" | "pending_approval"
       user_role:
@@ -3127,6 +3270,8 @@ export const Constants = {
         "overdue",
         "pending_approval",
       ],
+      email_route_type: ["primary", "family_member", "shared"],
+      family_member_type: ["parent", "co_parent", "child", "guardian"],
       family_role: ["primary_parent", "co_parent", "child", "guardian"],
       reward_status: ["available", "redeemed", "pending_approval"],
       user_role: [
