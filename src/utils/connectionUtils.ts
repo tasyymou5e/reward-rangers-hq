@@ -36,8 +36,8 @@ export class ConnectionChecker {
 
       try {
         const { error } = await supabase
-          .from('profiles')
-          .select('count')
+          .from('achievement_chains')
+          .select('id')
           .limit(1)
           .abortSignal(controller.signal);
 
