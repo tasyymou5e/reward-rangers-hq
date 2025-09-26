@@ -43,10 +43,10 @@ const AdminSystemSettings = () => {
       setLoading(true);
       
       const { data: loginData, error: loginError } = await supabase
-        .rpc('get_system_setting', { key_name: 'login_controls' });
+        .rpc('get_system_setting_secure', { key_name: 'login_controls' });
       
       const { data: maintenanceData, error: maintenanceError } = await supabase
-        .rpc('get_system_setting', { key_name: 'system_maintenance' });
+        .rpc('get_system_setting_secure', { key_name: 'system_maintenance' });
 
       if (loginError) throw loginError;
       if (maintenanceError) throw maintenanceError;
@@ -75,7 +75,7 @@ const AdminSystemSettings = () => {
       setSaving(true);
       
       const { error } = await supabase
-        .rpc('update_system_setting', {
+        .rpc('update_system_setting_secure', {
           key_name: 'login_controls',
           new_value: loginControls as any,
           setting_description: 'Controls which user types can log in to the system'
@@ -104,7 +104,7 @@ const AdminSystemSettings = () => {
       setSaving(true);
       
       const { error } = await supabase
-        .rpc('update_system_setting', {
+        .rpc('update_system_setting_secure', {
           key_name: 'system_maintenance',
           new_value: systemMaintenance as any,
           setting_description: 'System-wide maintenance mode settings'
