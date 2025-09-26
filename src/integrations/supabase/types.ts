@@ -2810,7 +2810,7 @@ export type Database = {
         Returns: string
       }
       get_family_data_secure: {
-        Args: { family_id_param: string; requesting_user_id?: string }
+        Args: { family_id_param: string; requesting_user_id: string }
         Returns: {
           created_at: string
           family_code: string
