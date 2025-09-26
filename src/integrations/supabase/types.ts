@@ -2716,6 +2716,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      create_family_email_alias_secure: {
+        Args: {
+          p_display_name: string
+          p_family_id: string
+          p_member_type?: Database["public"]["Enums"]["family_member_type"]
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_point_transaction: {
         Args: {
           p_bonus_type?: string
@@ -2785,6 +2794,10 @@ export type Database = {
         Returns: string
       }
       get_family_by_email: {
+        Args: { input_email: string }
+        Returns: string
+      }
+      get_family_by_email_secure: {
         Args: { input_email: string }
         Returns: string
       }
@@ -3033,6 +3046,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      migrate_family_to_primary_email_secure: {
+        Args: { p_family_id: string }
+        Returns: Json
+      }
       monitor_email_routing_security: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -3053,9 +3070,21 @@ export type Database = {
         Args: { input_email: string }
         Returns: string
       }
+      resolve_to_primary_email_secure: {
+        Args: { input_email: string }
+        Returns: string
+      }
       run_security_monitoring: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      setup_primary_email_designator_secure: {
+        Args: {
+          p_family_id: string
+          p_primary_email: string
+          p_primary_user_id: string
+        }
+        Returns: string
       }
       update_mfa_settings_secure: {
         Args: {
