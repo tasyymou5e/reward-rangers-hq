@@ -98,8 +98,12 @@ export default {
 				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)'
 			},
 			transitionProperty: {
-				'bounce': 'var(--transition-bounce)',
-				'smooth': 'var(--transition-smooth)'
+				'bounce': 'all',
+				'smooth': 'all'
+			},
+			transitionDuration: {
+				'bounce': '300ms',
+				'smooth': '300ms'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
