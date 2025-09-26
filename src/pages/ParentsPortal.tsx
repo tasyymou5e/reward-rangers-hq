@@ -16,14 +16,10 @@ import { useChores } from "@/hooks/useChores";
 import { MFASetup } from "@/components/MFASetup";
 import { FamilyChat } from "@/components/FamilyChat";
 import { PredictiveInsights } from "@/components/PredictiveInsights";
+import { EnhancedMFASetup } from "@/components/mfa/EnhancedMFASetup";
 import { useReportGeneration } from "@/hooks/useReportGeneration";
 import { AffiliateDisplay } from "@/components/AffiliateDisplay";
 import { useToast } from "@/hooks/use-toast";
-import { EnhancedMFASetup } from "@/components/mfa/EnhancedMFASetup";
-import { BehavioralAnalyticsEngine } from "@/components/analytics/BehavioralAnalyticsEngine";
-import { EnhancedPredictiveInsights } from "@/components/analytics/EnhancedPredictiveInsights";
-import { AdvancedAchievementSystem } from "@/components/gamification/AdvancedAchievementSystem";
-import { FamilyCompetitions } from "@/components/gamification/FamilyCompetitions";
 
 export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
@@ -322,6 +318,10 @@ export default function ParentsPortal() {
               <Brain className="h-4 w-4" />
               AI Insights
             </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Achievements
+            </TabsTrigger>
             <TabsTrigger value="communication" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               Communication
@@ -512,12 +512,32 @@ export default function ParentsPortal() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="security">
-            <MFASetup />
+          <TabsContent value="security" className="space-y-4">
+            <EnhancedMFASetup />
           </TabsContent>
 
           <TabsContent value="insights">
             <PredictiveInsights />
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-4">
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="text-parents-primary flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Advanced Achievement System
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Advanced Achievements</h3>
+                  <p className="text-muted-foreground">
+                    Achievement chains and family competitions coming soon.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="communication">

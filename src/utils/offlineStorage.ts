@@ -1,4 +1,4 @@
-interface OfflineData {
+export interface OfflineData {
   id: string;
   data: any;
   timestamp: number;
@@ -90,8 +90,8 @@ class OfflineStorage {
     }
   }
 
-  // Make getAll public for hooks to use
-  async getAll(): Promise<OfflineData[]> {
+  // Public method for external access
+  public async getAll(): Promise<OfflineData[]> {
     if (!this.db) await this.init();
     
     const transaction = this.db!.transaction(['offline-data'], 'readonly');

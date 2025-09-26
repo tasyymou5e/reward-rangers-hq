@@ -1,112 +1,76 @@
-import { useState, useEffect, useCallback } from 'react';
-import { offlineStorage } from '@/utils/offlineStorage';
+import { useState, useEffect } from 'react';
+import { OfflineData } from '@/utils/offlineStorage';
 
-interface OfflineData {
-  id: string;
-  data: any;
-  timestamp: number; // Keep as number to match storage format
-  type: 'chore' | 'progress' | 'notification' | 'achievement' | 'analytics' | 'user_action';
+interface UseOfflineStorageResult {
+  storedData: OfflineData[];
+  storeData: (data: Omit<OfflineData, 'timestamp'>) => Promise<void>;
+  syncData: () => Promise<void>;
+  isOnline: boolean;
 }
 
-export const useOfflineStorage = () => {
+export function useOfflineStorage(): UseOfflineStorageResult {
+  const [storedData, setStoredData] = useState<OfflineData[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [offlineData, setOfflineData] = useState<OfflineData[]>([]);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      syncOfflineData();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Initialize offline storage and load existing data
-    initializeStorage();
-
     return () => {
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('online', handleOffline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  const initializeStorage = async () => {
+  const storeData = async (data: Omit<OfflineData, 'timestamp'>) => {
     try {
-      await offlineStorage.init();
-      await loadOfflineData();
+      const { offlineStorage } = await import('@/utils/offlineStorage');
+      await offlineStorage.store(data);
+      await refreshStoredData();
     } catch (error) {
-      console.error('Failed to initialize offline storage:', error);
+      console.error('Error storing offline data:', error);
     }
   };
 
-  const loadOfflineData = async () => {
+  const refreshStoredData = async () => {
     try {
+      const { offlineStorage } = await import('@/utils/offlineStorage');
       const allData = await offlineStorage.getAll();
-      setOfflineData(allData);
+      setStoredData(allData);
     } catch (error) {
-      console.error('Failed to load offline data:', error);
+      console.error('Error refreshing stored data:', error);
     }
   };
 
-  const storeOfflineData = useCallback(async (
-    data: any, 
-    type: OfflineData['type']
-  ): Promise<string> => {
+  const syncData = async () => {
+    if (!isOnline) return;
+    
     try {
-      const id = crypto.randomUUID();
-      await offlineStorage.store({ id, data, type });
-      await loadOfflineData();
-      return id;
-    } catch (error) {
-      console.error('Failed to store offline data:', error);
-      throw error;
-    }
-  }, []);
-
-  const syncOfflineData = useCallback(async () => {
-    if (!isOnline || syncing) return;
-
-    try {
-      setSyncing(true);
+      const { offlineStorage } = await import('@/utils/offlineStorage');
       await offlineStorage.sync();
-      await loadOfflineData();
+      await refreshStoredData();
     } catch (error) {
-      console.error('Failed to sync offline data:', error);
-    } finally {
-      setSyncing(false);
+      console.error('Error syncing offline data:', error);
     }
-  }, [isOnline, syncing]);
+  };
 
-  const removeOfflineData = useCallback(async (id: string) => {
-    try {
-      await offlineStorage.remove(id);
-      await loadOfflineData();
-    } catch (error) {
-      console.error('Failed to remove offline data:', error);
-    }
+  useEffect(() => {
+    refreshStoredData();
   }, []);
 
-  const getOfflineDataByType = useCallback((type: OfflineData['type']) => {
-    return offlineData.filter(item => item.type === type);
-  }, [offlineData]);
-
-  const hasOfflineData = offlineData.length > 0;
-  const getPendingActionsCount = () => offlineData.length;
+  useEffect(() => {
+    if (isOnline) {
+      syncData();
+    }
+  }, [isOnline]);
 
   return {
-    isOnline,
-    syncing,
-    hasOfflineData,
-    offlineData,
-    storeOfflineData,
-    syncOfflineData,
-    removeOfflineData,
-    getOfflineDataByType,
-    getPendingActionsCount
+    storedData,
+    storeData,
+    syncData,
+    isOnline
   };
-};
+}
