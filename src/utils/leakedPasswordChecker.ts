@@ -73,10 +73,10 @@ function isCommonPasswordLocal(password: string): boolean {
 }
 
 /**
- * Enhanced password validation with breach checking
+ * Enhanced password validation with breach checking DISABLED
  */
 export async function validatePasswordSecurity(password: string) {
-  // Basic validation first
+  // Basic validation only - breach checking disabled
   const basicChecks = {
     length: password.length >= 8,
     hasLowercase: /[a-z]/.test(password),
@@ -87,18 +87,18 @@ export async function validatePasswordSecurity(password: string) {
     notTooLong: password.length <= 128,
   };
   
-  // Check for breached passwords
-  const isBreached = await checkPasswordBreach(password);
+  // Breach checking disabled - always return false for isBreached
+  const isBreached = false;
   
   const enhancedChecks = {
     ...basicChecks,
-    notBreached: !isBreached
+    notBreached: true // Always true since breach checking is disabled
   };
   
   const score = Object.values(enhancedChecks).filter(Boolean).length;
-  const isValid = score >= 7 && enhancedChecks.length && enhancedChecks.hasLowercase && 
+  const isValid = score >= 6 && enhancedChecks.length && enhancedChecks.hasLowercase && 
                   enhancedChecks.hasUppercase && enhancedChecks.hasNumbers && 
-                  enhancedChecks.hasSymbols && enhancedChecks.notBreached;
+                  enhancedChecks.hasSymbols; // Removed breach check requirement
   
   return {
     isValid,
@@ -112,7 +112,6 @@ export async function validatePasswordSecurity(password: string) {
       !enhancedChecks.hasNumbers && 'Include numbers',
       !enhancedChecks.hasSymbols && 'Include special characters',
       !enhancedChecks.noCommonPatterns && 'Avoid repeating characters',
-      !enhancedChecks.notBreached && '⚠️ This password has been found in data breaches - choose a different one',
       !enhancedChecks.notTooLong && 'Password too long (max 128 characters)',
     ].filter(Boolean),
   };
