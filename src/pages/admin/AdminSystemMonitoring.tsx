@@ -6,6 +6,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ComprehensiveMigrationDashboard } from "@/components/admin/ComprehensiveMigrationDashboard";
 import { 
   Activity, 
   AlertTriangle,
