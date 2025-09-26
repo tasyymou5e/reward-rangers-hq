@@ -2993,11 +2993,15 @@ export type Database = {
         Returns: boolean
       }
       is_family_member: {
-        Args: { family_id_param: string; user_id_param?: string }
+        Args:
+          | { family_id_param: string }
+          | { family_id_param: string; user_id_param?: string }
         Returns: boolean
       }
       is_family_parent: {
-        Args: { family_id_param: string; user_id_param?: string }
+        Args:
+          | { family_id_param: string }
+          | { family_id_param: string; user_id_param?: string }
         Returns: boolean
       }
       is_full_admin: {
