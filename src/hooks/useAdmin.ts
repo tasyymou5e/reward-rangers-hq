@@ -16,9 +16,30 @@ export function useAdmin() {
         throw new Error('No authenticated user found');
       }
 
-      // Use the new admin-specific function that bypasses RLS
-      console.log('🔒 Using admin-specific function to fetch profiles...');
-      const { data, error } = await supabase.rpc('get_all_profiles_for_admin');
+      // Fetch profiles directly - simplified approach for admin portal
+      console.log('📋 Fetching user profiles directly...');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          display_name,
+          email,
+          avatar_url,
+          role,
+          points,
+          level,
+          streak_days,
+          last_activity,
+          created_at,
+          updated_at,
+          email_verified,
+          alternative_emails,
+          is_primary_designator,
+          parent_email_designator,
+          email_alias
+        `)
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('❌ Admin profiles fetch error:', error);
@@ -55,25 +76,42 @@ export function useAdmin() {
         throw new Error('No authenticated user found for families fetch');
       }
 
-      // Use the new admin-specific function that bypasses RLS
-      console.log('🔒 Using admin-specific function to fetch families...');
-      const { data, error } = await supabase.rpc('get_all_families_for_admin');
+      // Fetch families directly with member count - simplified approach
+      console.log('📋 Fetching families with member counts...');
+      const { data: familiesData, error: familiesError } = await supabase
+        .from('families')
+        .select(`
+          *,
+          profiles!families_parent_id_fkey(display_name, email)
+        `)
+        .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('❌ Families fetch error:', error);
-        console.error('Error details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
+      if (familiesError) {
+        console.error('❌ Families fetch error:', familiesError);
+        throw familiesError;
       }
+
+      // Get member counts for each family
+      const familiesWithCounts = await Promise.all(
+        (familiesData || []).map(async (family) => {
+          const { count } = await supabase
+            .from('family_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('family_id', family.id);
+          
+          return {
+            ...family,
+            member_count: count || 0,
+            parent_display_name: family.profiles?.display_name || 'Unknown',
+            parent_email: family.profiles?.email || 'Unknown'
+          };
+        })
+      );
       
-      console.log('✅ Families fetch successful:', data?.length || 0, 'families found');
-      console.log('📋 Family data preview:', data?.slice(0, 2));
+      console.log('✅ Families fetch successful:', familiesWithCounts?.length || 0, 'families found');
+      console.log('📋 Family data preview:', familiesWithCounts?.slice(0, 2));
       
-      return data || [];
+      return familiesWithCounts || [];
     } catch (error) {
       console.error('💥 Critical error fetching families:', error);
       console.error('Error type:', typeof error);

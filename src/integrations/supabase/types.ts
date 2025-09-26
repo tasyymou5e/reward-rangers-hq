@@ -2727,6 +2727,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      check_admin_status: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_auth_rate_limit: {
         Args: {
           block_duration_minutes?: number
