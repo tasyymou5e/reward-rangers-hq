@@ -32,13 +32,13 @@ export const useSystemSettings = () => {
       setLoading(true);
       setError(null);
       
-      // Load login controls
+      // Load login controls using secure function
       const { data: loginData, error: loginError } = await supabase
-        .rpc('get_system_setting', { key_name: 'login_controls' });
+        .rpc('get_system_setting_secure', { key_name: 'login_controls' });
       
-      // Load maintenance settings
+      // Load maintenance settings using secure function
       const { data: maintenanceData, error: maintenanceError } = await supabase
-        .rpc('get_system_setting', { key_name: 'system_maintenance' });
+        .rpc('get_system_setting_secure', { key_name: 'system_maintenance' });
 
       if (loginError) {
         console.error('Error loading login controls:', loginError);
