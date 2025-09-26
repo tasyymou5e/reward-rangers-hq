@@ -11,3 +11,9 @@ verify_jwt = true
 
 [functions.invite-child]
 verify_jwt = true
+
+[functions.email-routing]
+verify_jwt = false
+
+[functions.email-routing-enhanced]
+verify_jwt = false

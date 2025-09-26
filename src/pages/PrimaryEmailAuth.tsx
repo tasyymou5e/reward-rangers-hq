@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Users, Shield, ArrowRight } from 'lucide-react';
 import { PrimaryEmailFamilySetup } from '@/components/family/PrimaryEmailFamilySetup';
 import { EmailAliasManager } from '@/components/family/EmailAliasManager';
+import { EnhancedEmailManagement } from '@/components/family/EnhancedEmailManagement';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const PrimaryEmailAuth: React.FC = () => {
@@ -31,7 +32,7 @@ export const PrimaryEmailAuth: React.FC = () => {
             </TabsList>
             
             <TabsContent value="aliases" className="mt-6">
-              <EmailAliasManager 
+              <EnhancedEmailManagement 
                 familyId="current-family-id" // TODO: Get from context
                 familyName="Sample Family" // TODO: Get from context
                 primaryEmail="family@example.com" // TODO: Get from context

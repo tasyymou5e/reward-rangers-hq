@@ -332,6 +332,18 @@ export default function Auth() {
                 For families using the new email management system
               </p>
             </div>
+
+            {/* Enhanced Authentication Integration */}
+            <div className="text-center text-xs text-muted-foreground">
+              {showEmailResolution && (
+                <div className="p-2 bg-blue-50 rounded text-blue-700">
+                  ✓ Enhanced email resolution enabled
+                </div>
+              )}
+              <div className="mt-1">
+                Secure authentication with family email integration
+              </div>
+            </div>
             
             <div className="text-center">
               <Button

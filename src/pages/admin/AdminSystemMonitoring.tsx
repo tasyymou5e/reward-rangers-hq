@@ -38,6 +38,24 @@ interface SystemAlert {
 }
 
 export default function AdminSystemMonitoring() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">System Monitoring</h1>
+        <p className="text-muted-foreground">
+          Monitor system health, security, performance metrics, and Primary Email System.
+        </p>
+      </div>
+      
+      <div className="space-y-8">
+        <ComprehensiveMigrationDashboard />
+        <SystemMonitoringContent />
+      </div>
+    </div>
+  );
+}
+
+function SystemMonitoringContent() {
   const { profile } = useAdminAuth();
   const { alerts, resolveAlert, getUnresolvedAlertsCount } = useSecurityMonitoring();
   const { toast } = useToast();
@@ -174,12 +192,12 @@ export default function AdminSystemMonitoring() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-admin-primary flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-admin-primary flex items-center gap-2">
             <Activity className="h-6 w-6" />
-            System Monitoring
-          </h1>
+            Real-time System Health
+          </h2>
           <p className="text-admin-primary/70 mt-1">
-            Real-time system health and performance monitoring
+            Live system health and performance monitoring
           </p>
         </div>
         
