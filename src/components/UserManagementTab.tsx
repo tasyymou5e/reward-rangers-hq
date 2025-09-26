@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "@/hooks/useAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Users, Trash2, UserMinus, UsersIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -48,16 +49,54 @@ export function UserManagementTab() {
   }, []);
 
   const loadData = async () => {
+    setIsLoading(true);
+    setError('');
+    
     try {
-      // Loading initial data...
+      console.log('🔄 UserManagementTab: Starting data load...');
+      
+      // Test authentication first
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Auth check in loadData:', user?.id, user?.email);
+      
+      if (!user) {
+        throw new Error('Authentication required - please refresh the page');
+      }
+
+      // Load data sequentially to better track where failures occur
+      console.log('📊 Loading users data...');
       const usersData = await fetchAllUsers();
+      console.log('✅ Users loaded:', usersData?.length || 0);
+      
+      console.log('🏠 Loading families data...');
       const familiesData = await fetchAllFamilies();
+      console.log('✅ Families loaded:', familiesData?.length || 0);
       
       setUsers(usersData || []);
       setFamilies(familiesData || []);
-      // Initial data loaded: users and families
+      
+      console.log('🎉 All data loaded successfully');
+      
+      // Show success message if we have data
+      if ((usersData?.length > 0) || (familiesData?.length > 0)) {
+        toast({
+          title: "Data Loaded",
+          description: `Found ${usersData?.length || 0} users and ${familiesData?.length || 0} families`,
+        });
+      } else {
+        setError('No data found - the database appears to be empty');
+      }
+      
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('💥 Critical error in loadData:', error);
+      const errorMessage = error.message || 'Unknown error occurred';
+      setError(`Failed to load data: ${errorMessage}`);
+      
+      toast({
+        title: "Data Loading Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -236,8 +275,53 @@ export function UserManagementTab() {
     }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center space-y-4">
+          <div className="text-4xl animate-spin">⚙️</div>
+          <p className="text-lg">Loading admin data...</p>
+          <p className="text-sm text-muted-foreground">Fetching users and families...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center space-y-4">
+          <div className="text-4xl">❌</div>
+          <p className="text-lg font-semibold text-destructive">Data Loading Error</p>
+          <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+          <Button onClick={loadData} variant="outline">
+            Retry Loading Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Debug Info */}
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="text-yellow-800 text-sm">
+            🔧 Debug Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xs space-y-1 text-yellow-700">
+            <p>Users loaded: {users.length}</p>
+            <p>Families loaded: {families.length}</p>
+            <p>Loading state: {isLoading ? 'true' : 'false'}</p>
+            <p>Error state: {error || 'none'}</p>
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Create Individual User */}
         <Card className="border-2 border-blue-200 bg-blue-50/50">

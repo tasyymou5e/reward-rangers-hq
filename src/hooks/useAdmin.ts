@@ -6,24 +6,75 @@ export function useAdmin() {
 
   const fetchAllUsers = async () => {
     try {
-      // Admin fetching all users...
+      console.log('🔍 Admin: Starting to fetch all users...');
+      
+      // First check if we have admin permissions
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Current user:', user?.id, user?.email);
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Try using the secure profile function first
+      try {
+        console.log('🔒 Trying secure profile fetch...');
+        const { data: secureData, error: secureError } = await supabase.rpc('get_profile_by_id_secure', {
+          target_user_id: user.id,
+          requesting_user_id: user.id
+        });
+        
+        if (secureError) {
+          console.error('❌ Secure profile fetch failed:', secureError);
+        } else {
+          console.log('✅ Secure profile fetch successful:', secureData);
+        }
+      } catch (secureErr) {
+        console.error('❌ Secure profile function error:', secureErr);
+      }
+
+      // Now try to fetch all profiles using direct table access
+      console.log('📊 Attempting direct profiles table access...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Users query completed
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Profiles fetch error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      
+      console.log('✅ Users fetch successful:', data?.length || 0, 'users found');
+      console.log('📋 User data preview:', data?.slice(0, 2));
+      
       return data || [];
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('💥 Critical error fetching users:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error.constructor?.name);
       return [];
     }
   };
 
   const fetchAllFamilies = async () => {
     try {
-      // Admin fetching all families...
+      console.log('🏠 Admin: Starting to fetch all families...');
+      
+      // Check current user auth status
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Current user for families:', user?.id, user?.email);
+      
+      if (!user) {
+        throw new Error('No authenticated user found for families fetch');
+      }
+
       const { data, error } = await supabase
         .from('families')
         .select(`
@@ -36,11 +87,25 @@ export function useAdmin() {
         `)
         .order('created_at', { ascending: false });
       
-      // Families query completed
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Families fetch error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      
+      console.log('✅ Families fetch successful:', data?.length || 0, 'families found');
+      console.log('📋 Family data preview:', data?.slice(0, 2));
+      
       return data || [];
     } catch (error) {
-      console.error('Error fetching families:', error);
+      console.error('💥 Critical error fetching families:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error.constructor?.name);
       return [];
     }
   };
