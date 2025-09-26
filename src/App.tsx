@@ -86,11 +86,11 @@ const App = () => {
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="families" element={<AdminFamilies />} />
                   <Route path="chore-templates" element={<AdminChoreTemplates />} />
-                  <Route path="reports" element={<AdminReports />} />
-                  <Route path="content" element={<AdminContent />} />
-                  <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
-                  <Route path="system-settings" element={<AdminSystemSettings />} />
-                  <Route path="security-center" element={<AdminSecurityCenter />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="system-monitoring" element={<AdminSystemMonitoring />} />
+            <Route path="security-center" element={<AdminSecurityCenter />} />
+                   <Route path="system-settings" element={<AdminSystemSettings />} />
                   <Route path="analytics" element={<AdminAnalytics />} />
                 </Route>
                 
