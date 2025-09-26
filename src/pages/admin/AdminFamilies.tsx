@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +16,10 @@ import {
   Plus, 
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  ArrowUpDown,
+  Filter,
+  X
 } from "lucide-react";
 
 export default function AdminFamilies() {
@@ -38,6 +42,12 @@ export default function AdminFamilies() {
   const [selectedFamily, setSelectedFamily] = useState<any>(null);
   const [showFamilyDialog, setShowFamilyDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
+  // Enhanced search and filter state
+  const [sortBy, setSortBy] = useState("name-asc");
+  const [memberCountFilter, setMemberCountFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   
   const [newTestFamily, setNewTestFamily] = useState({
     familyName: "",
@@ -143,10 +153,74 @@ export default function AdminFamilies() {
     });
   };
 
-  const filteredFamilies = families.filter(family =>
-    family.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    family.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Enhanced filtering and sorting logic
+  const getFilteredAndSortedFamilies = () => {
+    let filtered = families.filter(family => {
+      // Search filter
+      const matchesSearch = family.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           family.code?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Member count filter
+      const memberCount = family.family_members?.length || 0;
+      const matchesMemberCount = memberCountFilter === "all" ||
+        (memberCountFilter === "1-2" && memberCount >= 1 && memberCount <= 2) ||
+        (memberCountFilter === "3-5" && memberCount >= 3 && memberCount <= 5) ||
+        (memberCountFilter === "6+" && memberCount >= 6);
+      
+      // Date filter (last 30 days, 90 days, etc.)
+      const createdDate = new Date(family.created_at);
+      const now = new Date();
+      const matchesDate = dateFilter === "all" ||
+        (dateFilter === "today" && createdDate.toDateString() === now.toDateString()) ||
+        (dateFilter === "week" && (now.getTime() - createdDate.getTime()) <= 7 * 24 * 60 * 60 * 1000) ||
+        (dateFilter === "month" && (now.getTime() - createdDate.getTime()) <= 30 * 24 * 60 * 60 * 1000) ||
+        (dateFilter === "3months" && (now.getTime() - createdDate.getTime()) <= 90 * 24 * 60 * 60 * 1000);
+      
+      return matchesSearch && matchesMemberCount && matchesDate;
+    });
+
+    // Sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name?.localeCompare(b.name) || 0;
+        case "name-desc":
+          return b.name?.localeCompare(a.name) || 0;
+        case "date-newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "date-oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "members-most":
+          return (b.family_members?.length || 0) - (a.family_members?.length || 0);
+        case "members-least":
+          return (a.family_members?.length || 0) - (b.family_members?.length || 0);
+        case "code-asc":
+          return a.code?.localeCompare(b.code) || 0;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  };
+
+  const filteredFamilies = getFilteredAndSortedFamilies();
+
+  // Update active filters
+  useEffect(() => {
+    const filters = [];
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`);
+    if (memberCountFilter !== "all") filters.push(`Members: ${memberCountFilter}`);
+    if (dateFilter !== "all") filters.push(`Date: ${dateFilter}`);
+    setActiveFilters(filters);
+  }, [searchTerm, memberCountFilter, dateFilter]);
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setMemberCountFilter("all");
+    setDateFilter("all");
+    setSortBy("name-asc");
+  };
 
   if (loading) {
     return (
@@ -286,21 +360,106 @@ export default function AdminFamilies() {
         )}
       </div>
 
-      {/* Search */}
+      {/* Enhanced Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Search Families</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Search & Filters
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search families..."
+              placeholder="Search by family name or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
+
+          {/* Filters Row */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Sort By */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Sort By</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-md">
+                  <SelectItem value="name-asc">Name A-Z</SelectItem>
+                  <SelectItem value="name-desc">Name Z-A</SelectItem>
+                  <SelectItem value="date-newest">Newest First</SelectItem>
+                  <SelectItem value="date-oldest">Oldest First</SelectItem>
+                  <SelectItem value="members-most">Most Members</SelectItem>
+                  <SelectItem value="members-least">Least Members</SelectItem>
+                  <SelectItem value="code-asc">Code A-Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Member Count Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Member Count</Label>
+              <Select value={memberCountFilter} onValueChange={setMemberCountFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-md">
+                  <SelectItem value="all">All Families</SelectItem>
+                  <SelectItem value="1-2">1-2 Members</SelectItem>
+                  <SelectItem value="3-5">3-5 Members</SelectItem>
+                  <SelectItem value="6+">6+ Members</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Created</Label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Time" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-md">
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">Last Week</SelectItem>
+                  <SelectItem value="month">Last Month</SelectItem>
+                  <SelectItem value="3months">Last 3 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Clear Filters */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Actions</Label>
+              <Button 
+                variant="outline" 
+                onClick={clearAllFilters}
+                className="w-full"
+                disabled={activeFilters.length === 0}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+
+          {/* Active Filters */}
+          {activeFilters.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-muted-foreground">Active filters:</span>
+              {activeFilters.map((filter, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {filter}
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -308,21 +467,67 @@ export default function AdminFamilies() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Families ({filteredFamilies.length})</span>
-            <Badge variant="outline">{families.length} total families</Badge>
+            <span className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Families ({filteredFamilies.length})
+            </span>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{families.length} total</Badge>
+              {activeFilters.length > 0 && (
+                <Badge variant="secondary">{filteredFamilies.length} filtered</Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Members</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+          {filteredFamilies.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground">No families found</h3>
+              <p className="text-sm text-muted-foreground">
+                {families.length === 0 
+                  ? "No families exist yet." 
+                  : "Try adjusting your search or filter criteria."
+                }
+              </p>
+              {activeFilters.length > 0 && (
+                <Button variant="outline" onClick={clearAllFilters} className="mt-4">
+                  <X className="h-4 w-4 mr-2" />
+                  Clear all filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => setSortBy(sortBy === "name-asc" ? "name-desc" : "name-asc")}>
+                    <div className="flex items-center gap-2">
+                      Name
+                      <ArrowUpDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => setSortBy(sortBy === "code-asc" ? "code-desc" : "code-asc")}>
+                    <div className="flex items-center gap-2">
+                      Code
+                      <ArrowUpDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => setSortBy(sortBy === "members-most" ? "members-least" : "members-most")}>
+                    <div className="flex items-center gap-2">
+                      Members
+                      <ArrowUpDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => setSortBy(sortBy === "date-newest" ? "date-oldest" : "date-newest")}>
+                    <div className="flex items-center gap-2">
+                      Created
+                      <ArrowUpDown className="h-3 w-3" />
+                    </div>
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filteredFamilies.map((family) => (
                 <TableRow key={family.id}>
@@ -362,7 +567,8 @@ export default function AdminFamilies() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
