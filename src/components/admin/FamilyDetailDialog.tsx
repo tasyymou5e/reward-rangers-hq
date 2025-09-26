@@ -1,9 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, 
@@ -16,7 +19,10 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Mail,
+  Send,
+  UserMinus
 } from "lucide-react";
 import { AddFamilyMemberDialog } from "./AddFamilyMemberDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,10 +38,97 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [memberStates, setMemberStates] = useState<Record<string, boolean>>({});
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [inviteData, setInviteData] = useState({
+    email: "",
+    name: "",
+    role: "kid" as "parent" | "kid"
+  });
 
   if (!family) return null;
+
+  const loadActivityLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('security_audit_trail')
+        .select('*')
+        .or(`resource_id.eq.${family.id},family_context.eq.${family.id}`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setActivityLogs(data || []);
+    } catch (error) {
+      console.error('Failed to load activity logs:', error);
+    }
+  };
+
+  const handleSendInvitation = async () => {
+    if (!inviteData.email || !inviteData.name) {
+      toast({
+        title: "Error", 
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-family-invitation', {
+        body: {
+          familyId: family.id,
+          inviteeEmail: inviteData.email,
+          inviteeName: inviteData.name,
+          role: inviteData.role
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Invitation Sent",
+        description: `Invitation sent to ${inviteData.email}`,
+      });
+
+      setInviteData({ email: "", name: "", role: "kid" });
+      setShowInviteDialog(false);
+
+      // Log security event
+      await supabase.rpc('log_security_audit', {
+        p_action_type: 'admin_send_family_invitation',
+        p_resource_type: 'family',
+        p_resource_id: family.id,
+        p_risk_level: 'medium',
+        p_metadata: { 
+          invitee_email: inviteData.email,
+          invitee_name: inviteData.name,
+          role: inviteData.role,
+          family_name: family.name 
+        }
+      });
+
+      loadActivityLogs();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load activity logs when component mounts or tab changes
+  React.useEffect(() => {
+    if (activeTab === 'activity') {
+      loadActivityLogs();
+    }
+  }, [activeTab, family.id]);
 
   const handlePasswordReset = async (userId: string, userEmail: string) => {
     setLoading(true);
@@ -109,6 +202,51 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
       toast({
         title: "Error",
         description: `Failed to ${currentlyActive ? 'disable' : 'enable'} account`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string, userEmail: string, userName: string) => {
+    const confirmed = confirm(`Are you sure you want to remove ${userName} from ${family.name}? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('admin-remove-family-member', {
+        body: {
+          userId,
+          familyId: family.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Member Removed",
+        description: `${userName} has been removed from ${family.name}`,
+      });
+
+      // Log security event
+      await supabase.rpc('log_security_audit', {
+        p_action_type: 'admin_remove_family_member',
+        p_resource_type: 'family',
+        p_resource_id: family.id,
+        p_risk_level: 'high',
+        p_metadata: { 
+          removed_member_email: userEmail,
+          removed_member_name: userName,
+          family_name: family.name 
+        }
+      });
+
+      onUpdate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove family member",
         variant: "destructive",
       });
     } finally {
@@ -270,40 +408,52 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
                           </Badge>
                         </div>
 
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handlePasswordReset(member.id, member.email)}
-                            disabled={loading}
-                          >
-                            <Key className="h-4 w-4 mr-1" />
-                            Reset Password
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant={memberStates[member.id] === false ? "destructive" : "default"}
-                            onClick={() => handleToggleUserStatus(
-                              member.id, 
-                              member.email, 
-                              memberStates[member.id] !== false
-                            )}
-                            disabled={loading}
-                          >
-                            {memberStates[member.id] === false ? (
-                              <>
-                                <EyeOff className="h-4 w-4 mr-1" />
-                                Enable
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4 mr-1" />
-                                Disable
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                         <div className="flex gap-2">
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => handlePasswordReset(member.id, member.email)}
+                             disabled={loading}
+                           >
+                             <Key className="h-4 w-4 mr-1" />
+                             Reset Password
+                           </Button>
+                           
+                           <Button
+                             size="sm"
+                             variant={memberStates[member.id] === false ? "destructive" : "default"}
+                             onClick={() => handleToggleUserStatus(
+                               member.id, 
+                               member.email, 
+                               memberStates[member.id] !== false
+                             )}
+                             disabled={loading}
+                           >
+                             {memberStates[member.id] === false ? (
+                               <>
+                                 <EyeOff className="h-4 w-4 mr-1" />
+                                 Enable
+                               </>
+                             ) : (
+                               <>
+                                 <Eye className="h-4 w-4 mr-1" />
+                                 Disable
+                               </>
+                             )}
+                           </Button>
+
+                           {member.role !== 'Parent' && (
+                             <Button
+                               size="sm"
+                               variant="destructive"
+                               onClick={() => handleRemoveMember(member.id, member.email, member.display_name)}
+                               disabled={loading}
+                             >
+                               <XCircle className="h-4 w-4 mr-1" />
+                               Remove
+                             </Button>
+                           )}
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -374,17 +524,56 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Recent Activity</h3>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setShowInviteDialog(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Invitation
+                  </Button>
+                  <Button 
+                    onClick={loadActivityLogs}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
-                    Recent Activity
+                    Activity Log
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">
-                    Activity tracking will be implemented in the next phase.
-                  </p>
+                  {activityLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {activityLogs.slice(0, 10).map((log: any, index: number) => (
+                        <div key={index} className="flex items-start justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium">{log.action_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
+                            <p className="text-sm text-muted-foreground">{log.description || 'No description'}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(log.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <Badge variant={log.risk_level === 'high' ? 'destructive' : log.risk_level === 'medium' ? 'default' : 'secondary'}>
+                            {log.risk_level}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No recent activity found.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -399,8 +588,77 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
         onSuccess={() => {
           setShowAddMember(false);
           onUpdate();
+          loadActivityLogs();
         }}
       />
+
+      {/* Send Invitation Dialog */}
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Send Family Invitation
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="inviteEmail">Email Address</Label>
+              <Input
+                id="inviteEmail"
+                type="email"
+                value={inviteData.email}
+                onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
+                placeholder="Enter email address"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="inviteName">Full Name</Label>
+              <Input
+                id="inviteName"
+                value={inviteData.name}
+                onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
+                placeholder="Enter full name"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="inviteRole">Role</Label>
+              <Select value={inviteData.role} onValueChange={(value: "parent" | "kid") => setInviteData({ ...inviteData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="kid">Child</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowInviteDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendInvitation}
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? "Sending..." : "Send Invitation"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

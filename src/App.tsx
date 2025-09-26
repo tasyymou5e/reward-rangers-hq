@@ -23,6 +23,7 @@ import KidsPortal from "./pages/KidsPortal";
 import ParentsPortal from "./pages/ParentsPortal";
 import { PrimaryEmailAuth } from "./pages/PrimaryEmailAuth";
 import NotFound from "./pages/NotFound";
+import AcceptInvitation from "./pages/AcceptInvitation";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -94,6 +95,7 @@ const App = () => {
                 </Route>
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <FeedbackWidget />

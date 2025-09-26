@@ -23,3 +23,9 @@ verify_jwt = true
 
 [functions.admin-create-family-member]
 verify_jwt = true
+
+[functions.admin-remove-family-member]
+verify_jwt = true
+
+[functions.send-family-invitation]
+verify_jwt = true
