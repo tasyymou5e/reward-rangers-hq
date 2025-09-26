@@ -2604,7 +2604,7 @@ export type Database = {
         Returns: string
       }
       decrypt_mfa_secret_secure: {
-        Args: { encrypted_data: string }
+        Args: { encrypted_text: string }
         Returns: string
       }
       detect_security_violations: {
@@ -2867,7 +2867,7 @@ export type Database = {
         Args: {
           event_type: string
           metadata_param?: Json
-          user_id_param: string
+          user_id_param?: string
         }
         Returns: undefined
       }

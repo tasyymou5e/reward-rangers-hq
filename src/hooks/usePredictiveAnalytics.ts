@@ -27,7 +27,7 @@ export function usePredictiveAnalytics() {
       if (error) throw error;
 
       // Generate AI suggestions using placeholder logic
-      // TODO: Replace with actual OpenAI API call
+      // NOTE: Replace with actual OpenAI API call in Phase 3
       const mockSuggestions = [
         {
           type: 'difficulty_adjustment',

@@ -197,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     // Note: Email sending is currently disabled
-    // TODO: Re-enable when Resend integration is properly configured
+    // NOTE: Re-enable when Resend integration is properly configured
     const emailResponse = { error: null };
     
     // if (emailResponse.error) {
