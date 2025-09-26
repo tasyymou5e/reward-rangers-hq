@@ -2,7 +2,7 @@ interface OfflineData {
   id: string;
   data: any;
   timestamp: number;
-  type: 'chore' | 'progress' | 'notification';
+  type: 'chore' | 'progress' | 'notification' | 'achievement' | 'analytics' | 'user_action';
 }
 
 class OfflineStorage {
@@ -90,7 +90,8 @@ class OfflineStorage {
     }
   }
 
-  private async getAll(): Promise<OfflineData[]> {
+  // Make getAll public for hooks to use
+  async getAll(): Promise<OfflineData[]> {
     if (!this.db) await this.init();
     
     const transaction = this.db!.transaction(['offline-data'], 'readonly');

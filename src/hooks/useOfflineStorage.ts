@@ -4,8 +4,8 @@ import { offlineStorage } from '@/utils/offlineStorage';
 interface OfflineData {
   id: string;
   data: any;
-  timestamp: Date;
-  type: 'chore' | 'achievement' | 'analytics' | 'user_action';
+  timestamp: number; // Keep as number to match storage format
+  type: 'chore' | 'progress' | 'notification' | 'achievement' | 'analytics' | 'user_action';
 }
 
 export const useOfflineStorage = () => {

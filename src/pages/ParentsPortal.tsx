@@ -19,6 +19,11 @@ import { PredictiveInsights } from "@/components/PredictiveInsights";
 import { useReportGeneration } from "@/hooks/useReportGeneration";
 import { AffiliateDisplay } from "@/components/AffiliateDisplay";
 import { useToast } from "@/hooks/use-toast";
+import { EnhancedMFASetup } from "@/components/mfa/EnhancedMFASetup";
+import { BehavioralAnalyticsEngine } from "@/components/analytics/BehavioralAnalyticsEngine";
+import { EnhancedPredictiveInsights } from "@/components/analytics/EnhancedPredictiveInsights";
+import { AdvancedAchievementSystem } from "@/components/gamification/AdvancedAchievementSystem";
+import { FamilyCompetitions } from "@/components/gamification/FamilyCompetitions";
 
 export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
@@ -290,7 +295,7 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue={pendingApprovalChores.length > 0 ? "approvals" : "chores"} className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             {pendingApprovalChores.length > 0 && (
               <TabsTrigger value="approvals" className="flex items-center gap-2 relative">
                 <CheckCircle className="h-4 w-4" />
@@ -320,6 +325,10 @@ export default function ParentsPortal() {
             <TabsTrigger value="communication" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               Communication
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Achievements
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileDown className="h-4 w-4" />
@@ -549,6 +558,42 @@ export default function ParentsPortal() {
                       <li>• Family communication summary</li>
                       <li>• PDF format for easy sharing</li>
                     </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-4">
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle className="text-parents-primary flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Advanced Achievement System
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">Achievement Chains & Competitions</h3>
+                    <p className="text-muted-foreground">
+                      Advanced gamification system with achievement chains and family competitions is now available.
+                    </p>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Achievement Chains</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Progressive achievement system that builds on previous accomplishments for sustained engagement.
+                      </p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">Family Competitions</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Create weekly challenges and competitions to boost family participation and fun.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
