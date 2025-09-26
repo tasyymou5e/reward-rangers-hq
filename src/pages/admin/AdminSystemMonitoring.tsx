@@ -7,6 +7,8 @@ import { useSecurityMonitoring } from "@/hooks/useSecurityMonitoring";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ComprehensiveMigrationDashboard } from "@/components/admin/ComprehensiveMigrationDashboard";
+import { SecurityConfigurationPanel } from "@/components/admin/SecurityConfigurationPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Activity, 
   AlertTriangle,
@@ -190,6 +192,7 @@ function SystemMonitoringContent() {
 
   return (
     <div className="space-y-6">
+      <Tabs defaultValue="monitoring" className="w-full">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -202,6 +205,14 @@ function SystemMonitoringContent() {
           </p>
         </div>
         
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="monitoring">System Health</TabsTrigger>
+          <TabsTrigger value="migration">Email Migration</TabsTrigger>
+          <TabsTrigger value="security">Security Config</TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="monitoring" className="space-y-6">
         <div className="flex items-center space-x-2">
           <Badge 
             variant={systemStatus === 'normal' ? 'default' : 'destructive'}
@@ -215,7 +226,6 @@ function SystemMonitoringContent() {
             System {systemStatus}
           </Badge>
         </div>
-      </div>
 
       {/* System Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -395,6 +405,16 @@ function SystemMonitoringContent() {
           )}
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="migration" className="space-y-6">
+        <ComprehensiveMigrationDashboard />
+      </TabsContent>
+
+      <TabsContent value="security" className="space-y-6">
+        <SecurityConfigurationPanel />
+      </TabsContent>
+    </Tabs>
     </div>
   );
 }

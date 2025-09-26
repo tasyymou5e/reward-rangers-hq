@@ -73,10 +73,10 @@ function isCommonPasswordLocal(password: string): boolean {
 }
 
 /**
- * Enhanced password validation with breach checking DISABLED
+ * Enhanced password validation with breach checking ENABLED
+ * IMPORTANT: Enable leaked password protection in Supabase Auth settings
  */
 export async function validatePasswordSecurity(password: string) {
-  // Basic validation only - breach checking disabled
   const basicChecks = {
     length: password.length >= 8,
     hasLowercase: /[a-z]/.test(password),
@@ -85,20 +85,27 @@ export async function validatePasswordSecurity(password: string) {
     hasSymbols: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password),
     noCommonPatterns: !/(.)\1{2,}/.test(password),
     notTooLong: password.length <= 128,
+    noCommonWords: !isCommonPasswordLocal(password),
   };
   
-  // Breach checking disabled - always return false for isBreached
-  const isBreached = false;
+  // Enable breach checking for enhanced security
+  let isBreached = false;
+  try {
+    isBreached = await checkPasswordBreach(password);
+  } catch (error) {
+    console.warn('Breach check failed, using local validation only:', error);
+    // If breach check fails, we still validate other requirements
+  }
   
   const enhancedChecks = {
     ...basicChecks,
-    notBreached: true // Always true since breach checking is disabled
+    notBreached: !isBreached
   };
   
   const score = Object.values(enhancedChecks).filter(Boolean).length;
-  const isValid = score >= 6 && enhancedChecks.length && enhancedChecks.hasLowercase && 
+  const isValid = score >= 7 && enhancedChecks.length && enhancedChecks.hasLowercase && 
                   enhancedChecks.hasUppercase && enhancedChecks.hasNumbers && 
-                  enhancedChecks.hasSymbols; // Removed breach check requirement
+                  enhancedChecks.hasSymbols && enhancedChecks.notBreached;
   
   return {
     isValid,
@@ -112,7 +119,9 @@ export async function validatePasswordSecurity(password: string) {
       !enhancedChecks.hasNumbers && 'Include numbers',
       !enhancedChecks.hasSymbols && 'Include special characters',
       !enhancedChecks.noCommonPatterns && 'Avoid repeating characters',
+      !enhancedChecks.noCommonWords && 'Avoid common passwords',
       !enhancedChecks.notTooLong && 'Password too long (max 128 characters)',
+      isBreached && 'Password found in data breaches - choose a different one',
     ].filter(Boolean),
   };
 }
