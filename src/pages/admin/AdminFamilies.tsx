@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,8 +24,9 @@ import {
 } from "lucide-react";
 import { FamilyDetailDialog } from "@/components/admin/FamilyDetailDialog";
 import { ContextualLoading, SkeletonList } from "@/components/ui/enhanced-loading";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-export default function AdminFamilies() {
+function AdminFamiliesContent() {
   const { profile } = useAdminAuth();
   const { toast } = useToast();
   const {
@@ -69,8 +71,13 @@ export default function AdminFamilies() {
   const loadFamilies = async () => {
     try {
       const familiesData = await fetchAllFamilies();
-      setFamilies(familiesData);
+      console.log('Loaded families data:', familiesData);
+      
+      // Validate data structure
+      const validatedData = Array.isArray(familiesData) ? familiesData : [];
+      setFamilies(validatedData);
     } catch (error) {
+      console.error('Error loading families:', error);
       toast({
         title: "Error",
         description: "Failed to load families",
@@ -104,31 +111,31 @@ export default function AdminFamilies() {
     }
   };
 
-  const handleDeleteFamily = async (familyId: string) => {
-    const { confirm } = await import('@/components/ui/confirm-dialog').then(m => ({ confirm: m.useConfirmDialog().confirm }));
-    const confirmed = await confirm(
-      "Delete Family",
-      "Are you sure you want to delete this family? This action cannot be undone.",
-      { variant: "destructive", confirmText: "Delete Family" }
-    );
-    
-    if (!confirmed) {
-      return;
-    }
+  const [deleteConfirmFamily, setDeleteConfirmFamily] = useState<string | null>(null);
 
+  const handleDeleteFamily = async (familyId: string) => {
+    setDeleteConfirmFamily(familyId);
+  };
+
+  const confirmDeleteFamily = async () => {
+    if (!deleteConfirmFamily) return;
+    
     try {
-      await deleteFamily(familyId);
+      await deleteFamily(deleteConfirmFamily);
       await loadFamilies();
       toast({
         title: "Success",
         description: "Family deleted successfully",
       });
     } catch (error) {
+      console.error('Error deleting family:', error);
       toast({
         title: "Error",
         description: "Failed to delete family",
         variant: "destructive",
       });
+    } finally {
+      setDeleteConfirmFamily(null);
     }
   };
 
@@ -161,51 +168,78 @@ export default function AdminFamilies() {
     });
   };
 
-  // Enhanced filtering and sorting logic
+  // Enhanced filtering and sorting logic with data validation
   const getFilteredAndSortedFamilies = () => {
+    if (!Array.isArray(families)) {
+      console.warn('Families is not an array:', families);
+      return [];
+    }
+
     let filtered = families.filter(family => {
-      // Search filter
-      const matchesSearch = family.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           family.code?.toLowerCase().includes(searchTerm.toLowerCase());
+      // Validate family object
+      if (!family || typeof family !== 'object') {
+        console.warn('Invalid family object:', family);
+        return false;
+      }
+
+      // Search filter with null safety
+      const familyName = family.name || '';
+      const familyCode = family.family_code || family.code || '';
+      const matchesSearch = familyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           familyCode.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Member count filter
-      const memberCount = family.family_members?.length || 0;
+      // Member count filter with proper fallback
+      const memberCount = family.member_count || 0;
       const matchesMemberCount = memberCountFilter === "all" ||
         (memberCountFilter === "1-2" && memberCount >= 1 && memberCount <= 2) ||
         (memberCountFilter === "3-5" && memberCount >= 3 && memberCount <= 5) ||
         (memberCountFilter === "6+" && memberCount >= 6);
       
-      // Date filter (last 30 days, 90 days, etc.)
-      const createdDate = new Date(family.created_at);
-      const now = new Date();
-      const matchesDate = dateFilter === "all" ||
-        (dateFilter === "today" && createdDate.toDateString() === now.toDateString()) ||
-        (dateFilter === "week" && (now.getTime() - createdDate.getTime()) <= 7 * 24 * 60 * 60 * 1000) ||
-        (dateFilter === "month" && (now.getTime() - createdDate.getTime()) <= 30 * 24 * 60 * 60 * 1000) ||
-        (dateFilter === "3months" && (now.getTime() - createdDate.getTime()) <= 90 * 24 * 60 * 60 * 1000);
+      // Date filter with validation
+      let matchesDate = true;
+      try {
+        const createdDate = new Date(family.created_at);
+        const now = new Date();
+        if (isNaN(createdDate.getTime())) {
+          console.warn('Invalid created_at date:', family.created_at);
+        } else {
+          matchesDate = dateFilter === "all" ||
+            (dateFilter === "today" && createdDate.toDateString() === now.toDateString()) ||
+            (dateFilter === "week" && (now.getTime() - createdDate.getTime()) <= 7 * 24 * 60 * 60 * 1000) ||
+            (dateFilter === "month" && (now.getTime() - createdDate.getTime()) <= 30 * 24 * 60 * 60 * 1000) ||
+            (dateFilter === "3months" && (now.getTime() - createdDate.getTime()) <= 90 * 24 * 60 * 60 * 1000);
+        }
+      } catch (error) {
+        console.warn('Error processing date filter:', error);
+      }
       
       return matchesSearch && matchesMemberCount && matchesDate;
     });
 
-    // Sorting
+    // Sorting with safe comparisons
     filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "name-asc":
-          return a.name?.localeCompare(b.name) || 0;
-        case "name-desc":
-          return b.name?.localeCompare(a.name) || 0;
-        case "date-newest":
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case "date-oldest":
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        case "members-most":
-          return (b.family_members?.length || 0) - (a.family_members?.length || 0);
-        case "members-least":
-          return (a.family_members?.length || 0) - (b.family_members?.length || 0);
-        case "code-asc":
-          return a.code?.localeCompare(b.code) || 0;
-        default:
-          return 0;
+      try {
+        switch (sortBy) {
+          case "name-asc":
+            return (a.name || '').localeCompare(b.name || '');
+          case "name-desc":
+            return (b.name || '').localeCompare(a.name || '');
+          case "date-newest":
+            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+          case "date-oldest":
+            return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          case "members-most":
+            return (b.member_count || 0) - (a.member_count || 0);
+          case "members-least":
+            return (a.member_count || 0) - (b.member_count || 0);
+          case "code-asc":
+            return (a.family_code || a.code || '').localeCompare(b.family_code || b.code || '');
+          default:
+            return 0;
+        }
+      } catch (error) {
+        console.warn('Error in sorting:', error);
+        return 0;
       }
     });
 
@@ -559,31 +593,23 @@ export default function AdminFamilies() {
                    className="cursor-pointer hover:bg-muted/50"
                    onClick={() => handleFamilyClick(family)}
                  >
-                   <TableCell className="font-medium">{family.name}</TableCell>
-                   <TableCell>
-                     <Badge variant="outline">{family.family_code}</Badge>
-                   </TableCell>
-                   <TableCell>
-                     <div className="flex flex-col">
-                       <span className="font-medium">
-                         {(family.family_members?.length || 0) + 1} members
-                       </span>
-                       <div className="text-xs text-muted-foreground">
-                         {family.profiles?.display_name || 'Parent'} (Parent)
-                         {family.family_members?.slice(0, 2).map((member: any) => (
-                           <div key={member.user_id}>
-                             {member.profiles?.display_name || 'Unknown'} (Child)
-                           </div>
-                         ))}
-                         {(family.family_members?.length || 0) > 2 && (
-                           <div>+{(family.family_members?.length || 0) - 2} more</div>
-                         )}
-                       </div>
-                     </div>
-                   </TableCell>
-                   <TableCell>
-                     {new Date(family.created_at).toLocaleDateString()}
-                   </TableCell>
+                    <TableCell className="font-medium">{family.name || 'Unnamed Family'}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{family.family_code || 'N/A'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {family.member_count || 0} members
+                        </span>
+                        <div className="text-xs text-muted-foreground">
+                          {family.parent_display_name || family.parent_email || 'Parent'} (Parent)
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {family.created_at ? new Date(family.created_at).toLocaleDateString() : 'N/A'}
+                    </TableCell>
                    <TableCell>
                      <div className="flex items-center space-x-2">
                        <Button
@@ -618,6 +644,18 @@ export default function AdminFamilies() {
         </CardContent>
       </Card>
 
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmFamily !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmFamily(null)}
+        title="Delete Family"
+        description="Are you sure you want to delete this family? This action cannot be undone and will remove all associated data."
+        confirmText="Delete Family"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={confirmDeleteFamily}
+      />
+
       {/* Enhanced Family Detail Dialog */}
       <FamilyDetailDialog
         family={selectedFamily}
@@ -626,5 +664,13 @@ export default function AdminFamilies() {
         onUpdate={loadFamilies}
       />
     </div>
+  );
+}
+
+export default function AdminFamilies() {
+  return (
+    <ErrorBoundary componentName="AdminFamilies">
+      <AdminFamiliesContent />
+    </ErrorBoundary>
   );
 }
