@@ -22,11 +22,11 @@ export function SecurityConfigurationPanel() {
     {
       id: 'leaked_password_protection',
       title: 'Leaked Password Protection',
-      description: 'Prevents users from using passwords found in data breaches',
+      description: 'Prevents users from using passwords found in data breaches - CRITICAL SECURITY FIX REQUIRED',
       status: 'disabled',
       priority: 'critical',
-      action: 'Enable in Supabase Dashboard → Authentication → Password Protection',
-      link: 'https://supabase.com/docs/guides/auth/password-security'
+      action: 'IMMEDIATE ACTION: Enable in Supabase Dashboard → Authentication → Password Protection',
+      link: 'https://supabase.com/dashboard/project/rdvkwnoeojjvjuknlsjd/auth/providers'
     },
     {
       id: 'email_verification',
@@ -136,7 +136,12 @@ export function SecurityConfigurationPanel() {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {criticalIssues.length} critical security issue(s) require immediate attention.
+              <strong>CRITICAL SECURITY ALERT:</strong> {criticalIssues.length} critical security issue(s) require immediate attention.
+              <div className="mt-2 space-y-1">
+                <div>🔐 <strong>Leaked Password Protection DISABLED</strong> - Exposing users to compromised passwords</div>
+                <div>⚠️ Manual configuration required in Supabase Dashboard</div>
+                <div>📋 Security alerts pending resolution</div>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -171,18 +176,23 @@ export function SecurityConfigurationPanel() {
           ))}
         </div>
 
-        <Alert>
+        <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Production Readiness Checklist:</strong>
+            <strong>⚠️ PHASE 1 CRITICAL SECURITY FIXES REQUIRED:</strong>
             <ul className="mt-2 space-y-1 text-sm">
+              <li>❌ <strong className="text-destructive">URGENT: Enable leaked password protection in Supabase Dashboard</strong></li>
+              <li>❌ <strong className="text-destructive">Resolve 8 medium-severity security alerts</strong></li>
+              <li>❌ <strong className="text-destructive">Configure production login controls</strong></li>
               <li>✅ Row Level Security enabled on all tables</li>
               <li>✅ Rate limiting implemented</li>
               <li>✅ Input validation with Zod schemas</li>
-              <li>⚠️ <strong>Enable leaked password protection in Supabase Dashboard</strong></li>
               <li>✅ HTTPS enforced</li>
               <li>✅ Audit logging in place</li>
             </ul>
+            <div className="mt-3 p-2 bg-destructive/10 rounded border border-destructive/20">
+              <strong>Security Grade: B+ → A+ after fixes</strong>
+            </div>
           </AlertDescription>
         </Alert>
       </CardContent>
