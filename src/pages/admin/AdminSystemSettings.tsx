@@ -6,7 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Settings, Shield, Users } from "lucide-react";
+import { AlertTriangle, Settings, Shield, Users, Mail, Clock, UserCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface LoginControls {
@@ -20,6 +22,13 @@ interface SystemMaintenance {
   message: string;
 }
 
+interface InvitationSettings {
+  external_invitations_enabled: boolean;
+  invitation_expiry_days: number;
+  allowed_roles: string[];
+  admin_approval_required: boolean;
+}
+
 const AdminSystemSettings = () => {
   const [loginControls, setLoginControls] = useState<LoginControls>({
     parents_login_enabled: true,
@@ -29,6 +38,12 @@ const AdminSystemSettings = () => {
   const [systemMaintenance, setSystemMaintenance] = useState<SystemMaintenance>({
     enabled: false,
     message: "System is currently under maintenance. Please try again later."
+  });
+  const [invitationSettings, setInvitationSettings] = useState<InvitationSettings>({
+    external_invitations_enabled: true,
+    invitation_expiry_days: 7,
+    allowed_roles: ["parent", "kid"],
+    admin_approval_required: false
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,8 +63,12 @@ const AdminSystemSettings = () => {
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .rpc('get_system_setting_secure', { key_name: 'system_maintenance' });
 
+      const { data: invitationData, error: invitationError } = await supabase
+        .rpc('get_system_setting_secure', { key_name: 'invitation_settings' });
+
       if (loginError) throw loginError;
       if (maintenanceError) throw maintenanceError;
+      if (invitationError) throw invitationError;
 
       if (loginData) {
         setLoginControls(loginData as unknown as LoginControls);
@@ -57,6 +76,10 @@ const AdminSystemSettings = () => {
       
       if (maintenanceData) {
         setSystemMaintenance(maintenanceData as unknown as SystemMaintenance);
+      }
+
+      if (invitationData) {
+        setInvitationSettings(invitationData as unknown as InvitationSettings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -121,6 +144,35 @@ const AdminSystemSettings = () => {
       toast({
         title: "Error",
         description: "Failed to update maintenance settings",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveInvitationSettings = async () => {
+    try {
+      setSaving(true);
+      
+      const { error } = await supabase
+        .rpc('update_system_setting_secure', {
+          key_name: 'invitation_settings',
+          new_value: invitationSettings as any,
+          setting_description: 'External family invitation system configuration'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Invitation settings updated successfully"
+      });
+    } catch (error) {
+      console.error('Error saving invitation settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update invitation settings",
         variant: "destructive"
       });
     } finally {
@@ -265,6 +317,104 @@ const AdminSystemSettings = () => {
             className="w-full"
           >
             {saving ? "Saving..." : "Save Maintenance Settings"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Invitation Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Mail className="h-5 w-5" />
+            <span>External Invitation System</span>
+          </CardTitle>
+          <CardDescription>
+            Control external family invitation functionality
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="external-invites" className="text-base">
+                Enable External Invitations
+              </Label>
+              <div className="text-sm text-muted-foreground">
+                Allow admins to send invitations to external users to join families
+              </div>
+            </div>
+            <Switch
+              id="external-invites"
+              checked={invitationSettings.external_invitations_enabled}
+              onCheckedChange={(checked) =>
+                setInvitationSettings(prev => ({ ...prev, external_invitations_enabled: checked }))
+              }
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="expiry-days" className="flex items-center space-x-2">
+                <Clock className="h-4 w-4" />
+                <span>Invitation Expiry (Days)</span>
+              </Label>
+              <Input
+                id="expiry-days"
+                type="number"
+                min="1"
+                max="30"
+                value={invitationSettings.invitation_expiry_days}
+                onChange={(e) =>
+                  setInvitationSettings(prev => ({ 
+                    ...prev, 
+                    invitation_expiry_days: parseInt(e.target.value) || 7 
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center space-x-2">
+                <UserCheck className="h-4 w-4" />
+                <span>Admin Approval Required</span>
+              </Label>
+              <Switch
+                checked={invitationSettings.admin_approval_required}
+                onCheckedChange={(checked) =>
+                  setInvitationSettings(prev => ({ ...prev, admin_approval_required: checked }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Allowed Roles for Invitations</Label>
+            <div className="flex space-x-4">
+              {["parent", "kid"].map((role) => (
+                <div key={role} className="flex items-center space-x-2">
+                  <Switch
+                    id={`role-${role}`}
+                    checked={invitationSettings.allowed_roles.includes(role)}
+                    onCheckedChange={(checked) => {
+                      setInvitationSettings(prev => ({
+                        ...prev,
+                        allowed_roles: checked 
+                          ? [...prev.allowed_roles, role]
+                          : prev.allowed_roles.filter(r => r !== role)
+                      }));
+                    }}
+                  />
+                  <Label htmlFor={`role-${role}`} className="capitalize">{role}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button 
+            onClick={saveInvitationSettings} 
+            disabled={saving}
+            className="w-full"
+          >
+            {saving ? "Saving..." : "Save Invitation Settings"}
           </Button>
         </CardContent>
       </Card>

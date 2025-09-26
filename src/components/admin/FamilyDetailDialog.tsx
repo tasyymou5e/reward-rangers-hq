@@ -47,6 +47,7 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
     name: "",
     role: "kid" as "parent" | "kid"
   });
+  const [invitationsEnabled, setInvitationsEnabled] = useState(true);
 
   if (!family) return null;
 
@@ -531,10 +532,17 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
                     onClick={() => setShowInviteDialog(true)}
                     size="sm"
                     variant="outline"
+                    disabled={!invitationsEnabled}
+                    title={!invitationsEnabled ? "External invitations are disabled by administrator" : ""}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Invitation
                   </Button>
+                  {!invitationsEnabled && (
+                    <div className="text-xs text-muted-foreground">
+                      Invitations disabled
+                    </div>
+                  )}
                   <Button 
                     onClick={loadActivityLogs}
                     size="sm"

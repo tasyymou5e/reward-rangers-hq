@@ -49,10 +49,24 @@ serve(async (req) => {
       throw new Error('Insufficient permissions');
     }
 
+    // Check if external invitations are enabled
+    const { data: invitationSettings } = await supabaseClient
+      .rpc('get_system_setting_secure', { key_name: 'invitation_settings' });
+
+    if (invitationSettings && !invitationSettings.external_invitations_enabled) {
+      throw new Error('External invitations are currently disabled by system administrator');
+    }
+
     const { familyId, inviteeEmail, inviteeName, role } = await req.json();
 
     if (!familyId || !inviteeEmail || !inviteeName || !role) {
       throw new Error('Missing required parameters');
+    }
+
+    // Validate role against allowed roles
+    const allowedRoles = invitationSettings?.allowed_roles || ['parent', 'kid'];
+    if (!allowedRoles.includes(role)) {
+      throw new Error(`Role '${role}' is not allowed for invitations`);
     }
 
     // Get family info
@@ -96,8 +110,8 @@ serve(async (req) => {
         invitee_name: inviteeName,
         role: role,
         invited_by: user.id,
-        status: 'pending',
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        status: invitationSettings?.admin_approval_required ? 'pending_approval' : 'pending',
+        expires_at: new Date(Date.now() + (invitationSettings?.invitation_expiry_days || 7) * 24 * 60 * 60 * 1000).toISOString()
       })
       .select()
       .single();
