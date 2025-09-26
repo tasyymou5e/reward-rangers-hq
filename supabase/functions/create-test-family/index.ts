@@ -59,13 +59,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is admin using RPC to avoid RLS recursion
-    const { data: isAdmin, error: adminError } = await supabaseAdmin.rpc('is_admin_enhanced');
+    // Check if user is admin using direct auth.users check
+    const { data: authUser, error: authCheckError } = await supabaseAdmin
+      .from('auth.users')
+      .select('raw_user_meta_data')
+      .eq('id', user.id)
+      .single();
     
-    if (adminError || !isAdmin) {
+    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
+    
+    if (authCheckError || !isAdmin) {
       console.log('Unauthorized test family creation attempt:', { 
         userId: user.id, 
-        adminError: adminError?.message,
+        authCheckError: authCheckError?.message,
+        userRole: authUser?.raw_user_meta_data?.role,
         isAdmin
       });
       return new Response(
