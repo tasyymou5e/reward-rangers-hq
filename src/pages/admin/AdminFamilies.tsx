@@ -22,6 +22,7 @@ import {
   X
 } from "lucide-react";
 import { FamilyDetailDialog } from "@/components/admin/FamilyDetailDialog";
+import { ContextualLoading, SkeletonList } from "@/components/ui/enhanced-loading";
 
 export default function AdminFamilies() {
   const { profile } = useAdminAuth();
@@ -231,11 +232,27 @@ export default function AdminFamilies() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center space-y-4">
-          <div className="text-4xl animate-spin">⚙️</div>
-          <p className="text-lg">Loading families...</p>
+      <div className="space-y-6">
+        {/* Page Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <ContextualLoading 
+              type="families" 
+              message="Loading family management system..." 
+              size="md"
+            />
+          </div>
         </div>
+        
+        {/* Content Skeleton */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Families</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SkeletonList count={8} type="table" />
+          </CardContent>
+        </Card>
       </div>
     );
   }

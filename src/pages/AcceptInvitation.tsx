@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Users, CheckCircle, XCircle, Loader2, Clock, AlertTriangle, UserCheck, Mail, Shield } from "lucide-react";
 
 export default function AcceptInvitation() {
   const [searchParams] = useSearchParams();
@@ -15,9 +17,14 @@ export default function AcceptInvitation() {
   const { toast } = useToast();
   
   const [invitation, setInvitation] = useState<any>(null);
+  const [familyData, setFamilyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
+  const [acceptProgress, setAcceptProgress] = useState(0);
+  const [acceptStep, setAcceptStep] = useState("");
   const [needsAccount, setNeedsAccount] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState("");
+  const [isExpiringSoon, setIsExpiringSoon] = useState(false);
   const [accountData, setAccountData] = useState({
     email: "",
     password: "",
@@ -40,7 +47,16 @@ export default function AcceptInvitation() {
         .from('family_invitations')
         .select(`
           *,
-          families (name, family_code)
+          families (
+            name, 
+            family_code, 
+            description, 
+            avatar_url,
+            created_at,
+            family_members!inner (
+              profiles (display_name, role)
+            )
+          )
         `)
         .eq('invitation_code', invitationCode)
         .eq('status', 'pending')
@@ -50,6 +66,25 @@ export default function AcceptInvitation() {
       if (error) throw error;
 
       setInvitation(data);
+      setFamilyData(data.families);
+
+      // Calculate time remaining
+      const expiryTime = new Date(data.expires_at).getTime();
+      const now = new Date().getTime();
+      const hoursRemaining = Math.floor((expiryTime - now) / (1000 * 60 * 60));
+      
+      if (hoursRemaining < 24) {
+        setIsExpiringSoon(true);
+        if (hoursRemaining < 1) {
+          const minutesRemaining = Math.floor((expiryTime - now) / (1000 * 60));
+          setTimeRemaining(`${minutesRemaining} minutes`);
+        } else {
+          setTimeRemaining(`${hoursRemaining} hours`);
+        }
+      } else {
+        const daysRemaining = Math.floor(hoursRemaining / 24);
+        setTimeRemaining(`${daysRemaining} days`);
+      }
 
       // Check if user already exists
       const { data: existingUser } = await supabase
@@ -78,6 +113,7 @@ export default function AcceptInvitation() {
     if (!invitation) return;
 
     setAccepting(true);
+    setAcceptProgress(0);
     try {
       let userId = null;
 
@@ -91,7 +127,10 @@ export default function AcceptInvitation() {
           throw new Error("Password must be at least 8 characters");
         }
 
-        // Create new account
+        // Step 1: Create account
+        setAcceptStep("Creating your account...");
+        setAcceptProgress(20);
+        
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: invitation.invitee_email,
           password: accountData.password,
@@ -107,7 +146,10 @@ export default function AcceptInvitation() {
         if (signUpError) throw signUpError;
         userId = authData.user?.id;
 
-        // Create profile
+        // Step 2: Create profile
+        setAcceptStep("Setting up your profile...");
+        setAcceptProgress(40);
+        
         await supabase
           .from('profiles')
           .insert({
@@ -120,7 +162,10 @@ export default function AcceptInvitation() {
           });
 
       } else {
-        // Sign in existing user
+        // Step 1: Sign in existing user
+        setAcceptStep("Signing you in...");
+        setAcceptProgress(30);
+        
         const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
           email: invitation.invitee_email,
           password: accountData.password
@@ -132,7 +177,10 @@ export default function AcceptInvitation() {
 
       if (!userId) throw new Error("Failed to authenticate user");
 
-      // Add to family
+      // Step 3: Add to family
+      setAcceptStep("Adding you to the family...");
+      setAcceptProgress(60);
+      
       await supabase
         .from('family_members')
         .insert({
@@ -140,7 +188,10 @@ export default function AcceptInvitation() {
           user_id: userId
         });
 
-      // Add family role
+      // Step 4: Set family role
+      setAcceptStep("Setting up permissions...");
+      setAcceptProgress(80);
+      
       await supabase
         .from('family_roles')
         .insert({
@@ -152,11 +203,17 @@ export default function AcceptInvitation() {
           accepted_at: new Date().toISOString()
         });
 
-      // Update invitation status
+      // Step 5: Update invitation status
+      setAcceptStep("Finalizing invitation...");
+      setAcceptProgress(95);
+      
       await supabase
         .from('family_invitations')
         .update({ status: 'accepted' })
         .eq('id', invitation.id);
+
+      setAcceptStep("Complete! Redirecting...");
+      setAcceptProgress(100);
 
       toast({
         title: "Success!",
@@ -164,20 +221,24 @@ export default function AcceptInvitation() {
       });
 
       // Redirect based on role
-      if (invitation.role === 'parent') {
-        navigate('/parent-dashboard');
-      } else {
-        navigate('/children/tasks');
-      }
+      setTimeout(() => {
+        if (invitation.role === 'parent') {
+          navigate('/parent-dashboard');
+        } else {
+          navigate('/children/tasks');
+        }
+      }, 1000);
 
     } catch (error: any) {
+      setAcceptStep("");
+      setAcceptProgress(0);
       toast({
         title: "Error",
         description: error.message || "Failed to accept invitation",
         variant: "destructive"
       });
     } finally {
-      setAccepting(false);
+      setTimeout(() => setAccepting(false), 1000);
     }
   };
 
@@ -215,7 +276,7 @@ export default function AcceptInvitation() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
             <Users className="h-8 w-8 text-blue-600" />
@@ -227,16 +288,58 @@ export default function AcceptInvitation() {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Invitation Details */}
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold">{invitation.families.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              Invited as: <Badge variant="secondary">{invitation.role}</Badge>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Family Code: <code className="font-mono">{invitation.families.family_code}</code>
-            </p>
-          </div>
+          {/* Expiry Warning */}
+          {isExpiringSoon && (
+            <Alert className="border-orange-200 bg-orange-50">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Invitation expires in {timeRemaining}</strong>
+                {timeRemaining.includes('minutes') && " - Please accept soon!"}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Family Preview */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader className="text-center pb-3">
+              <div className="mx-auto mb-2">
+                {familyData?.avatar_url ? (
+                  <img 
+                    src={familyData.avatar_url} 
+                    alt={`${familyData.name} avatar`}
+                    className="h-16 w-16 rounded-full object-cover border-2 border-blue-200"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-200">
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                )}
+              </div>
+              <CardTitle className="text-lg text-blue-900">{familyData?.name}</CardTitle>
+              <div className="flex items-center justify-center gap-4 text-sm text-blue-700">
+                <span className="flex items-center gap-1">
+                  <UserCheck className="h-4 w-4" />
+                  {(familyData?.family_members?.length || 0) + 1} members
+                </span>
+                <span className="flex items-center gap-1">
+                  <Shield className="h-4 w-4" />
+                  Code: {familyData?.family_code}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-blue-700">
+                  {familyData?.description || "A wonderful family on Chatterbox"}
+                </p>
+                <div className="flex justify-center">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    Invited as: {invitation.role}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Account Creation/Login Form */}
           <div className="space-y-4">
@@ -317,6 +420,19 @@ export default function AcceptInvitation() {
             )}
           </div>
 
+          {/* Progress Indicator */}
+          {accepting && (
+            <div className="space-y-3">
+              <div className="text-center">
+                <p className="text-sm font-medium text-blue-700">{acceptStep}</p>
+              </div>
+              <Progress value={acceptProgress} className="h-2" />
+              <p className="text-xs text-center text-muted-foreground">
+                {acceptProgress}% complete
+              </p>
+            </div>
+          )}
+
           {/* Accept Button */}
           <Button 
             className="w-full" 
@@ -326,12 +442,12 @@ export default function AcceptInvitation() {
             {accepting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {needsAccount ? "Creating Account..." : "Signing In..."}
+                {acceptStep || (needsAccount ? "Creating Account..." : "Signing In...")}
               </>
             ) : (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Accept Invitation
+                Accept Invitation & Join Family
               </>
             )}
           </Button>

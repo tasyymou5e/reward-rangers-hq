@@ -25,6 +25,7 @@ import {
   UserMinus
 } from "lucide-react";
 import { AddFamilyMemberDialog } from "./AddFamilyMemberDialog";
+import { EnhancedActivityLogs } from "./EnhancedActivityLogs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FamilyDetailDialogProps {
@@ -525,65 +526,29 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Recent Activity</h3>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => setShowInviteDialog(true)}
-                    size="sm"
-                    variant="outline"
-                    disabled={!invitationsEnabled}
-                    title={!invitationsEnabled ? "External invitations are disabled by administrator" : ""}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Invitation
-                  </Button>
-                  {!invitationsEnabled && (
-                    <div className="text-xs text-muted-foreground">
-                      Invitations disabled
-                    </div>
-                  )}
-                  <Button 
-                    onClick={loadActivityLogs}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Activity className="h-4 w-4 mr-2" />
-                    Refresh
-                  </Button>
+              <div className="flex justify-between items-center mb-4">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">Family Activity</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Complete activity history for {family.name}
+                  </p>
                 </div>
+                <Button 
+                  onClick={() => setShowInviteDialog(true)}
+                  size="sm"
+                  disabled={!invitationsEnabled}
+                  title={!invitationsEnabled ? "External invitations are disabled by administrator" : ""}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Invitation
+                </Button>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Activity Log
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {activityLogs.length > 0 ? (
-                    <div className="space-y-3">
-                      {activityLogs.slice(0, 10).map((log: any, index: number) => (
-                        <div key={index} className="flex items-start justify-between p-3 border rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium">{log.action_type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</p>
-                            <p className="text-sm text-muted-foreground">{log.description || 'No description'}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(log.created_at).toLocaleString()}
-                            </p>
-                          </div>
-                          <Badge variant={log.risk_level === 'high' ? 'destructive' : log.risk_level === 'medium' ? 'default' : 'secondary'}>
-                            {log.risk_level}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">No recent activity found.</p>
-                  )}
-                </CardContent>
-              </Card>
+              <EnhancedActivityLogs 
+                familyId={family.id}
+                title="Family Activity Logs"
+                className="border-0 shadow-none p-0"
+              />
             </TabsContent>
           </Tabs>
         </DialogContent>
