@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdminBridge } from "@/hooks/useAdminBridge";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Users, Trash2, UserMinus, UsersIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export function UserManagementTab() {
-  const { createUser, createTestFamily, deleteUser, deleteFamily, fetchAllUsers, fetchAllFamilies } = useAdmin();
+  const { createUser, createTestFamily, deleteUser, deleteFamily, fetchAllUsers, fetchAllFamilies } = useAdminBridge();
   const { toast } = useToast();
   
   const [showUserDialog, setShowUserDialog] = useState(false);
@@ -63,14 +63,14 @@ export function UserManagementTab() {
         throw new Error('Authentication required - please refresh the page');
       }
 
-      // Load data sequentially to better track where failures occur
-      console.log('📊 Loading users data...');
-      const usersData = await fetchAllUsers();
-      console.log('✅ Users loaded:', usersData?.length || 0);
+      // Use the secure admin functions to get all profiles and families
+      console.log('📊 Loading users data via secure admin function...');
+      const { data: usersData } = await supabase.rpc('get_all_profiles_for_admin');
+      console.log('✅ Users loaded via admin function:', usersData?.length || 0);
       
-      console.log('🏠 Loading families data...');
-      const familiesData = await fetchAllFamilies();
-      console.log('✅ Families loaded:', familiesData?.length || 0);
+      console.log('🏠 Loading families data via secure admin function...');
+      const { data: familiesData } = await supabase.rpc('get_all_families_for_admin');
+      console.log('✅ Families loaded via admin function:', familiesData?.length || 0);
       
       setUsers(usersData || []);
       setFamilies(familiesData || []);
