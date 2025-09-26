@@ -520,18 +520,37 @@ export default function ParentsPortal() {
 
           <TabsContent value="achievements" className="space-y-4">
             <div className="space-y-6">
-              {children.length > 0 && (
+              {family?.id && children.length > 0 && (
                 <AdvancedAchievementSystem 
-                  userId={children[0]?.id} 
-                  familyId={family?.id} 
+                  userId={children[0].id} 
+                  familyId={family.id} 
                 />
               )}
-              {family?.id && (
+              {family?.id && family.parent_id && (
                 <FamilyCompetitions 
                   familyId={family.id} 
-                  userId={children[0]?.id || ""} 
+                  userId={family.parent_id} 
                   isParent={true} 
                 />
+              )}
+              {(!family?.id || children.length === 0) && (
+                <Card className="bg-white">
+                  <CardHeader>
+                    <CardTitle className="text-parents-primary flex items-center gap-2">
+                      <Award className="h-5 w-5" />
+                      Advanced Achievement System
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">Achievement System</h3>
+                      <p className="text-muted-foreground">
+                        Add children to your family to enable the achievement system and family competitions.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </TabsContent>
