@@ -1016,6 +1016,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           avatar_url: string | null
+          backup_id: string
           created_at: string | null
           created_by_primary_email: boolean | null
           description: string | null
@@ -1031,6 +1032,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           avatar_url?: string | null
+          backup_id?: string
           created_at?: string | null
           created_by_primary_email?: boolean | null
           description?: string | null
@@ -1046,6 +1048,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           avatar_url?: string | null
+          backup_id?: string
           created_at?: string | null
           created_by_primary_email?: boolean | null
           description?: string | null
@@ -2068,6 +2071,7 @@ export type Database = {
         Row: {
           alternative_emails: Json | null
           avatar_url: string | null
+          backup_id: string
           created_at: string | null
           display_name: string | null
           email: string | null
@@ -2084,6 +2088,7 @@ export type Database = {
         Insert: {
           alternative_emails?: Json | null
           avatar_url?: string | null
+          backup_id?: string
           created_at?: string | null
           display_name?: string | null
           email?: string | null
@@ -2100,6 +2105,7 @@ export type Database = {
         Update: {
           alternative_emails?: Json | null
           avatar_url?: string | null
+          backup_id?: string
           created_at?: string | null
           display_name?: string | null
           email?: string | null
