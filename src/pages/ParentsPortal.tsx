@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus, ExternalLink, CheckCircle } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Clock, FileDown, Shield, MessageCircle, Brain, Heart, User, UserPlus, ExternalLink, CheckCircle, Bot } from "lucide-react";
 import { WishlistCard } from "@/components/WishlistCard";
 import { ChoreAssignmentForm } from "@/components/ChoreAssignmentForm";
 import { ChoreApprovalCard } from "@/components/ChoreApprovalCard";
@@ -22,6 +22,7 @@ import { AffiliateDisplay } from "@/components/AffiliateDisplay";
 import { AdvancedAchievementSystem } from "@/components/gamification/AdvancedAchievementSystem";
 import { FamilyCompetitions } from "@/components/gamification/FamilyCompetitions";
 import { useToast } from "@/hooks/use-toast";
+import { AIAssistant } from "@/components/AIAssistant";
 
 export default function ParentsPortal() {
   const { generateWeeklyReport, generating } = useReportGeneration();
@@ -293,7 +294,7 @@ export default function ParentsPortal() {
 
         {/* Enhanced Features Tabs */}
         <Tabs defaultValue={pendingApprovalChores.length > 0 ? "approvals" : "chores"} className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             {pendingApprovalChores.length > 0 && (
               <TabsTrigger value="approvals" className="flex items-center gap-2 relative">
                 <CheckCircle className="h-4 w-4" />
@@ -315,6 +316,10 @@ export default function ParentsPortal() {
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Security
+            </TabsTrigger>
+            <TabsTrigger value="ai-chat" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              AI Assistant
             </TabsTrigger>
             <TabsTrigger value="insights" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -512,6 +517,10 @@ export default function ParentsPortal() {
 
           <TabsContent value="security" className="space-y-4">
             <EnhancedMFASetup />
+          </TabsContent>
+
+          <TabsContent value="ai-chat" className="space-y-4">
+            <AIAssistant />
           </TabsContent>
 
           <TabsContent value="insights">
