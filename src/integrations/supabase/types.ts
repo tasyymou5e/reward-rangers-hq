@@ -3050,6 +3050,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_admin_permission_safe: {
+        Args: {
+          p_permission: Database["public"]["Enums"]["admin_permission"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       has_family_permission: {
         Args: {
           family_id_param: string
@@ -3081,6 +3088,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_like_from_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_safe: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

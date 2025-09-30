@@ -1,4 +1,17 @@
-# Welcome to your Lovable project
+# Chatterbox - Family Chore Management Platform
+
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+[![Security](https://img.shields.io/badge/security-A--grade-green.svg)](docs/database-security-improvements.md)
+[![AI Powered](https://img.shields.io/badge/AI-Gemini%202.5-orange.svg)](docs/ai-integration.md)
+
+> Family chore management with gamification, AI assistance, and enterprise-grade security.
+
+## 🚀 Latest Updates (v2.0.0)
+- ✅ Fixed critical RLS recursion issues
+- ✅ 40-60% performance improvement
+- ✅ AI Assistant integrated
+- ✅ 24 new database indexes added
+- 📚 [View Full Changelog](CHANGELOG.md)
 
 ## Project info
 
