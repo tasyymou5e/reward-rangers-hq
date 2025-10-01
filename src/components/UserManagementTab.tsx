@@ -6,15 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminBridge } from "@/hooks/useAdminBridge";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Users, Trash2, UserMinus, UsersIcon } from "lucide-react";
+import { UserPlus, Users, Trash2, UserMinus, UsersIcon, Eye, Key, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { UserDetailDialog } from "@/components/admin/UserDetailDialog";
+import { UserPasswordResetDialog } from "@/components/admin/UserPasswordResetDialog";
 
-export function UserManagementTab() {
+interface UserManagementTabProps {
+  searchTerm?: string;
+  roleFilter?: string;
+}
+
+export function UserManagementTab({ searchTerm = "", roleFilter = "all" }: UserManagementTabProps) {
   const { createUser, createTestFamily, deleteUser, deleteFamily, fetchAllUsers, fetchAllFamilies } = useAdminBridge();
   const { toast } = useToast();
   
@@ -24,6 +32,9 @@ export function UserManagementTab() {
   const [families, setFamilies] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showUserDetail, setShowUserDetail] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   const [newUser, setNewUser] = useState({
     email: "",
@@ -382,352 +393,361 @@ export function UserManagementTab() {
 
   return (
     <div className="space-y-6">
-      {/* Debug Info */}
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="text-yellow-800 text-sm">
-            🔧 Debug Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-xs space-y-1 text-yellow-700">
-            <p>Users loaded: {users.length}</p>
-            <p>Families loaded: {families.length}</p>
-            <p>Loading state: {isLoading ? 'true' : 'false'}</p>
-            <p>Error state: {error || 'none'}</p>
-          </div>
-        </CardContent>
-      </Card>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Create Individual User */}
-        <Card className="border-2 border-blue-200 bg-blue-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
-              <UserPlus className="h-5 w-5" />
-              Create Admin & User Accounts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-blue-600 mb-4 font-medium">
-              ✨ Create admin users with different permission levels (Full Admin, Read Only, Report Admin), as well as parent and kid users for testing and administration.
-            </p>
-            <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-              <DialogTrigger asChild>
-                <Button className="w-full">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Create New User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New User</DialogTitle>
-                  <DialogDescription>
-                    Create admin users with role-based permissions (Full Admin, Read Only, Report Admin) or regular parent/kid accounts.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="user@example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Minimum 6 characters"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="display_name">Display Name</Label>
-                    <Input
-                      id="display_name"
-                      value={newUser.display_name}
-                      onChange={(e) => setNewUser(prev => ({ ...prev, display_name: e.target.value }))}
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="role">User Role</Label>
-                    <Select value={newUser.role} onValueChange={(value: "admin" | "full_admin" | "read_only_admin" | "report_admin" | "parent" | "kid") => setNewUser(prev => ({ ...prev, role: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">🔴 Legacy Admin (Full Access)</SelectItem>
-                        <SelectItem value="full_admin">🔴 Full Admin (Complete Access)</SelectItem>
-                        <SelectItem value="read_only_admin">🔵 Read Only Admin (View Only)</SelectItem>
-                        <SelectItem value="report_admin">🟣 Report Admin (Reports & Limited)</SelectItem>
-                        <SelectItem value="parent">👨‍👩‍👧‍👦 Parent (Family Manager)</SelectItem>
-                        <SelectItem value="kid">🧒 Kid (Family Member)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Admin roles provide access to the admin portal with different permission levels
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowUserDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateUser}>
-                    Create User
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+      {/* Create User Dialog */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Create User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                Create a new user account with specified role and permissions.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Secure password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="display_name">Display Name</Label>
+                <Input
+                  id="display_name"
+                  value={newUser.display_name}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, display_name: e.target.value }))}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value as any }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parent">Parent</SelectItem>
+                    <SelectItem value="kid">Kid</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="full_admin">Full Admin</SelectItem>
+                    <SelectItem value="read_only_admin">Read Only Admin</SelectItem>
+                    <SelectItem value="report_admin">Report Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowUserDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateUser}>Create User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-        {/* Create Test Family */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+        {/* Create Test Family Dialog */}
+        <Dialog open={showFamilyDialog} onOpenChange={setShowFamilyDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
               Create Test Family
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a complete test family with parent and multiple children accounts, plus sample chores.
-            </p>
-            <Dialog open={showFamilyDialog} onOpenChange={setShowFamilyDialog}>
-              <DialogTrigger asChild>
-                <Button className="w-full">
-                  <Users className="mr-2 h-4 w-4" />
-                  Create Test Family
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create Test Family</DialogTitle>
-                  <DialogDescription>
-                    Create a complete family setup for testing with parent and children accounts.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Family Info */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Family Information</h3>
-                    <div>
-                      <Label htmlFor="familyName">Family Name</Label>
-                      <Input
-                        id="familyName"
-                        value={newFamily.familyName}
-                        onChange={(e) => setNewFamily(prev => ({ ...prev, familyName: e.target.value }))}
-                        placeholder="The Smith Family"
-                      />
-                    </div>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Test Family</DialogTitle>
+              <DialogDescription>
+                Create a complete family with parent and children for testing purposes.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Family Info */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Family Information</h3>
+                <div>
+                  <Label htmlFor="familyName">Family Name</Label>
+                  <Input
+                    id="familyName"
+                    value={newFamily.familyName}
+                    onChange={(e) => setNewFamily(prev => ({ ...prev, familyName: e.target.value }))}
+                    placeholder="The Smith Family"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Parent Info */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Parent Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="parentName">Parent Name</Label>
+                    <Input
+                      id="parentName"
+                      value={newFamily.parentName}
+                      onChange={(e) => setNewFamily(prev => ({ ...prev, parentName: e.target.value }))}
+                      placeholder="John Smith"
+                    />
                   </div>
-
-                  <Separator />
-
-                  {/* Parent Info */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Parent Account</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="parentName">Parent Name</Label>
-                        <Input
-                          id="parentName"
-                          value={newFamily.parentName}
-                          onChange={(e) => setNewFamily(prev => ({ ...prev, parentName: e.target.value }))}
-                          placeholder="John Smith"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="parentEmail">Parent Email</Label>
-                        <Input
-                          id="parentEmail"
-                          type="email"
-                          value={newFamily.parentEmail}
-                          onChange={(e) => setNewFamily(prev => ({ ...prev, parentEmail: e.target.value }))}
-                          placeholder="parent@example.com"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="parentPassword">Parent Password</Label>
-                      <Input
-                        id="parentPassword"
-                        type="password"
-                        value={newFamily.parentPassword}
-                        onChange={(e) => setNewFamily(prev => ({ ...prev, parentPassword: e.target.value }))}
-                        placeholder="Minimum 6 characters"
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Children Info */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Children Accounts</h3>
-                      <Button type="button" variant="outline" size="sm" onClick={addChild}>
-                        Add Child
-                      </Button>
-                    </div>
-                    {newFamily.children.map((child, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium">Child {index + 1}</h4>
-                          {newFamily.children.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeChild(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <div className="space-y-3">
-                          <div>
-                            <Label htmlFor={`childName-${index}`}>Name</Label>
-                            <Input
-                              id={`childName-${index}`}
-                              value={child.name}
-                              onChange={(e) => updateChild(index, 'name', e.target.value)}
-                              placeholder="Emma Smith"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label htmlFor={`childEmail-${index}`}>Email</Label>
-                              <Input
-                                id={`childEmail-${index}`}
-                                type="email"
-                                value={child.email}
-                                onChange={(e) => updateChild(index, 'email', e.target.value)}
-                                placeholder="emma@example.com"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor={`childPassword-${index}`}>Password</Label>
-                              <Input
-                                id={`childPassword-${index}`}
-                                type="password"
-                                value={child.password}
-                                onChange={(e) => updateChild(index, 'password', e.target.value)}
-                                placeholder="password123"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+                  <div>
+                    <Label htmlFor="parentEmail">Parent Email</Label>
+                    <Input
+                      id="parentEmail"
+                      type="email"
+                      value={newFamily.parentEmail}
+                      onChange={(e) => setNewFamily(prev => ({ ...prev, parentEmail: e.target.value }))}
+                      placeholder="john@example.com"
+                    />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowFamilyDialog(false)}>
-                    Cancel
+                <div>
+                  <Label htmlFor="parentPassword">Parent Password</Label>
+                  <Input
+                    id="parentPassword"
+                    type="password"
+                    value={newFamily.parentPassword}
+                    onChange={(e) => setNewFamily(prev => ({ ...prev, parentPassword: e.target.value }))}
+                    placeholder="Secure password"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Children Info */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Children</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={addChild}>
+                    Add Child
                   </Button>
-                  <Button onClick={handleCreateTestFamily}>
-                    Create Test Family
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+                </div>
+                {newFamily.children.map((child, index) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Child {index + 1}</h4>
+                      {newFamily.children.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeChild(index)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor={`childName${index}`}>Name</Label>
+                        <Input
+                          id={`childName${index}`}
+                          value={child.name}
+                          onChange={(e) => updateChild(index, 'name', e.target.value)}
+                          placeholder="Jane Smith"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`childEmail${index}`}>Email</Label>
+                        <Input
+                          id={`childEmail${index}`}
+                          type="email"
+                          value={child.email}
+                          onChange={(e) => updateChild(index, 'email', e.target.value)}
+                          placeholder="jane@example.com"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`childPassword${index}`}>Password</Label>
+                      <Input
+                        id={`childPassword${index}`}
+                        type="password"
+                        value={child.password}
+                        onChange={(e) => updateChild(index, 'password', e.target.value)}
+                        placeholder="Secure password"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFamilyDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateTestFamily}>Create Family</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* User and Family Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Existing Users */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Existing Users - Enhanced with Email and Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserMinus className="h-5 w-5" />
-              Manage Users
+              Manage Users ({users.filter(u => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(u.role) && 
+                (u.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+                (roleFilter === "all" || u.role === roleFilter)).length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-             {isLoading ? (
-               <p className="text-center text-muted-foreground">Loading users...</p>
-             ) : (
-               <Table>
-                 <TableHeader>
-                   <TableRow>
-                     <TableHead>Name</TableHead>
-                     <TableHead>Role</TableHead>
-                     <TableHead>Family</TableHead>
-                     <TableHead>Family Role</TableHead>
-                     <TableHead>Actions</TableHead>
-                   </TableRow>
-                 </TableHeader>
-                 <TableBody>
-                   {users.filter(user => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)).map((user) => {
-                     const familyInfo = getUserFamilyInfo(user);
-                     const deleteValidation = canDeleteUser(user);
-                     
-                     return (
-                       <TableRow key={user.id}>
-                         <TableCell>{user.display_name}</TableCell>
-                         <TableCell className="capitalize">{user.role}</TableCell>
-                         <TableCell>{familyInfo.familyName}</TableCell>
-                         <TableCell>{familyInfo.role}</TableCell>
-                         <TableCell>
-                           {deleteValidation.canDelete ? (
-                             <AlertDialog>
-                               <AlertDialogTrigger asChild>
-                                 <Button variant="ghost" size="sm">
-                                   <Trash2 className="h-4 w-4 text-destructive" />
-                                 </Button>
-                               </AlertDialogTrigger>
-                               <AlertDialogContent>
-                                 <AlertDialogHeader>
-                                   <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                   <AlertDialogDescription>
-                                     Are you sure you want to delete {user.display_name}? This action cannot be undone and will remove all associated data.
-                                   </AlertDialogDescription>
-                                 </AlertDialogHeader>
-                                 <AlertDialogFooter>
-                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                   <AlertDialogAction 
-                                     onClick={() => handleDeleteUser(user.id, user.display_name)}
-                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                   >
-                                     Delete User
-                                   </AlertDialogAction>
-                                 </AlertDialogFooter>
-                               </AlertDialogContent>
-                             </AlertDialog>
-                           ) : (
-                             <Button 
-                               variant="ghost" 
-                               size="sm" 
-                               disabled
-                               title={deleteValidation.reason || "Cannot delete this user"}
-                             >
-                               <Trash2 className="h-4 w-4 text-muted-foreground" />
-                             </Button>
-                           )}
-                         </TableCell>
-                       </TableRow>
-                     );
-                   })}
-                   {users.filter(user => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role)).length === 0 && (
-                     <TableRow>
-                       <TableCell colSpan={5} className="text-center text-muted-foreground">
-                         No non-admin users found
-                       </TableCell>
-                     </TableRow>
-                   )}
-                 </TableBody>
-               </Table>
-             )}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Family</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users
+                    .filter(user => !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role))
+                    .filter(user => {
+                      const matchesSearch = user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                           user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+                      return matchesSearch && matchesRole;
+                    })
+                    .map((user) => {
+                    const familyInfo = getUserFamilyInfo(user);
+                    const deleteValidation = canDeleteUser(user);
+                    
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{user.display_name}</p>
+                            <p className="text-xs text-muted-foreground">{user.username}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-mono">{user.email}</span>
+                          </div>
+                          {user.email_alias && (
+                            <p className="text-xs text-muted-foreground mt-1">Alias: {user.email_alias}</p>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === 'parent' ? 'default' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm">{familyInfo.familyName}</p>
+                            <p className="text-xs text-muted-foreground">{familyInfo.role}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowUserDetail(true);
+                              }}
+                              title="View details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowPasswordReset(true);
+                              }}
+                              title="Reset password"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                            {deleteValidation.canDelete ? (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" title="Delete user">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete {user.display_name}? This action cannot be undone and will remove all associated data.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => handleDeleteUser(user.id, user.display_name)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete User
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            ) : (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                disabled
+                                title={deleteValidation.reason || "Cannot delete this user"}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {users.filter(user => {
+                    const matchesSearch = user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+                    const isNotAdmin = !['admin', 'full_admin', 'read_only_admin', 'report_admin'].includes(user.role);
+                    return matchesSearch && matchesRole && isNotAdmin;
+                  }).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        No users found matching the filters
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
@@ -736,117 +756,81 @@ export function UserManagementTab() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UsersIcon className="h-5 w-5" />
-              Manage Families
+              Manage Families ({families.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <p className="text-center text-muted-foreground">Loading families...</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Family Name</TableHead>
-                    <TableHead>Members</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                 <TableBody>
-                   {families.map((family) => (
-                     <TableRow key={family.id}>
-                       <TableCell>{family.name}</TableCell>
-                       <TableCell>
-                         <div className="space-y-1">
-                           {/* Parent */}
-                           <div className="text-sm">
-                             <span className="font-medium">{family.profiles?.display_name}</span>
-                             <span className="text-muted-foreground ml-1">(Parent)</span>
-                           </div>
-                           {/* Children */}
-                           {family.family_members?.map((member: any, index: number) => (
-                             <div key={index} className="text-sm">
-                               <span className="font-medium">{member.profiles?.display_name}</span>
-                               <span className="text-muted-foreground ml-1">(Child)</span>
-                             </div>
-                           ))}
-                           {(!family.family_members || family.family_members.length === 0) && (
-                             <div className="text-sm text-muted-foreground">No children</div>
-                           )}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         <AlertDialog>
-                           <AlertDialogTrigger asChild>
-                             <Button variant="ghost" size="sm">
-                               <Trash2 className="h-4 w-4 text-destructive" />
-                             </Button>
-                           </AlertDialogTrigger>
-                           <AlertDialogContent>
-                             <AlertDialogHeader>
-                               <AlertDialogTitle>Delete Family</AlertDialogTitle>
-                               <AlertDialogDescription>
-                                 Are you sure you want to delete the family "{family.name}"? This will permanently delete all family members, chores, and associated data. This action cannot be undone.
-                               </AlertDialogDescription>
-                             </AlertDialogHeader>
-                             <AlertDialogFooter>
-                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                               <AlertDialogAction 
-                                 onClick={() => handleDeleteFamily(family.id, family.name)}
-                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                               >
-                                 Delete Family
-                               </AlertDialogAction>
-                             </AlertDialogFooter>
-                           </AlertDialogContent>
-                         </AlertDialog>
-                       </TableCell>
-                     </TableRow>
-                   ))}
-                   {families.length === 0 && (
-                     <TableRow>
-                       <TableCell colSpan={3} className="text-center text-muted-foreground">
-                         No families found
-                       </TableCell>
-                     </TableRow>
-                   )}
-                 </TableBody>
-               </Table>
-             )}
-           </CardContent>
-         </Card>
-       </div>
-
-       {/* Instructions */}
-       <Card>
-         <CardHeader>
-           <CardTitle>User Management Instructions</CardTitle>
-         </CardHeader>
-         <CardContent>
-            <div className="space-y-3 text-sm">
-              <div>
-                <strong>Legacy Admin:</strong> Full access to admin portal with all permissions (legacy role).
-              </div>
-              <div>
-                <strong>Full Admin:</strong> Complete administrative access - can manage users, families, and all settings.
-              </div>
-              <div>
-                <strong>Read Only Admin:</strong> Can view all data and reports but cannot make changes to users or families.
-              </div>
-              <div>
-                <strong>Report Admin:</strong> Can generate and view reports, limited modification capabilities.
-              </div>
-              <div>
-                <strong>Parent Users:</strong> Can create families, manage children, assign chores, and approve rewards.
-              </div>
-              <div>
-                <strong>Kid Users:</strong> Can view and complete assigned chores, track progress, and request rewards.
-              </div>
-              <div>
-                <strong>Test Families:</strong> Complete family setups with sample chores automatically created for testing workflows.
-              </div>
+            <div className="space-y-4">
+              {families.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No families found
+                </div>
+              ) : (
+                families.map((family) => (
+                  <div key={family.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{family.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Parent: {family.parent_display_name} ({family.parent_email})
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Family Code: {family.family_code}
+                        </p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Family
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Family</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{family.name}"? This will permanently delete the family and all its members. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteFamily(family.id, family.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Family
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
-    );
+
+      {/* User Detail Dialog */}
+      {selectedUser && (
+        <UserDetailDialog
+          user={selectedUser}
+          open={showUserDetail}
+          onOpenChange={setShowUserDetail}
+          onUpdate={loadData}
+        />
+      )}
+
+      {/* Password Reset Dialog */}
+      {selectedUser && (
+        <UserPasswordResetDialog
+          user={selectedUser}
+          open={showPasswordReset}
+          onOpenChange={setShowPasswordReset}
+          onSuccess={loadData}
+        />
+      )}
+    </div>
+  );
 }
