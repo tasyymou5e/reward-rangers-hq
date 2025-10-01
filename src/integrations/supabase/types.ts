@@ -2863,6 +2863,7 @@ export type Database = {
           email_domain: string
           family_code: string
           family_email_domain: string
+          family_members: Json
           id: string
           member_count: number
           name: string

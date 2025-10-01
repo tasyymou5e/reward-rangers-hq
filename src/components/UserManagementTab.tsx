@@ -152,7 +152,9 @@ export function UserManagementTab({ searchTerm = "", roleFilter = "all" }: UserM
           ...family,
           parent_display_name: family.profiles?.display_name || '',
           parent_email: family.profiles?.email || '',
-          member_count: 0 // Will be calculated separately if needed
+          member_count: family.family_members?.length || 0,
+          // Preserve family_members array - CRITICAL for getUserFamilyInfo
+          family_members: family.family_members || []
         }));
       }
       
@@ -273,7 +275,12 @@ export function UserManagementTab({ searchTerm = "", roleFilter = "all" }: UserM
         return { familyName: family.name, role: 'Parent' };
       }
       // Check if user is a family member (child)
-      if (family.family_members?.some((member: any) => member.user_id === user.id)) {
+      // Handle both array and JSONB array formats
+      const members = Array.isArray(family.family_members) 
+        ? family.family_members 
+        : (family.family_members ? JSON.parse(JSON.stringify(family.family_members)) : []);
+      
+      if (members.some((member: any) => member.user_id === user.id)) {
         return { familyName: family.name, role: 'Child' };
       }
     }
