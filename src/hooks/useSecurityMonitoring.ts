@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SecurityAlert {
   id: string;
@@ -16,7 +16,7 @@ interface SecurityAlert {
 }
 
 export function useSecurityMonitoring() {
-  const { user } = useAdminAuth();
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState<SecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [monitoringResult, setMonitoringResult] = useState<any>(null);
