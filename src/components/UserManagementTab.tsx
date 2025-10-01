@@ -123,7 +123,8 @@ export function UserManagementTab() {
             created_at, updated_at, settings, archived_at, created_by_primary_email,
             email_domain, family_email_domain, primary_email_designator,
             primary_email_designator_id,
-            profiles!parent_id(display_name, email)
+            profiles!parent_id(display_name, email),
+            family_members(user_id)
           `);
         
         console.log('Direct families query result:', {
