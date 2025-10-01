@@ -16,6 +16,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { UserPasswordResetDialog } from "./UserPasswordResetDialog";
+import { EmailDisplay } from "./EmailDisplay";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserDetailDialogProps {
@@ -109,11 +110,12 @@ export function UserDetailDialog({ user, open, onOpenChange, onUpdate }: UserDet
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg font-mono">{user.email}</p>
+                    <EmailDisplay email={user.email} />
                     {user.email_alias && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Alias: {user.email_alias}
-                      </p>
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">Email Alias:</p>
+                        <p className="text-sm font-mono">{user.email_alias}</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

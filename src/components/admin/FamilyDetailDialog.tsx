@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { AddFamilyMemberDialog } from "./AddFamilyMemberDialog";
 import { EnhancedActivityLogs } from "./EnhancedActivityLogs";
+import { EmailDisplay } from "./EmailDisplay";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FamilyDetailDialogProps {
@@ -369,15 +370,20 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
                 <CardHeader>
                   <CardTitle>Family Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-4">
                   <div>
-                    <strong>Description:</strong> {family.description || 'No description'}
+                    <p className="text-sm font-medium mb-1">Description</p>
+                    <p className="text-sm text-muted-foreground">{family.description || 'No description'}</p>
                   </div>
+                  {family.primary_email_designator && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Primary Email Designator</p>
+                      <EmailDisplay email={family.primary_email_designator} />
+                    </div>
+                  )}
                   <div>
-                    <strong>Primary Email:</strong> {family.primary_email_designator || 'Not set'}
-                  </div>
-                  <div>
-                    <strong>Email Domain:</strong> {family.email_domain || 'Default'}
+                    <p className="text-sm font-medium mb-1">Email Domain</p>
+                    <p className="text-sm text-muted-foreground">{family.email_domain || 'Default'}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -399,15 +405,15 @@ export function FamilyDetailDialog({ family, open, onOpenChange, onUpdate }: Fam
                 {allMembers.map((member: any) => (
                   <Card key={member.id}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
                             <p className="font-medium">{member.display_name}</p>
-                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                            <Badge variant={member.role === 'Parent' ? 'default' : 'secondary'}>
+                              {member.role}
+                            </Badge>
                           </div>
-                          <Badge variant={member.role === 'Parent' ? 'default' : 'secondary'}>
-                            {member.role}
-                          </Badge>
+                          <EmailDisplay email={member.email} />
                         </div>
 
                          <div className="flex gap-2">

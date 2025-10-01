@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { UserDetailDialog } from "@/components/admin/UserDetailDialog";
 import { UserPasswordResetDialog } from "@/components/admin/UserPasswordResetDialog";
+import { EmailDisplayCompact } from "@/components/admin/EmailDisplay";
 
 interface UserManagementTabProps {
   searchTerm?: string;
@@ -656,12 +657,9 @@ export function UserManagementTab({ searchTerm = "", roleFilter = "all" }: UserM
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-mono">{user.email}</span>
-                          </div>
+                          <EmailDisplayCompact email={user.email} />
                           {user.email_alias && (
-                            <p className="text-xs text-muted-foreground mt-1">Alias: {user.email_alias}</p>
+                            <p className="text-xs text-muted-foreground mt-1 ml-6">Alias: {user.email_alias}</p>
                           )}
                         </TableCell>
                         <TableCell>
