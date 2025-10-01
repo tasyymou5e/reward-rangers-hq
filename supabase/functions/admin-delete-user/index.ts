@@ -79,29 +79,49 @@ serve(async (req) => {
       })
     }
 
-    // Check if user is admin using direct auth.users check
-    const { data: authUser, error: authCheckError } = await supabaseAdmin
-      .from('auth.users')
-      .select('raw_user_meta_data')
-      .eq('id', user.id)
-      .single();
-    
-    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
+    // Use the secure is_admin_enhanced() function to verify admin status
+    console.log('🔐 Checking admin status using is_admin_enhanced()...');
+    const { data: isAdmin, error: adminCheckError } = await supabaseAdmin
+      .rpc('is_admin_enhanced');
 
     console.log('Admin check:', { 
-      userId: user.id, 
+      userId: user.id,
       isAdmin, 
-      hasError: !!authCheckError,
-      errorMessage: authCheckError?.message 
+      hasError: !!adminCheckError,
+      errorMessage: adminCheckError?.message 
     });
 
-    if (authCheckError || !isAdmin) {
-      console.error('Admin role verification failed:', { isAdmin, adminError: authCheckError });
-      return new Response('Forbidden: Admin role required', { 
-        status: 403, 
-        headers: corsHeaders 
-      });
+    if (adminCheckError) {
+      console.error('❌ Admin verification failed:', adminCheckError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Admin verification failed',
+          details: adminCheckError.message,
+          hint: 'Database function error - check RLS policies and function permissions'
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
+
+    if (!isAdmin) {
+      console.error('❌ Admin role verification failed');
+      return new Response(
+        JSON.stringify({
+          error: 'Access denied. Admin privileges required.',
+          userId: user.id,
+          hint: 'Your account does not have admin privileges'
+        }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    console.log('✅ Admin verification successful');
 
     // Parse request body
     const { userId } = await req.json()

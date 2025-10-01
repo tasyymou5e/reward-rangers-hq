@@ -287,12 +287,27 @@ export function useAdmin() {
     }>;
   }) => {
     try {
+      console.log('🏗️ Starting test family creation...');
+      
       // Get the current session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
       
       if (!session?.access_token) {
-        throw new Error('No valid session found');
+        console.error('❌ No valid session found');
+        throw new Error('No valid session found. Please log in again.');
       }
+
+      console.log('✅ Session found, calling edge function...');
+      console.log('📤 Request data:', { 
+        familyName: familyData.familyName,
+        parentEmail: familyData.parentEmail,
+        childrenCount: familyData.children.length 
+      });
 
       const { data, error } = await supabase.functions.invoke('create-test-family', {
         body: familyData,
@@ -301,34 +316,55 @@ export function useAdmin() {
         },
       });
       
+      console.log('📥 Edge function response:', { data, error });
+      
       if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
+        console.error('❌ Edge function error:', error);
+        const errorMessage = error.message || 'Failed to create test family';
+        throw new Error(errorMessage);
       }
+      
+      if (!data) {
+        console.error('❌ No data returned from edge function');
+        throw new Error('No data returned from edge function');
+      }
+      
+      if (data.error) {
+        console.error('❌ Edge function returned error:', data.error);
+        throw new Error(data.error);
+      }
+      
+      console.log('✅ Test family created successfully');
       return data;
-    } catch (error) {
-      console.error('Error creating test family:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('💥 Error creating test family:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      });
+      throw new Error(error?.message || 'Failed to create test family');
     }
   };
 
   const deleteUser = async (userId: string) => {
     try {
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Starting user deletion process');
-      });
+      console.log('🗑️ Starting user deletion process for:', userId);
       
       // Get the current session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
       
       if (!session?.access_token) {
-        console.error('No valid session found');
-        throw new Error('No valid session found');
+        console.error('❌ No valid session found');
+        throw new Error('No valid session found. Please log in again.');
       }
 
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Session found, calling edge function...');
-      });
+      console.log('✅ Session found, calling edge function...');
 
       // Use the secure edge function for user deletion
       const { data, error } = await supabase.functions.invoke('admin-delete-user', {
@@ -338,26 +374,28 @@ export function useAdmin() {
         },
       });
 
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('Edge function response received');
-      });
+      console.log('📥 Edge function response:', { data, error });
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to delete user');
+        console.error('❌ Edge function error:', error);
+        const errorMessage = error.message || 'Failed to delete user';
+        throw new Error(errorMessage);
       }
 
       if (!data?.success) {
-        console.error('Edge function returned failure:', data);
+        console.error('❌ Edge function returned failure:', data);
         throw new Error(data?.error || 'Failed to delete user');
       }
 
-      import('@/utils/secureLogging').then(({ secureLog }) => {
-        secureLog.info('User deleted successfully');
+      console.log('✅ User deleted successfully');
+    } catch (error: any) {
+      console.error('💥 Error deleting user:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
       });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      throw error;
+      throw new Error(error?.message || 'Failed to delete user');
     }
   };
 

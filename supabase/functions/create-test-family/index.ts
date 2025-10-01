@@ -59,24 +59,43 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is admin using direct auth.users check
-    const { data: authUser, error: authCheckError } = await supabaseAdmin
-      .from('auth.users')
-      .select('raw_user_meta_data')
-      .eq('id', user.id)
-      .single();
+    // Use the secure is_admin_enhanced() function to verify admin status
+    console.log('🔐 Checking admin status using is_admin_enhanced()...');
+    const { data: isAdmin, error: adminCheckError } = await supabaseAdmin
+      .rpc('is_admin_enhanced');
     
-    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
+    console.log('Admin check result:', { isAdmin, error: adminCheckError });
     
-    if (authCheckError || !isAdmin) {
-      console.log('Unauthorized test family creation attempt:', { 
-        userId: user.id, 
-        authCheckError: authCheckError?.message,
-        userRole: authUser?.raw_user_meta_data?.role,
-        isAdmin
+    if (adminCheckError) {
+      console.error('❌ Admin verification failed:', adminCheckError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Admin verification failed',
+          details: adminCheckError.message,
+          hint: 'Database function error - check RLS policies and function permissions'
+        }),
+        { 
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+    
+    if (!isAdmin) {
+      console.log('❌ Unauthorized test family creation attempt:', { 
+        userId: user.id,
+        email: user.email
       });
       return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
+        JSON.stringify({ 
+          error: 'Access denied. Admin privileges required.',
+          userId: user.id,
+          email: user.email,
+          hint: 'Your account does not have admin privileges'
+        }),
         { 
           status: 403,
           headers: { 
@@ -86,6 +105,8 @@ Deno.serve(async (req) => {
         }
       );
     }
+    
+    console.log('✅ Admin verification successful');
 
     const { familyName, parentEmail, parentPassword, parentName, children } = await req.json();
 
