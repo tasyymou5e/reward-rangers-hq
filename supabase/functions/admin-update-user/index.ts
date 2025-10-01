@@ -32,8 +32,15 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Check if user is admin using database function
-    const { data: isAdmin, error: adminCheckError } = await supabaseClient
+    // Create a user-scoped client using the incoming JWT for RLS/auth.uid()
+    const supabaseUserClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
+
+    // Check if user is admin using database function with proper auth context
+    const { data: isAdmin, error: adminCheckError } = await supabaseUserClient
       .rpc('is_admin_enhanced');
     
     if (adminCheckError || !isAdmin) {
