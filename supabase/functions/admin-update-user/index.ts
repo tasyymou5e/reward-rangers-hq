@@ -80,9 +80,13 @@ serve(async (req) => {
         }
         
         // Update user password via auth admin
+        // CRITICAL: Set email_confirm to true to bypass email verification requirement
         const { error: passwordError } = await supabaseClient.auth.admin.updateUserById(
           userId,
-          { password: newPassword }
+          { 
+            password: newPassword,
+            email_confirm: true  // Confirm email to allow immediate login
+          }
         );
 
         if (passwordError) {
