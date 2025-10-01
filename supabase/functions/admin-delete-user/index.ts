@@ -80,8 +80,9 @@ serve(async (req) => {
     }
 
     // Use the secure is_admin_enhanced() function to verify admin status
+    // CRITICAL: Use user client (not service role) so auth.uid() works inside the function
     console.log('🔐 Checking admin status using is_admin_enhanced()...');
-    const { data: isAdmin, error: adminCheckError } = await supabaseAdmin
+    const { data: isAdmin, error: adminCheckError } = await supabase
       .rpc('is_admin_enhanced');
 
     console.log('Admin check:', { 
