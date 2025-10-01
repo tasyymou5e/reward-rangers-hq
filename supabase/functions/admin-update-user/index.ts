@@ -32,20 +32,16 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Check if user is admin using direct auth.users check  
-    const { data: authUser, error: authCheckError } = await supabaseClient
-      .from('auth.users')
-      .select('raw_user_meta_data')
-      .eq('id', user.id)
-      .single();
+    // Check if user is admin using database function
+    const { data: isAdmin, error: adminCheckError } = await supabaseClient
+      .rpc('is_admin_enhanced');
     
-    const isAdmin = authUser?.raw_user_meta_data?.role === 'admin';
-    
-    if (authCheckError || !isAdmin) {
-      throw new Error('Insufficient permissions');
+    if (adminCheckError || !isAdmin) {
+      console.error('Admin check failed:', adminCheckError);
+      throw new Error('Insufficient permissions: Admin role required');
     }
 
-    const { userId, action, generatePassword, notifyUser } = await req.json();
+    const { userId, action, password, generatePassword, notifyUser } = await req.json();
 
     if (!userId || !action) {
       throw new Error('Missing required parameters');
@@ -55,24 +51,43 @@ serve(async (req) => {
 
     switch (action) {
       case 'reset_password':
-        if (generatePassword) {
+        // Determine which password to use
+        let newPassword: string;
+        
+        if (password) {
+          // Use custom password provided by admin
+          newPassword = password;
+          console.log(`Using custom password for user ${userId}`);
+        } else if (generatePassword) {
           // Generate secure temporary password
-          const tempPassword = generateSecurePassword();
-          
-          // Update user password via auth admin
-          const { error: passwordError } = await supabaseClient.auth.admin.updateUserById(
-            userId,
-            { password: tempPassword }
-          );
+          newPassword = generateSecurePassword();
+          result.tempPassword = newPassword;
+          console.log(`Generated temporary password for user ${userId}`);
+        } else {
+          throw new Error('Either password or generatePassword must be provided');
+        }
+        
+        // Validate password meets requirements
+        if (newPassword.length < 8) {
+          throw new Error('Password must be at least 8 characters long');
+        }
+        
+        // Update user password via auth admin
+        const { error: passwordError } = await supabaseClient.auth.admin.updateUserById(
+          userId,
+          { password: newPassword }
+        );
 
-          if (passwordError) {
-            throw new Error(`Password reset failed: ${passwordError.message}`);
-          }
-
-          result.tempPassword = tempPassword;
-          
-          // TODO: Send email notification if notifyUser is true
-          console.log(`Password reset for user ${userId}. Temp password: ${tempPassword}`);
+        if (passwordError) {
+          throw new Error(`Password reset failed: ${passwordError.message}`);
+        }
+        
+        // Log successful password reset
+        console.log(`Password reset successful for user ${userId}`);
+        
+        // TODO: Send email notification if notifyUser is true
+        if (notifyUser) {
+          console.log(`TODO: Send email notification to user ${userId}`);
         }
         break;
 
@@ -116,16 +131,18 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
-    // Log the admin action
+    // Log the admin action with enhanced metadata
     await supabaseClient.rpc('log_security_audit', {
       p_action_type: `admin_user_${action}`,
       p_resource_type: 'user',
       p_resource_id: userId,
-      p_risk_level: action.includes('disable') ? 'high' : 'medium',
+      p_risk_level: action === 'reset_password' ? 'high' : action.includes('disable') ? 'high' : 'medium',
       p_metadata: {
         admin_user_id: user.id,
         action: action,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        password_type: password ? 'custom' : generatePassword ? 'generated' : 'none',
+        notify_user: notifyUser || false
       }
     });
 
